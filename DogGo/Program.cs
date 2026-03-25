@@ -27,6 +27,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
 
+builder.Services.AddSignalR();
+
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -41,6 +43,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+app.MapHub<DogGo.Hubs.ChatHub>("/chatHub");
 
 app.UseAuthentication(); 
 app.UseAuthorization();
