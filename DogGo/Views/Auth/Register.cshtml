@@ -1,0 +1,77 @@
+﻿@model DogGo.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Crear cuenta";
+}
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-logo">🐾 DogGo</div>
+        <h2>Crea tu cuenta</h2>
+
+        <form asp-action="Register" method="post">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label asp-for="Nombre">Nombre</label>
+                    <input asp-for="Nombre" class="form-control" />
+                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label asp-for="Apellido">Apellido</label>
+                    <input asp-for="Apellido" class="form-control" />
+                    <span asp-validation-for="Apellido" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email">Email</label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Telefono">Teléfono</label>
+                <input asp-for="Telefono" class="form-control" />
+                <span asp-validation-for="Telefono" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Rol">Quiero registrarme como</label>
+                <select asp-for="Rol" class="form-control">
+                    <option value="">-- Selecciona --</option>
+                    <option value="Duenio">Dueño de mascota</option>
+                    <option value="Paseador">Paseador</option>
+                </select>
+                <span asp-validation-for="Rol" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password">Contraseña</label>
+                <input asp-for="Password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ConfirmPassword">Confirmar contraseña</label>
+                <input asp-for="ConfirmPassword" class="form-control" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3">Crear cuenta</button>
+        </form>
+
+        <p class="text-center mt-3">
+            ¿Ya tienes cuenta? <a asp-action="Login">Inicia sesión</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+}
