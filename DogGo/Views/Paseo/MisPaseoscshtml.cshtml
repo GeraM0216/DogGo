@@ -1,0 +1,40 @@
+﻿@model List<DogGo.Models.Paseo>
+@{
+    ViewData["Title"] = "Mis paseos";
+}
+
+<div class="container mt-4">
+    <h4> Mis paseos</h4>
+
+    @if (!Model.Any())
+    {
+        <p class="text-muted mt-3">No tienes paseos registrados aún.</p>
+    }
+    else
+    {
+        <div class="list-group mt-3">
+            @foreach (var p in Model)
+            {
+                <a asp-action="Mapa" asp-route-id="@p.Id"
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
+                        <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                    <span class="badge
+                        @(p.Estado == "EnCurso" ? "bg-success" :
+                                                p.Estado == "Finalizado" ? "bg-secondary" :
+                                                p.Estado == "Cancelado" ? "bg-danger" : "bg-warning text-dark")">
+                        @p.Estado
+                    </span>
+                    @if (p.Estado == "Finalizado" && p.Calificacion == null && User.IsInRole("Dueño"))
+                    {
+                        <a asp-controller="Calificacion" asp-action="Crear"
+                           asp-route-paseoId="@p.Id"
+                           class="btn btn-warning btn-sm ms-2"> Calificar</a>
+                    }
+                </a>
+            }
+        </div>
+    }
+</div>

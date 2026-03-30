@@ -1,0 +1,201 @@
+﻿@model DogGo.Models.Paseo
+@{
+    ViewData["Title"] = "Mapa del paseo";
+    var esPaseador = (bool)ViewBag.EsPaseador;
+    var lat = Model.LatitudActual != 0 ? (double)Model.LatitudActual : 25.6866;
+    var lng = Model.LongitudActual != 0 ? (double)Model.LongitudActual : -100.3161;
+}
+
+<div class="mapa-container">
+
+    <div class="mapa-header">
+        <h5>Paseo #@Model.Id —
+            <span id="estadoBadge" class="badge
+                @(Model.Estado == "EnCurso" ? "bg-success" :
+                  Model.Estado == "Finalizado" ? "bg-secondary" : "bg-warning text-dark")">
+                @Model.Estado
+            </span>
+        </h5>
+        <div class="mapa-info">
+            <span>@Model.Perro.Nombre</span>
+            <span> @Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</span>
+        </div>
+    </div>
+
+    <!-- Mapa Leaflet -->
+    <div id="map"></div>
+
+    <!-- Controles del paseador -->
+    @if (esPaseador)
+    {
+        <div class="mapa-controles">
+            @if (Model.Estado == "Pendiente")
+            {
+                <button id="btnIniciar" class="btn btn-success w-100"
+                        onclick="cambiarEstado('EnCurso')">
+                    ▶ Iniciar paseo
+                </button>
+            }
+            @if (Model.Estado == "EnCurso")
+            {
+                <button id="btnFinalizar" class="btn btn-danger w-100"
+                        onclick="cambiarEstado('Finalizado')">
+                    ⏹ Finalizar paseo
+                </button>
+            }
+        </div>
+    }
+
+    <!-- Botón al chat -->
+    <div class="mapa-footer">
+        <a asp-controller="Chat" asp-action="Index"
+           asp-route-paseoId="@Model.Id"
+           class="btn btn-outline-primary w-100">
+             Abrir chat del paseo
+        </a>
+    </div>
+
+</div>
+
+@section Scripts {
+<!-- Leaflet CSS y JS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
+<script>
+    const paseoId    = @Model.Id;
+    const esPaseador = @(esPaseador ? "true" : "false");
+    let watchId      = null;
+    let marker       = null;
+    let ruta         = [];
+
+    // ── Inicializar mapa ──────────────────────────────────────
+    const map = L.map("map").setView([@lat, @lng], 15);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors"
+    }).addTo(map);
+
+    // Ícono personalizado
+    const iconoPaseo = L.divIcon({
+        className: "",
+        html: `<div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))">🐕</div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 32]
+    });
+
+    marker = L.marker([@lat, @lng], { icon: iconoPaseo })
+              .addTo(map)
+              .bindPopup("Ubicación actual del paseo");
+
+    // Dibujar historial de ruta si existe
+    @if (Model.Ubicaciones != null && Model.Ubicaciones.Any())
+    {
+        <text>
+        const historial = [
+            @foreach (var u in Model.Ubicaciones)
+            {
+                @:[@((double)u.Latitud), @((double)u.Longitud)],
+            }
+        ];
+        if (historial.length > 1) {
+            L.polyline(historial, { color: "#0d6efd", weight: 3, opacity: 0.7 }).addTo(map);
+        }
+        </text>
+    }
+
+    // ── SignalR ───────────────────────────────────────────────
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/paseoHub")
+        .withAutomaticReconnect()
+        .build();
+
+    // Recibir ubicación (dueño y paseador)
+    connection.on("RecibirUbicacion", (lat, lng) => {
+        const pos = [lat, lng];
+        marker.setLatLng(pos);
+        map.panTo(pos);
+        ruta.push(pos);
+        if (ruta.length > 1) {
+            L.polyline(ruta, { color: "#0d6efd", weight: 3, opacity: 0.7 }).addTo(map);
+        }
+    });
+
+    // Recibir cambio de estado
+    connection.on("EstadoCambiado", (estado) => {
+        document.getElementById("estadoBadge").textContent = estado;
+
+        if (estado === "EnCurso" && esPaseador) {
+            iniciarGPS();
+            document.getElementById("btnIniciar")?.remove();
+        }
+        if (estado === "Finalizado") {
+            detenerGPS();
+            document.getElementById("btnFinalizar")?.remove();
+        }
+    });
+
+    connection.start()
+        .then(() => connection.invoke("UnirseAPaseo", paseoId))
+        .catch(err => console.error("SignalR error:", err));
+
+    // ── GPS (solo paseador) ───────────────────────────────────
+    function iniciarGPS() {
+        if (!navigator.geolocation) {
+            alert("Tu navegador no soporta geolocalización");
+            return;
+        }
+        watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                connection.invoke("EnviarUbicacion", paseoId, lat, lng)
+                    .catch(err => console.error("Error GPS:", err));
+            },
+            (err) => console.error("Error geolocalización:", err),
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+    }
+
+    function detenerGPS() {
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+    }
+
+    function cambiarEstado(nuevoEstado) {
+        connection.invoke("CambiarEstado", paseoId, nuevoEstado)
+            .catch(err => console.error("Error al cambiar estado:", err));
+    }
+
+    // Si el paseo ya está en curso y es paseador, iniciar GPS de inmediato
+    @if (Model.Estado == "EnCurso" && esPaseador)
+    {
+        <text>iniciarGPS();</text>
+    }
+</script>
+}
+
+<style>
+.mapa-container {
+    max-width: 760px;
+    margin: 1.5rem auto;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.mapa-header {
+    padding: 1rem 1.25rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.mapa-info { font-size: 0.88rem; color: #6c757d; display: flex; gap: 1rem; }
+#map { height: 420px; width: 100%; }
+.mapa-controles { padding: 0.75rem 1rem; border-top: 1px solid #ddd; }
+.mapa-footer { padding: 0.75rem 1rem; border-top: 1px solid #eee; background: #fafafa; }
+</style>

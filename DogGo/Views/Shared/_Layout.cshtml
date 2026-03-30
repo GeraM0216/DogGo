@@ -1,50 +1,247 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - DogGo</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/DogGo.styles.css" asp-append-version="true" />
-</head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">DogGo</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <title>@ViewData["Title"] — DogGo</title>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - DogGo - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <!-- Bootstrap -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css"
+          rel="stylesheet" />
+
+    <style>
+        /* ── Variables ───────────────────────────────────────── */
+        :root {
+            --doggo-primary:  #0d6efd;
+            --doggo-surface:  #f8f9fa;
+            --doggo-border:   #dee2e6;
+            --doggo-nav-h:    60px;
+        }
+
+        /* ── Base ────────────────────────────────────────────── */
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #f4f6fb;
+            font-family: system-ui, sans-serif;
+        }
+
+        main { flex: 1; padding-top: 1.5rem; padding-bottom: 3rem; }
+
+        /* ── Navbar ──────────────────────────────────────────── */
+        .navbar-doggo {
+            height: var(--doggo-nav-h);
+            background: white;
+            border-bottom: 1px solid var(--doggo-border);
+            box-shadow: 0 1px 4px rgba(0,0,0,.06);
+        }
+
+        .navbar-brand {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--doggo-primary) !important;
+            letter-spacing: -.3px;
+        }
+
+        .nav-link {
+            font-size: 0.9rem;
+            color: #555 !important;
+            padding: 0.4rem 0.75rem !important;
+            border-radius: 6px;
+            transition: background .15s, color .15s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: #e8f0fe;
+            color: var(--doggo-primary) !important;
+        }
+
+        /* Badge de mensajes no leídos */
+        .nav-badge {
+            font-size: 0.65rem;
+            padding: 2px 5px;
+            border-radius: 10px;
+            background: #dc3545;
+            color: white;
+            vertical-align: super;
+            margin-left: 2px;
+        }
+
+        /* ── Alerts de TempData ──────────────────────────────── */
+        .tempdata-alert {
+            position: fixed;
+            top: calc(var(--doggo-nav-h) + 12px);
+            right: 16px;
+            z-index: 1055;
+            min-width: 280px;
+            max-width: 380px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.12);
+            border-radius: 10px;
+            animation: slideIn .25s ease;
+        }
+
+        @@keyframes slideIn {
+            from { opacity: 0; transform: translateX(40px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ── Footer ──────────────────────────────────────────── */
+        .footer-doggo {
+            background: white;
+            border-top: 1px solid var(--doggo-border);
+            padding: 1rem 0;
+            font-size: 0.82rem;
+            color: #aaa;
+            text-align: center;
+        }
+    </style>
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+
+<body>
+
+    <!-- ── Navbar ─────────────────────────────────────────────── -->
+    <nav class="navbar navbar-expand-md navbar-doggo sticky-top px-3">
+        <div class="container-fluid">
+
+            <!-- Logo -->
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                🐾 DogGo
+            </a>
+
+            <!-- Hamburguesa mobile -->
+            <button class="navbar-toggler border-0" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navMenu">
+
+                <!-- Links izquierda -->
+                <ul class="navbar-nav me-auto gap-1">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Paseador" asp-action="Directorio">
+                            Paseadores
+                        </a>
+                    </li>
+
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Paseo" asp-action="MisPaseos">
+                                Mis paseos
+                            </a>
+                        </li>
+
+                        @if (User.IsInRole("Paseador"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Paseador" asp-action="Perfil">
+                                    Mi perfil
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Dueño"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Perro" asp-action="MisPerros">
+                                    Mis perros
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
+
+                <!-- Links derecha -->
+                <ul class="navbar-nav gap-1 align-items-center">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <!-- Nombre del usuario -->
+                        <li class="nav-item">
+                            <span class="nav-link pe-none" style="color:#888!important;font-size:.85rem">
+                                👤 @User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                            </span>
+                        </li>
+
+                        <!-- Logout -->
+                        <li class="nav-item">
+                            <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="nav-link btn btn-link p-0 px-2"
+                                        style="color:#dc3545!important">
+                                    Cerrar sesión
+                                </button>
+                            </form>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Auth" asp-action="Login">
+                                Iniciar sesión
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-primary btn-sm ms-1"
+                               asp-controller="Auth" asp-action="Register">
+                                Registrarse
+                            </a>
+                        </li>
+                    }
+                </ul>
+
+            </div>
         </div>
+    </nav>
+
+    <!-- ── TempData alerts ────────────────────────────────────── -->
+    @if (TempData["Exito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible tempdata-alert" role="alert">
+             @TempData["Exito"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible tempdata-alert" role="alert">
+             @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- ── Contenido principal ────────────────────────────────── -->
+    <main>
+        <div class="container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <footer class="footer-doggo">
+        DogGo &copy; @DateTime.Now.Year — Proyecto universitario
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- ── Scripts ────────────────────────────────────────────── -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Auto-cerrar alerts después de 4 segundos -->
+    <script>
+        document.querySelectorAll(".tempdata-alert").forEach(alert => {
+            setTimeout(() => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            }, 4000);
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

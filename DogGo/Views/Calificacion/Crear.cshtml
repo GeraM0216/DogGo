@@ -1,0 +1,108 @@
+﻿@model DogGo.ViewModels.CalificacionViewModel
+@{
+    ViewData["Title"] = "Calificar paseo";
+    var paseo = (DogGo.Models.Paseo)ViewBag.Paseo;
+}
+
+<div class="cal-container">
+    <div class="cal-card">
+        <h4>⭐ Califica el paseo</h4>
+        <p class="text-muted">
+            Paseador: <strong>@paseo.Paseador.Usuario.Nombre @paseo.Paseador.Usuario.Apellido</strong><br/>
+            Perro: <strong>@paseo.Perro.Nombre</strong>
+        </p>
+
+        <form asp-action="Crear" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="PaseoId" />
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <!-- Estrellas interactivas -->
+            <div class="form-group mb-3">
+                <label>Puntuación</label>
+                <div class="estrellas" id="estrellas">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <span class="estrella" data-valor="@i">★</span>
+                    }
+                </div>
+                <input type="hidden" asp-for="Puntaje" id="puntajeInput" />
+                <span asp-validation-for="Puntaje" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Comentario">Comentario (opcional)</label>
+                <textarea asp-for="Comentario"
+                          class="form-control"
+                          rows="3"
+                          placeholder="¿Cómo fue la experiencia?"></textarea>
+                <span asp-validation-for="Comentario" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Enviar calificación</button>
+            <a asp-controller="Paseo" asp-action="MisPaseos"
+               class="btn btn-outline-secondary w-100 mt-2">Cancelar</a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script>
+        const estrellas    = document.querySelectorAll(".estrella");
+        const puntajeInput = document.getElementById("puntajeInput");
+
+        estrellas.forEach(estrella => {
+            // Hover: iluminar hasta la estrella apuntada
+            estrella.addEventListener("mouseover", () => {
+                const valor = parseInt(estrella.dataset.valor);
+                estrellas.forEach(e =>
+                    e.classList.toggle("activa", parseInt(e.dataset.valor) <= valor)
+                );
+            });
+
+            // Salir del hover: volver al valor seleccionado
+            estrella.addEventListener("mouseleave", () => {
+                const seleccionado = parseInt(puntajeInput.value) || 0;
+                estrellas.forEach(e =>
+                    e.classList.toggle("activa", parseInt(e.dataset.valor) <= seleccionado)
+                );
+            });
+
+            // Click: fijar valor
+            estrella.addEventListener("click", () => {
+                puntajeInput.value = estrella.dataset.valor;
+                estrellas.forEach(e =>
+                    e.classList.toggle("activa", parseInt(e.dataset.valor) <= parseInt(estrella.dataset.valor))
+                );
+            });
+        });
+    </script>
+}
+
+<style>
+.cal-container {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+}
+.cal-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+}
+.estrellas { display: flex; gap: 8px; margin: 8px 0; }
+.estrella {
+    font-size: 2.2rem;
+    color: #dee2e6;
+    cursor: pointer;
+    transition: color 0.15s, transform 0.1s;
+    user-select: none;
+}
+.estrella:hover,
+.estrella.activa { color: #ffc107; transform: scale(1.1); }
+</style>
