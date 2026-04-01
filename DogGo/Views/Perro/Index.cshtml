@@ -1,0 +1,41 @@
+﻿@model IEnumerable<DogGo.Models.Perro>
+
+@{
+    ViewData["Title"] = "Perros";
+}
+
+<h1>Perros</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Registrar perro</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Raza</th>
+            <th>Edad</th>
+            <th>Tamaño</th>
+            <th>Dueño</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Nombre</td>
+                <td>@item.Raza</td>
+                <td>@item.Edad</td>
+                <td>@item.Tamaño</td>
+                <td>@(item.Dueño != null ? item.Dueño.Nombre + " " + item.Dueño.Apellido : "")</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id">Detalles</a> |
+                    <a asp-action="Edit" asp-route-id="@item.Id">Editar</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Eliminar</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
