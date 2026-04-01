@@ -47,13 +47,18 @@
     }
 
     <!-- Botón al chat -->
-    <div class="mapa-footer">
-        <a asp-controller="Chat" asp-action="Index"
-           asp-route-paseoId="@Model.Id"
-           class="btn btn-outline-primary w-100">
-             Abrir chat del paseo
-        </a>
-    </div>
+<div class="mapa-footer d-flex gap-2">
+    <a asp-controller="Paseo" asp-action="MisPaseos"
+       class="btn btn-outline-secondary w-100">
+        ← Volver a mis paseos
+    </a>
+
+    <a asp-controller="Chat" asp-action="Index"
+       asp-route-paseoId="@Model.Id"
+       class="btn btn-outline-primary w-100">
+        Abrir chat del paseo
+    </a>
+</div>
 
 </div>
 
