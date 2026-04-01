@@ -165,8 +165,17 @@
                     {
                         <!-- Nombre del usuario -->
                         <li class="nav-item">
-                            <span class="nav-link pe-none" style="color:#888!important;font-size:.85rem">
-                                👤 @User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                            <span class="nav-link pe-none d-flex align-items-center gap-2" style="color:#888!important;font-size:.85rem">
+                                @{
+                                    var nombre = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+                                    var rol = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+                                    var rolMostrado = rol == "Duenio" ? "Cliente" :
+                                                      rol == "Paseador" ? "Paseador" :
+                                                      rol;
+                                }
+                                <span>👤 @nombre</span>
+                                <span class="badge bg-light text-dark border">@rolMostrado</span>
                             </span>
                         </li>
 

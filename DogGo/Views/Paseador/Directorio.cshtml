@@ -1,10 +1,12 @@
 ﻿@model List<DogGo.Models.Paseador>
+@using DogGo.Models
+
 @{
     ViewData["Title"] = "Paseadores disponibles";
 }
 
 <div class="container mt-4">
-    <h4> Paseadores disponibles</h4>
+    <h4>Paseadores disponibles</h4>
 
     @if (!Model.Any())
     {
@@ -33,14 +35,60 @@
                                 <small class="text-muted">@p.CalificacionPromedio.ToString("0.0")</small>
                             </div>
                         </div>
+
                         @if (!string.IsNullOrEmpty(p.Descripcion))
                         {
                             <p class="mt-2 mb-2 small text-muted">@p.Descripcion</p>
                         }
+
                         <a asp-action="Perfil" asp-route-id="@p.Id"
                                class="btn btn-outline-primary btn-sm mt-auto">
                             Ver perfil
                         </a>
+
+                        @if (User.IsInRole("Duenio"))
+                        {
+                            var perros = ViewBag.Perros as List<Perro>;
+
+                            if (perros != null && perros.Any())
+                            {
+                                <form asp-controller="Paseo" asp-action="Crear" method="post" class="mt-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="paseadorId" value="@p.Id" />
+
+                                    <div class="mb-2">
+                                        <select name="perroId" class="form-select form-select-sm" required>
+                                            <option value="">Selecciona uno de tus perros</option>
+                                            @foreach (var perro in perros)
+                                            {
+                                                <option value="@perro.Id">@perro.Nombre</option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <input type="number"
+                                               name="precio"
+                                               class="form-control form-control-sm"
+                                               step="0.01"
+                                               min="0"
+                                               value="@p.TarifaPorHora"
+                                               placeholder="Precio"
+                                               required />
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                        Solicitar paseo
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning mt-2 mb-0 p-2 small">
+                                    Primero registra al menos un perro para poder solicitar paseos.
+                                </div>
+                            }
+                        }
                     </div>
                 </div>
             }

@@ -11,7 +11,7 @@
 
 <div class="row">
     <div class="col-md-6">
-        <form asp-action="Create" method="post">
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -53,6 +53,11 @@
                 <label asp-for="Notas" class="form-label"></label>
                 <textarea asp-for="Notas" class="form-control"></textarea>
                 <span asp-validation-for="Notas" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Imagen del perro</label>
+                <input type="file" name="imagenArchivo" class="form-control" accept="image/*" />
             </div>
 
             <div class="mb-3">

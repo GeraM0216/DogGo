@@ -15,9 +15,15 @@ namespace DogGo.Models
         /// <summary>"Pequeño", "Mediano", "Grande"</summary>
         public string? Tamaño { get; set; }
         public string? Notas { get; set; }
+        //fotitos
+        public string? ImagenUrl { get; set; }
 
         // Navegación
         public Usuario Dueño { get; set; }
         public ICollection<Paseo>? Paseos { get; set; }
+
+
+ 
+
     }
 }

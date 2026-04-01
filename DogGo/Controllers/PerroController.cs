@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 
 namespace DogGo.Controllers
 {
@@ -11,10 +13,12 @@ namespace DogGo.Controllers
     public class PerroController : Controller
     {
         private readonly DogGoDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public PerroController(DogGoDbContext context)
+        public PerroController(DogGoDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // GET: /Perro
@@ -48,13 +52,14 @@ namespace DogGo.Controllers
         public async Task<IActionResult> Create()
         {
             await CargarDueños();
-            return View("~/Views/Perro/Create.cshtml");
+            return View();
         }
 
         // POST: /Perro/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Perro perro)
+
+        public async Task<IActionResult> Create(Perro perro, IFormFile? imagenArchivo)
         {
             ModelState.Remove("Dueño");
             ModelState.Remove("Paseos");
@@ -64,6 +69,23 @@ namespace DogGo.Controllers
                 await CargarDueños(perro.DueñoId);
                 return View(perro);
             }
+
+            if (imagenArchivo != null && imagenArchivo.Length > 0)
+            {
+                var carpeta = Path.Combine(_environment.WebRootPath, "uploads", "perros");
+                Directory.CreateDirectory(carpeta);
+
+                var nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(imagenArchivo.FileName);
+                var rutaCompleta = Path.Combine(carpeta, nombreArchivo);
+
+                using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+                {
+                    await imagenArchivo.CopyToAsync(stream);
+                }
+
+                perro.ImagenUrl = "/uploads/perros/" + nombreArchivo;
+            }
+
 
             _context.Perros.Add(perro);
             await _context.SaveChangesAsync();

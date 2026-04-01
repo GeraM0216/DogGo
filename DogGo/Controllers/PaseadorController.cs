@@ -104,6 +104,8 @@ namespace DogGo.Controllers
 
         // GET: /Paseador/Directorio
         // Lista de paseadores disponibles para que los dueÃ±os contraten
+        // GET: /Paseador/Directorio
+        // Lista de paseadores disponibles para que los dueños contraten
         public async Task<IActionResult> Directorio()
         {
             var paseadores = await _context.Paseadores
@@ -111,6 +113,20 @@ namespace DogGo.Controllers
                 .Include(p => p.Usuario)
                 .OrderByDescending(p => p.CalificacionPromedio)
                 .ToListAsync();
+
+            if (User.IsInRole("Duenio"))
+            {
+                var usuarioId = int.Parse(
+                    User.FindFirstValue(ClaimTypes.NameIdentifier)
+                );
+
+                var perros = await _context.Perros
+                    .Where(p => p.DueñoId == usuarioId)
+                    .OrderBy(p => p.Nombre)
+                    .ToListAsync();
+
+                ViewBag.Perros = perros;
+            }
 
             return View(paseadores);
         }

@@ -364,3 +364,5 @@ FodyWeavers.xsd
 
 #Ignore para contrasena de base de datos local
 DogGo/appsettings.Development.json
+#Ignore para archivos locales
+DogGo/wwwroot/uploads/

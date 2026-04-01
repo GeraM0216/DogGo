@@ -81,9 +81,42 @@ namespace DogGo.Controllers
         // POST: /Paseo/Crear
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Dueño")]
+        [Authorize(Roles = "Duenio")]
         public async Task<IActionResult> Crear(int paseadorId, int perroId, decimal precio)
         {
+            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var perro = await _context.Perros
+                .FirstOrDefaultAsync(p => p.Id == perroId);
+
+            if (perro == null)
+                return NotFound();
+
+            if (perro.DueñoId != usuarioId)
+                return Forbid();
+
+            var paseador = await _context.Paseadores
+                .FirstOrDefaultAsync(p => p.Id == paseadorId);
+
+            if (paseador == null)
+                return NotFound();
+
+            if (!paseador.Disponible)
+            {
+                TempData["Error"] = "El paseador no está disponible en este momento.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
+
+            var paseoExistente = await _context.Paseos
+                .AnyAsync(p => p.PerroId == perroId &&
+                              (p.Estado == "Pendiente" || p.Estado == "EnCurso"));
+
+            if (paseoExistente)
+            {
+                TempData["Error"] = "Este perro ya tiene un paseo pendiente o en curso.";
+                return RedirectToAction("Index", "Perro");
+            }
+
             var paseo = new Paseo
             {
                 PaseadorId = paseadorId,
@@ -96,6 +129,7 @@ namespace DogGo.Controllers
             _context.Paseos.Add(paseo);
             await _context.SaveChangesAsync();
 
+            TempData["Exito"] = "Paseo solicitado correctamente.";
             return RedirectToAction("Mapa", new { id = paseo.Id });
         }
     }

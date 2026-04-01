@@ -5,6 +5,12 @@
 }
 
 <h1>Detalle del perro</h1>
+@if (!string.IsNullOrEmpty(Model.ImagenUrl))
+{
+    <div class="mb-3">
+        <img src="@Model.ImagenUrl" alt="Perro" style="max-width:220px;border-radius:12px;" />
+    </div>
+}
 
 <div>
     <h4>Perro</h4>
