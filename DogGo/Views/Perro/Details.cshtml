@@ -1,0 +1,38 @@
+﻿@model DogGo.Models.Perro
+
+@{
+    ViewData["Title"] = "Detalle del perro";
+}
+
+<h1>Detalle del perro</h1>
+
+<div>
+    <h4>Perro</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Nombre</dt>
+        <dd class="col-sm-10">@Model.Nombre</dd>
+
+        <dt class="col-sm-2">Raza</dt>
+        <dd class="col-sm-10">@Model.Raza</dd>
+
+        <dt class="col-sm-2">Edad</dt>
+        <dd class="col-sm-10">@Model.Edad</dd>
+
+        <dt class="col-sm-2">Tamaño</dt>
+        <dd class="col-sm-10">@Model.Tamaño</dd>
+
+        <dt class="col-sm-2">Notas</dt>
+        <dd class="col-sm-10">@Model.Notas</dd>
+
+        <dt class="col-sm-2">Dueño</dt>
+        <dd class="col-sm-10">
+            @(Model.Dueño != null ? Model.Dueño.Nombre + " " + Model.Dueño.Apellido : "")
+        </dd>
+    </dl>
+</div>
+
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Editar</a>
+    <a asp-action="Index" class="btn btn-secondary">Volver</a>
+</div>

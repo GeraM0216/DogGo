@@ -48,7 +48,7 @@ namespace DogGo.Controllers
         public async Task<IActionResult> Create()
         {
             await CargarDueños();
-            return View();
+            return View("~/Views/Perro/Create.cshtml");
         }
 
         // POST: /Perro/Create
@@ -56,6 +56,9 @@ namespace DogGo.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Perro perro)
         {
+            ModelState.Remove("Dueño");
+            ModelState.Remove("Paseos");
+
             if (!ModelState.IsValid)
             {
                 await CargarDueños(perro.DueñoId);
@@ -88,6 +91,9 @@ namespace DogGo.Controllers
         {
             if (id != perro.Id)
                 return NotFound();
+
+            ModelState.Remove("Dueño");
+            ModelState.Remove("Paseos");
 
             if (!ModelState.IsValid)
             {
