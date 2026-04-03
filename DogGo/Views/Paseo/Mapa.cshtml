@@ -47,13 +47,18 @@
     }
 
     <!-- Botón al chat -->
-    <div class="mapa-footer">
-        <a asp-controller="Chat" asp-action="Index"
-           asp-route-paseoId="@Model.Id"
-           class="btn btn-outline-primary w-100">
-             Abrir chat del paseo
-        </a>
-    </div>
+<div class="mapa-footer d-flex gap-2">
+    <a asp-controller="Paseo" asp-action="MisPaseos"
+       class="btn btn-outline-secondary w-100">
+        ← Volver a mis paseos
+    </a>
+
+    <a asp-controller="Chat" asp-action="Index"
+       asp-route-paseoId="@Model.Id"
+       class="btn btn-outline-primary w-100">
+        Abrir chat del paseo
+    </a>
+</div>
 
 </div>
 
@@ -124,17 +129,35 @@
 
     // Recibir cambio de estado
     connection.on("EstadoCambiado", (estado) => {
-        document.getElementById("estadoBadge").textContent = estado;
+
+        const badge = document.getElementById("estadoBadge");
+        badge.textContent = estado;
+
+        badge.classList.remove("bg-warning", "text-dark", "bg-success", "bg-secondary");
+
+        if (estado === "Pendiente") {
+            badge.classList.add("bg-warning", "text-dark");
+        } else if (estado === "EnCurso") {
+            badge.classList.add("bg-success");
+        } else if (estado === "Finalizado") {
+            badge.classList.add("bg-secondary");
+        }
 
         if (estado === "EnCurso" && esPaseador) {
             iniciarGPS();
             document.getElementById("btnIniciar")?.remove();
         }
+
         if (estado === "Finalizado") {
             detenerGPS();
             document.getElementById("btnFinalizar")?.remove();
         }
     });
+
+
+
+
+
 
     connection.start()
         .then(() => connection.invoke("UnirseAPaseo", paseoId))

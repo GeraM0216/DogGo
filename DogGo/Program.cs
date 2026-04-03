@@ -1,12 +1,19 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using DogGo.Data;
 using Microsoft.EntityFrameworkCore;
+using DogGo.Models;
+using DogGo.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+
+builder.Services.AddScoped<EmailService>();
 
 // MySQL con Pomelo
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -44,10 +51,11 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.MapHub<DogGo.Hubs.ChatHub>("/chatHub");
-
 app.UseAuthentication(); 
 app.UseAuthorization();
+
+app.MapHub<DogGo.Hubs.ChatHub>("/chatHub");
+app.MapHub<DogGo.Hubs.PaseoHub>("/paseoHub");
 
 app.MapStaticAssets();
 
