@@ -129,17 +129,35 @@
 
     // Recibir cambio de estado
     connection.on("EstadoCambiado", (estado) => {
-        document.getElementById("estadoBadge").textContent = estado;
+
+        const badge = document.getElementById("estadoBadge");
+        badge.textContent = estado;
+
+        badge.classList.remove("bg-warning", "text-dark", "bg-success", "bg-secondary");
+
+        if (estado === "Pendiente") {
+            badge.classList.add("bg-warning", "text-dark");
+        } else if (estado === "EnCurso") {
+            badge.classList.add("bg-success");
+        } else if (estado === "Finalizado") {
+            badge.classList.add("bg-secondary");
+        }
 
         if (estado === "EnCurso" && esPaseador) {
             iniciarGPS();
             document.getElementById("btnIniciar")?.remove();
         }
+
         if (estado === "Finalizado") {
             detenerGPS();
             document.getElementById("btnFinalizar")?.remove();
         }
     });
+
+
+
+
+
 
     connection.start()
         .then(() => connection.invoke("UnirseAPaseo", paseoId))

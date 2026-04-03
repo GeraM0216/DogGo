@@ -13,6 +13,10 @@ namespace DogGo.Models
         [Required] public string PasswordHash { get; set; }
         public string Telefono { get; set; }
 
+        public bool EmailConfirmado { get; set; } = false;
+        public string? CodigoConfirmacion { get; set; }
+        public DateTime? CodigoExpiraEn { get; set; }
+
         /// <summary>"Duenio" o "Paseador"</summary>
         [Required] public string Rol { get; set; }
 
