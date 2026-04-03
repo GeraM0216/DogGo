@@ -366,3 +366,4 @@ FodyWeavers.xsd
 DogGo/appsettings.Development.json
 #Ignore para archivos locales
 DogGo/wwwroot/uploads/
+
