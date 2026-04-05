@@ -103,7 +103,7 @@ namespace DogGo.Controllers
         }
 
         // GET: /Paseador/Directorio
-        // Lista de paseadores disponibles para que los dueÃ±os contraten
+        // Lista de paseadores disponibles para que los dueños contraten
         // GET: /Paseador/Directorio
         // Lista de paseadores disponibles para que los dueños contraten
         public async Task<IActionResult> Directorio()
