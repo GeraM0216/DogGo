@@ -30,12 +30,14 @@ namespace DogGo.Controllers
                 .Include(p => p.Ubicaciones.OrderBy(u => u.Timestamp))
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (paseo == null) return NotFound();
+            if (paseo == null || paseo.Perro == null || paseo.Paseador == null)
+                return NotFound();
 
             var esDuenio = paseo.Perro.DueñoId == usuarioId;
             var esPaseador = paseo.Paseador.UsuarioId == usuarioId;
 
-            if (!esDuenio && !esPaseador) return Forbid();
+            if (!esDuenio && !esPaseador)
+                return Forbid();
 
             ViewBag.Paseo = paseo;
             ViewBag.EsPaseador = esPaseador;
@@ -58,6 +60,11 @@ namespace DogGo.Controllers
             {
                 var paseador = await _context.Paseadores
                     .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
+
+                if (paseador == null)
+                {
+                    return View(new List<Paseo>());
+                }
 
                 paseos = await _context.Paseos
                     .Where(p => p.PaseadorId == paseador.Id)
@@ -100,6 +107,12 @@ namespace DogGo.Controllers
 
             if (paseador == null)
                 return NotFound();
+
+            if (precio <= 0)
+            {
+                TempData["Error"] = "El precio del paseo no es válido.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
 
             if (!paseador.Disponible)
             {

@@ -18,11 +18,6 @@
             <input type="hidden" asp-for="Id" />
 
             <div class="mb-3">
-                <label asp-for="DueñoId" class="form-label"></label>
-                <select asp-for="DueñoId" class="form-control" asp-items="ViewBag.DueñoId"></select>
-            </div>
-
-            <div class="mb-3">
                 <label asp-for="Nombre" class="form-label"></label>
                 <input asp-for="Nombre" class="form-control" />
                 <span asp-validation-for="Nombre" class="text-danger"></span>

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace DogGo.Controllers
 {
@@ -24,8 +25,15 @@ namespace DogGo.Controllers
         // GET: /Perro
         public async Task<IActionResult> Index()
         {
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return Unauthorized();
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
             var perros = await _context.Perros
                 .Include(p => p.Dueño)
+                .Where(p => p.DueñoId == usuarioId)
                 .ToListAsync();
 
             return View(perros);
@@ -37,10 +45,16 @@ namespace DogGo.Controllers
             if (id == null)
                 return NotFound();
 
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return Unauthorized();
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
             var perro = await _context.Perros
                 .Include(p => p.Dueño)
                 .Include(p => p.Paseos)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id && p.DueñoId == usuarioId);
 
             if (perro == null)
                 return NotFound();
@@ -49,24 +63,30 @@ namespace DogGo.Controllers
         }
 
         // GET: /Perro/Create
-        public async Task<IActionResult> Create()
+        public IActionResult Create()
         {
-            await CargarDueños();
             return View();
         }
 
         // POST: /Perro/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-
         public async Task<IActionResult> Create(Perro perro, IFormFile? imagenArchivo)
         {
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return Unauthorized();
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
+            perro.DueñoId = usuarioId;
+
             ModelState.Remove("Dueño");
             ModelState.Remove("Paseos");
+            ModelState.Remove("DueñoId");
 
             if (!ModelState.IsValid)
             {
-                await CargarDueños(perro.DueñoId);
                 return View(perro);
             }
 
@@ -86,7 +106,6 @@ namespace DogGo.Controllers
                 perro.ImagenUrl = "/uploads/perros/" + nombreArchivo;
             }
 
-
             _context.Perros.Add(perro);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
@@ -98,11 +117,18 @@ namespace DogGo.Controllers
             if (id == null)
                 return NotFound();
 
-            var perro = await _context.Perros.FindAsync(id);
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return Unauthorized();
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
+            var perro = await _context.Perros
+                .FirstOrDefaultAsync(p => p.Id == id && p.DueñoId == usuarioId);
+
             if (perro == null)
                 return NotFound();
 
-            await CargarDueños(perro.DueñoId);
             return View(perro);
         }
 
@@ -114,18 +140,37 @@ namespace DogGo.Controllers
             if (id != perro.Id)
                 return NotFound();
 
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return Unauthorized();
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
+            var perroExistente = await _context.Perros
+                .FirstOrDefaultAsync(p => p.Id == id && p.DueñoId == usuarioId);
+
+            if (perroExistente == null)
+                return NotFound();
+
             ModelState.Remove("Dueño");
             ModelState.Remove("Paseos");
+            ModelState.Remove("DueñoId");
 
             if (!ModelState.IsValid)
             {
-                await CargarDueños(perro.DueñoId);
+                perro.DueñoId = usuarioId;
                 return View(perro);
             }
 
             try
             {
-                _context.Update(perro);
+                perroExistente.Nombre = perro.Nombre;
+                perroExistente.Raza = perro.Raza;
+                perroExistente.Edad = perro.Edad;
+                perroExistente.Tamaño = perro.Tamaño;
+                perroExistente.Notas = perro.Notas;
+                perroExistente.ImagenUrl = perro.ImagenUrl;
+
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -145,9 +190,15 @@ namespace DogGo.Controllers
             if (id == null)
                 return NotFound();
 
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return Unauthorized();
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
             var perro = await _context.Perros
                 .Include(p => p.Dueño)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id && p.DueñoId == usuarioId);
 
             if (perro == null)
                 return NotFound();
@@ -160,7 +211,14 @@ namespace DogGo.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var perro = await _context.Perros.FindAsync(id);
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return Unauthorized();
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
+            var perro = await _context.Perros
+                .FirstOrDefaultAsync(p => p.Id == id && p.DueñoId == usuarioId);
 
             if (perro != null)
             {
@@ -176,18 +234,6 @@ namespace DogGo.Controllers
             return _context.Perros.Any(e => e.Id == id);
         }
 
-        private async Task CargarDueños(object? dueñoSeleccionado = null)
-        {
-            var dueños = await _context.Usuarios
-                .Where(u => u.Rol == "Duenio")
-                .Select(u => new
-                {
-                    u.Id,
-                    NombreCompleto = u.Nombre + " " + u.Apellido
-                })
-                .ToListAsync();
 
-            ViewBag.DueñoId = new SelectList(dueños, "Id", "NombreCompleto", dueñoSeleccionado);
-        }
     }
 }
