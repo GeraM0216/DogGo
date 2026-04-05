@@ -5,83 +5,113 @@
 
 @if (User.Identity.IsAuthenticated)
 {
-    <section class="home-hero">
-        <div class="home-hero-content">
-            <span class="home-pill">DogGo</span>
-            <h1>¡Hola, @nombre! 🐾</h1>
-            <p>
+    <!-- ── HERO (usuario logueado) ── -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-kicker"><span>👋</span> Bienvenido de vuelta</div>
+            <h1 class="hero-h1">
+                ¡Hola,<br>
+                <span class="line-purple">@nombre!</span> 🐾
+            </h1>
+            <p class="hero-sub">
                 Gestiona tus paseos, revisa tu información y accede rápido a las
                 funciones principales de DogGo.
             </p>
-
-            <div class="home-actions">
-                <a asp-controller="Paseo" asp-action="MisPaseos" class="btn btn-dark btn-lg px-4">
+            <div class="hero-ctas">
+                <a asp-controller="Paseo" asp-action="MisPaseos" class="btn-main">
                     Ver mis paseos
                 </a>
-
-                @if (User.IsInRole("Dueño"))
+                @if (User.IsInRole("Duenio"))
                 {
-                    <a asp-controller="Paseador" asp-action="Directorio" class="btn btn-outline-dark btn-lg px-4">
+                    <a asp-controller="Paseador" asp-action="Directorio" class="btn-ghost">
                         Buscar paseador
                     </a>
                 }
                 else if (User.IsInRole("Paseador"))
                 {
-                    <a asp-controller="Paseador" asp-action="Perfil" class="btn btn-outline-dark btn-lg px-4">
+                    <a asp-controller="Paseador" asp-action="Perfil" class="btn-ghost">
                         Ver mi perfil
                     </a>
                 }
             </div>
         </div>
 
-        <div class="home-hero-visual">
-            <div class="dog-visual-card">
-                <div class="dog-emoji">🐶</div>
-                <h3>Tu espacio DogGo</h3>
-                <p>
+        <div class="hero-visual">
+            <div class="float-badge b1"><div class="dot dot-g"></div> 1 paseo activo</div>
+            <div class="hero-card">
+                <span class="card-dog-big">🐕</span>
+                <div class="card-title">Tu espacio DogGo</div>
+                <div class="card-sub">
                     Accede rápido a tus paseos, perfil y herramientas principales
-                    desde un panel más claro y moderno.
-                </p>
+                    desde un panel claro y moderno.
+                </div>
+                <div class="card-tags">
+                    @if (User.IsInRole("Duenio"))
+                    {
+                        <span class="tag tag-p">Cliente</span>
+                    }
+                    else if (User.IsInRole("Paseador"))
+                    {
+                        <span class="tag tag-p">Paseador</span>
+                    }
+                    <span class="tag tag-g">Activo</span>
+                    <span class="tag tag-b">DogGo</span>
+                </div>
             </div>
+            <div class="float-badge b2"><div class="dot dot-p"></div> 4.9 ⭐ promedio</div>
         </div>
     </section>
 
-    <section class="home-section">
-        <div class="section-heading">
-            <h2>Accesos rápidos</h2>
-            <p>Todo lo importante en un solo lugar.</p>
+    <!-- ── TICKER ── -->
+    <div class="ticker-wrap">
+        <div class="ticker">
+            <span class="ticker-item"><span class="ticker-dot">●</span> Paseadores verificados</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Seguimiento GPS</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Chat en tiempo real</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Calificaciones visibles</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Perfiles detallados</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Historial de paseos</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Paseadores verificados</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Seguimiento GPS</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Chat en tiempo real</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Calificaciones visibles</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Perfiles detallados</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Historial de paseos</span>
         </div>
+    </div>
 
-        <div class="home-grid">
-            <a asp-controller="Paseo" asp-action="MisPaseos"
-                   class="home-card home-card-link">
-                <div class="home-card-icon">🦮</div>
+    <!-- ── ACCESOS RÁPIDOS ── -->
+    <section class="home-section">
+        <div class="section-label">Accesos rápidos</div>
+        <h2 class="section-title">Todo en<br>un solo lugar.</h2>
+        <p class="section-sub">Las funciones que más usas, siempre a un clic de distancia.</p>
+
+        <div class="qa-grid">
+            <a asp-controller="Paseo" asp-action="MisPaseos" class="qa-card">
+                <div class="feat-icon ic-p">🦮</div>
                 <h5>Mis paseos</h5>
                 <p>Revisa el estado de tus paseos activos, historial y seguimiento.</p>
             </a>
 
-            @if (User.IsInRole("Dueño"))
+            @if (User.IsInRole("Duenio"))
             {
-                <a asp-controller="Paseador" asp-action="Directorio"
-                       class="home-card home-card-link">
-                    <div class="home-card-icon">🔍</div>
+                <a asp-controller="Paseador" asp-action="Directorio" class="qa-card">
+                    <div class="feat-icon ic-g">🔍</div>
                     <h5>Buscar paseador</h5>
                     <p>Encuentra el paseador ideal para tu mascota de forma rápida.</p>
                 </a>
 
-                <a asp-controller="Perro" asp-action="MisPerros"
-                       class="home-card home-card-link">
-                    <div class="home-card-icon">🐶</div>
+                <a asp-controller="Perro" asp-action="Index" class="qa-card">
+                    <div class="feat-icon ic-b">🐶</div>
                     <h5>Mis perros</h5>
-                    <p>Administra los perfiles, datos y detalles de tus mascotas.</p>
+                    <p>Administra los perfiles y datos de tus mascotas.</p>
                 </a>
             }
 
             @if (User.IsInRole("Paseador"))
             {
-                <a asp-controller="Paseador" asp-action="Perfil"
-                       class="home-card home-card-link">
-                    <div class="home-card-icon">⭐</div>
+                <a asp-controller="Paseador" asp-action="Perfil" class="qa-card">
+                    <div class="feat-icon ic-g">⭐</div>
                     <h5>Mi perfil</h5>
                     <p>Consulta tus calificaciones y mantén tu información actualizada.</p>
                 </a>
@@ -91,222 +121,100 @@
 }
 else
 {
-    <section class="home-hero public-hero">
-        <div class="home-hero-content">
-            <span class="home-pill">DogGo</span>
-            <h1>Paseos de confianza para tu mejor amigo</h1>
-            <p>
-                Conectamos dueños de mascotas con paseadores confiables, con chat,
-                seguimiento en tiempo real y perfiles visibles.
+    <!-- ── HERO (visitante) ── -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-kicker"><span>🐾</span> Plataforma de paseos</div>
+            <h1 class="hero-h1">
+                Tu perro merece<br>
+                <span class="line-purple">paseos</span><br>
+                <span class="line-green">increíbles.</span>
+            </h1>
+            <p class="hero-sub">
+                Conectamos dueños con paseadores confiables. Chat en tiempo real,
+                seguimiento GPS y perfiles verificados.
             </p>
-
-            <div class="home-actions">
-                <a asp-controller="Auth" asp-action="Register"
-                       class="btn btn-dark btn-lg px-4">
+            <div class="hero-ctas">
+                <a asp-controller="Auth" asp-action="Register" class="btn-main">
                     Comenzar ahora
                 </a>
-                <a asp-controller="Paseador" asp-action="Directorio"
-                       class="btn btn-outline-dark btn-lg px-4">
+                <a asp-controller="Paseador" asp-action="Directorio" class="btn-ghost">
                     Ver paseadores
                 </a>
             </div>
         </div>
 
-        <div class="home-hero-visual">
-            <div class="dog-visual-card">
-                <div class="dog-emoji">🐾</div>
-                <h3>DogGo</h3>
-                <p>
-                    Una forma simple de organizar paseos, comunicarte con el paseador
-                    y seguir el recorrido de tu mascota.
+        <div class="hero-visual">
+            <div class="float-badge b1"><div class="dot dot-g"></div> Paseo activo</div>
+            <div class="hero-card">
+                <span class="card-dog-big">🐶</span>
+                <div class="card-title">DogGo</div>
+                <div class="card-sub">
+                    Una forma simple de organizar paseos y seguir a tu mascota
+                    en tiempo real.
+                </div>
+                <div class="card-tags">
+                    <span class="tag tag-p">Paseadores verificados</span>
+                    <span class="tag tag-g">GPS en tiempo real</span>
+                    <span class="tag tag-b">Chat directo</span>
+                </div>
+            </div>
+            <div class="float-badge b2"><div class="dot dot-p"></div> 3 paseadores cerca</div>
+        </div>
+    </section>
+
+    <!-- ── TICKER ── -->
+    <div class="ticker-wrap">
+        <div class="ticker">
+            <span class="ticker-item"><span class="ticker-dot">●</span> Paseadores verificados</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Seguimiento GPS</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Chat en tiempo real</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Calificaciones visibles</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Perfiles detallados</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Historial de paseos</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Paseadores verificados</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Seguimiento GPS</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Chat en tiempo real</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Calificaciones visibles</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Perfiles detallados</span>
+            <span class="ticker-item"><span class="ticker-dot">●</span> Historial de paseos</span>
+        </div>
+    </div>
+
+    <!-- ── POR QUÉ DOGGO ── -->
+    <section class="home-section">
+        <div class="section-label">¿Por qué DogGo?</div>
+        <h2 class="section-title">Funciones pensadas<br>para ti y tu mascota.</h2>
+        <p class="section-sub">
+            Todo lo que necesitas para organizar paseos seguros, cómodos
+            y con total transparencia.
+        </p>
+
+        <div class="cards-grid">
+            <div class="feat-card c-p">
+                <div class="feat-icon ic-p">🔒</div>
+                <div class="feat-title">Paseadores verificados</div>
+                <p class="feat-desc">
+                    Consulta perfiles, calificaciones e información antes de
+                    elegir a alguien para tu perro.
+                </p>
+            </div>
+            <div class="feat-card c-g">
+                <div class="feat-icon ic-g">📍</div>
+                <div class="feat-title">Seguimiento en tiempo real</div>
+                <p class="feat-desc">
+                    Sigue la ubicación de tu mascota durante todo el paseo
+                    desde la app.
+                </p>
+            </div>
+            <div class="feat-card c-b">
+                <div class="feat-icon ic-b">💬</div>
+                <div class="feat-title">Chat directo</div>
+                <p class="feat-desc">
+                    Comunícate con el paseador en cualquier momento,
+                    sin intermediarios.
                 </p>
             </div>
         </div>
     </section>
-
-    <section class="home-section">
-        <div class="section-heading">
-            <h2>¿Por qué DogGo?</h2>
-            <p>Funciones pensadas para dueños y paseadores.</p>
-        </div>
-
-        <div class="home-grid">
-            <div class="home-card">
-                <div class="home-card-icon">🔒</div>
-                <h5>Paseadores verificados</h5>
-                <p>Consulta perfiles, información y calificaciones antes de elegir.</p>
-            </div>
-
-            <div class="home-card">
-                <div class="home-card-icon">📍</div>
-                <h5>Seguimiento en tiempo real</h5>
-                <p>Sigue la ubicación de tu mascota durante el paseo.</p>
-            </div>
-
-            <div class="home-card">
-                <div class="home-card-icon">💬</div>
-                <h5>Chat directo</h5>
-                <p>Comunícate con el paseador cuando lo necesites.</p>
-            </div>
-        </div>
-    </section>
 }
-
-<style>
-    .home-hero {
-        display: grid;
-        grid-template-columns: 1.2fr .8fr;
-        gap: 2rem;
-        align-items: center;
-        padding: 3.5rem 0 2.5rem;
-    }
-
-    .home-hero-content h1 {
-        font-size: clamp(2.2rem, 4vw, 4rem);
-        font-weight: 800;
-        line-height: 1.05;
-        margin-bottom: 1rem;
-        color: #1f1f1f;
-    }
-
-    .home-hero-content p {
-        font-size: 1.05rem;
-        color: #6b7280;
-        max-width: 640px;
-        margin-bottom: 1.5rem;
-    }
-
-    .home-pill {
-        display: inline-block;
-        margin-bottom: 1rem;
-        padding: .4rem .85rem;
-        border: 1px solid #dcdcdc;
-        border-radius: 999px;
-        background: #fff;
-        font-size: .9rem;
-        font-weight: 600;
-        color: #444;
-    }
-
-    .home-actions {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .home-hero-visual {
-        display: flex;
-        justify-content: center;
-    }
-
-    .dog-visual-card {
-        width: 100%;
-        max-width: 380px;
-        min-height: 300px;
-        background: linear-gradient(180deg, #ffffff 0%, #f6f7fb 100%);
-        border: 1px solid #e6e6e6;
-        border-radius: 24px;
-        box-shadow: 0 12px 35px rgba(0,0,0,.06);
-        padding: 2rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: left;
-    }
-
-    .dog-emoji {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-    }
-
-    .dog-visual-card h3 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: .75rem;
-        color: #1f1f1f;
-    }
-
-    .dog-visual-card p {
-        color: #6b7280;
-        margin-bottom: 0;
-    }
-
-    .home-section {
-        padding: 1rem 0 3rem;
-    }
-
-    .section-heading {
-        margin-bottom: 1.25rem;
-    }
-
-        .section-heading h2 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            margin-bottom: .35rem;
-            color: #1f1f1f;
-        }
-
-        .section-heading p {
-            color: #6b7280;
-            margin-bottom: 0;
-        }
-
-    .home-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 1.25rem;
-    }
-
-    .home-card {
-        background: #fff;
-        border: 1px solid #e6e6e6;
-        border-radius: 22px;
-        padding: 1.5rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,.04);
-        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-    }
-
-    .home-card-link {
-        text-decoration: none;
-        color: inherit;
-    }
-
-    .home-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 14px 30px rgba(0,0,0,.08);
-        border-color: #d7d7d7;
-    }
-
-    .home-card-icon {
-        font-size: 2.2rem;
-        margin-bottom: 1rem;
-    }
-
-    .home-card h5 {
-        font-size: 1.2rem;
-        font-weight: 700;
-        margin-bottom: .5rem;
-        color: #1f1f1f;
-    }
-
-    .home-card p {
-        color: #6b7280;
-        margin-bottom: 0;
-        line-height: 1.5;
-    }
-
-    @@media (max-width: 991px) {
-        .home-hero {
-            grid-template-columns: 1fr;
-            padding-top: 2.5rem;
-        }
-
-        .home-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .dog-visual-card {
-            max-width: 100%;
-        }
-    }
-</style>

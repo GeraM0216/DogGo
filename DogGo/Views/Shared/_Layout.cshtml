@@ -6,97 +6,11 @@
     <title>@ViewData["Title"] — DogGo</title>
 
     <!-- Bootstrap -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css"
-          rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
-    <style>
-        /* ── Variables ───────────────────────────────────────── */
-        :root {
-            --doggo-primary:  #0d6efd;
-            --doggo-surface:  #f8f9fa;
-            --doggo-border:   #dee2e6;
-            --doggo-nav-h:    60px;
-        }
-
-        /* ── Base ────────────────────────────────────────────── */
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: #f4f6fb;
-            font-family: system-ui, sans-serif;
-        }
-
-        main { flex: 1; padding-top: 1.5rem; padding-bottom: 3rem; }
-
-        /* ── Navbar ──────────────────────────────────────────── */
-        .navbar-doggo {
-            height: var(--doggo-nav-h);
-            background: white;
-            border-bottom: 1px solid var(--doggo-border);
-            box-shadow: 0 1px 4px rgba(0,0,0,.06);
-        }
-
-        .navbar-brand {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--doggo-primary) !important;
-            letter-spacing: -.3px;
-        }
-
-        .nav-link {
-            font-size: 0.9rem;
-            color: #555 !important;
-            padding: 0.4rem 0.75rem !important;
-            border-radius: 6px;
-            transition: background .15s, color .15s;
-        }
-
-        .nav-link:hover,
-        .nav-link.active {
-            background: #e8f0fe;
-            color: var(--doggo-primary) !important;
-        }
-
-        /* Badge de mensajes no leídos */
-        .nav-badge {
-            font-size: 0.65rem;
-            padding: 2px 5px;
-            border-radius: 10px;
-            background: #dc3545;
-            color: white;
-            vertical-align: super;
-            margin-left: 2px;
-        }
-
-        /* ── Alerts de TempData ──────────────────────────────── */
-        .tempdata-alert {
-            position: fixed;
-            top: calc(var(--doggo-nav-h) + 12px);
-            right: 16px;
-            z-index: 1055;
-            min-width: 280px;
-            max-width: 380px;
-            box-shadow: 0 4px 16px rgba(0,0,0,.12);
-            border-radius: 10px;
-            animation: slideIn .25s ease;
-        }
-
-        @@keyframes slideIn {
-            from { opacity: 0; transform: translateX(40px); }
-            to   { opacity: 1; transform: translateX(0); }
-        }
-
-        /* ── Footer ──────────────────────────────────────────── */
-        .footer-doggo {
-            background: white;
-            border-top: 1px solid var(--doggo-border);
-            padding: 1rem 0;
-            font-size: 0.82rem;
-            color: #aaa;
-            text-align: center;
-        }
-    </style>
+    <link rel="stylesheet" href="@Url.Content("~/css/site.css")" />
 
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -149,7 +63,7 @@
                         }
 
                         @if (User.IsInRole("Duenio"))
-                       {
+                        {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Perro" asp-action="Index">
                                     Mis perros
@@ -163,28 +77,23 @@
                 <ul class="navbar-nav gap-1 align-items-center">
                     @if (User.Identity.IsAuthenticated)
                     {
-                        <!-- Nombre del usuario -->
                         <li class="nav-item">
-                            <span class="nav-link pe-none d-flex align-items-center gap-2" style="color:#888!important;font-size:.85rem">
+                            <span class="nav-link pe-none d-flex align-items-center gap-2 nav-user-info">
                                 @{
                                     var nombre = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
                                     var rol = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-
                                     var rolMostrado = rol == "Duenio" ? "Cliente" :
-                                                      rol == "Paseador" ? "Paseador" :
-                                                      rol;
+                                                      rol == "Paseador" ? "Paseador" : rol;
                                 }
                                 <span>👤 @nombre</span>
-                                <span class="badge bg-light text-dark border">@rolMostrado</span>
+                                <span class="badge-rol">@rolMostrado</span>
                             </span>
                         </li>
 
-                        <!-- Logout -->
                         <li class="nav-item">
                             <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="nav-link btn btn-link p-0 px-2"
-                                        style="color:#dc3545!important">
+                                <button type="submit" class="btn-logout">
                                     Cerrar sesión
                                 </button>
                             </form>
@@ -198,8 +107,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-primary btn-sm ms-1"
-                               asp-controller="Auth" asp-action="Register">
+                            <a class="nav-pill-btn" asp-controller="Auth" asp-action="Register">
                                 Registrarse
                             </a>
                         </li>
@@ -211,37 +119,41 @@
     </nav>
 
     <!-- ── TempData alerts ────────────────────────────────────── -->
-   
+    @if (TempData["Exito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible tempdata-alert" role="alert">
+            ✅ @TempData["Exito"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible tempdata-alert" role="alert">
-             @TempData["Error"]
+            ❌ @TempData["Error"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
     <!-- ── Contenido principal ────────────────────────────────── -->
     <main>
-        <div class="container">
-            @RenderBody()
-        </div>
+        @RenderBody()
     </main>
 
     <!-- ── Footer ─────────────────────────────────────────────── -->
     <footer class="footer-doggo">
-        DogGo &copy; @DateTime.Now.Year — Proyecto universitario
+        <div class="footer-logo">🐾 DogGo</div>
+        <div>DogGo &copy; @DateTime.Now.Year — Proyecto universitario</div>
     </footer>
 
     <!-- ── Scripts ────────────────────────────────────────────── -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Auto-cerrar alerts después de 4 segundos -->
     <script>
         document.querySelectorAll(".tempdata-alert").forEach(alert => {
-            setTimeout(() => {
-                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
-                bsAlert.close();
-            }, 4000);
+        setTimeout(() => {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+        bsAlert.close();
+        }, 4000);
         });
     </script>
 
