@@ -53,7 +53,7 @@ namespace DogGo.Migrations
                     b.HasIndex("PaseoId")
                         .IsUnique();
 
-                    b.ToTable("Calificaciones");
+                    b.ToTable("Calificaciones", (string)null);
                 });
 
             modelBuilder.Entity("DogGo.Models.Mensaje", b =>
@@ -91,7 +91,7 @@ namespace DogGo.Migrations
 
                     b.HasIndex("ReceptorId");
 
-                    b.ToTable("Mensajes");
+                    b.ToTable("Mensajes", (string)null);
                 });
 
             modelBuilder.Entity("DogGo.Models.Paseador", b =>
@@ -125,7 +125,7 @@ namespace DogGo.Migrations
                     b.HasIndex("UsuarioId")
                         .IsUnique();
 
-                    b.ToTable("Paseadores");
+                    b.ToTable("Paseadores", (string)null);
                 });
 
             modelBuilder.Entity("DogGo.Models.Paseo", b =>
@@ -170,7 +170,7 @@ namespace DogGo.Migrations
 
                     b.HasIndex("PerroId");
 
-                    b.ToTable("Paseos");
+                    b.ToTable("Paseos", (string)null);
                 });
 
             modelBuilder.Entity("DogGo.Models.Perro", b =>
@@ -207,7 +207,7 @@ namespace DogGo.Migrations
 
                     b.HasIndex("DueñoId");
 
-                    b.ToTable("Perros");
+                    b.ToTable("Perros", (string)null);
                 });
 
             modelBuilder.Entity("DogGo.Models.Ubicacion", b =>
@@ -236,7 +236,7 @@ namespace DogGo.Migrations
 
                     b.HasIndex("PaseoId");
 
-                    b.ToTable("Ubicaciones");
+                    b.ToTable("Ubicaciones", (string)null);
                 });
 
             modelBuilder.Entity("DogGo.Models.Usuario", b =>
@@ -280,7 +280,7 @@ namespace DogGo.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Usuarios");
+                    b.ToTable("Usuarios", (string)null);
                 });
 
             modelBuilder.Entity("DogGo.Models.Calificacion", b =>

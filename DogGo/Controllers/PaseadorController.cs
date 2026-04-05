@@ -114,7 +114,7 @@ namespace DogGo.Controllers
                 .OrderByDescending(p => p.CalificacionPromedio)
                 .ToListAsync();
 
-            if (User.IsInRole("Duenio"))
+            if (User.IsInRole("Dueño"))
             {
                 var usuarioId = int.Parse(
                     User.FindFirstValue(ClaimTypes.NameIdentifier)
