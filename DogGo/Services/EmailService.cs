@@ -22,9 +22,21 @@ namespace DogGo.Services
             mensaje.To.Add(MailboxAddress.Parse(destino));
             mensaje.Subject = "Código de confirmación - DogGo";
 
-            mensaje.Body = new TextPart("plain")
+            mensaje.Body = new TextPart("html")
             {
-                Text = $"Tu código de confirmación es: {codigo}. Expira en 10 minutos."
+                Text = $@"
+                    <div style='font-family:Arial,sans-serif; padding:20px; color:#222;'>
+                        <h2>Bienvenido a DogGo 🐾</h2>
+                        <p>Gracias por registrarte.</p>
+                        <p>Tu código de confirmación es:</p>
+                        <div style='font-size:32px; font-weight:bold; letter-spacing:4px; margin:20px 0;'>
+                            {codigo}
+                        </div>
+                        <p>Este código expira en 10 minutos.</p>
+                        <p>Si tú no solicitaste este registro, puedes ignorar este correo.</p>
+                        <hr />
+                        <p style='color:#666;'>Equipo DogGo</p>
+                     </div>"
             };
 
             using var client = new SmtpClient();
