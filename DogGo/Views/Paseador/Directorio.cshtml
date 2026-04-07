@@ -77,6 +77,52 @@
                                                required />
                                     </div>
 
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-semibold mb-1">Duración del paseo</label>
+                                        <select name="duracionMinutos" class="form-select form-select-sm" required>
+                                            <option value="">Selecciona duración</option>
+                                            <option value="30">30 minutos</option>
+                                            <option value="60">60 minutos</option>
+                                            <option value="90">90 minutos</option>
+                                            <option value="120">120 minutos</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-semibold mb-1">Tipo de paseo</label>
+
+                                        <div class="form-check">
+                                            <input class="form-check-input tipo-paseo"
+                                                   type="radio"
+                                                   name="esProgramado"
+                                                   id="ahora_@p.Id"
+                                                   value="false"
+                                                   checked>
+                                            <label class="form-check-label" for="ahora_@p.Id">
+                                                Paseo ahora
+                                            </label>
+                                        </div>
+
+                                        <div class="form-check">
+                                            <input class="form-check-input tipo-paseo"
+                                                   type="radio"
+                                                   name="esProgramado"
+                                                   id="programado_@p.Id"
+                                                   value="true"
+                                                   data-target="fecha-programada-@p.Id">
+                                            <label class="form-check-label" for="programado_@p.Id">
+                                                Programar paseo
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2 fecha-programada d-none" id="fecha-programada-@p.Id">
+                                        <label class="form-label small fw-semibold mb-1">Fecha y hora</label>
+                                        <input type="datetime-local"
+                                               name="fechaProgramada"
+                                               class="form-control form-control-sm" />
+                                    </div>
+
                                     <button type="submit" class="btn btn-primary btn-sm w-100">
                                         Solicitar paseo
                                     </button>
@@ -95,3 +141,32 @@
         </div>
     }
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const radios = document.querySelectorAll(".tipo-paseo");
+
+        radios.forEach(radio => {
+            radio.addEventListener("change", function () {
+                const form = this.closest("form");
+                if (!form) return;
+
+                const contenedorFecha = form.querySelector(".fecha-programada");
+                const inputFecha = contenedorFecha?.querySelector("input[name='fechaProgramada']");
+
+                if (!contenedorFecha || !inputFecha) return;
+
+                const programado = form.querySelector("input[name='esProgramado'][value='true']");
+
+                if (programado && programado.checked) {
+                    contenedorFecha.classList.remove("d-none");
+                    inputFecha.required = true;
+                } else {
+                    contenedorFecha.classList.add("d-none");
+                    inputFecha.required = false;
+                    inputFecha.value = "";
+                }
+            });
+        });
+    });
+</script>

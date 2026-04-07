@@ -4,6 +4,7 @@ using DogGo.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DogGo.Migrations
 {
     [DbContext(typeof(DogGoDbContext))]
-    partial class DogGoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407070158_AddCancelacionInfoToPaseo")]
+    partial class AddCancelacionInfoToPaseo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -139,12 +142,6 @@ namespace DogGo.Migrations
                     b.Property<string>("CanceladoPor")
                         .HasColumnType("longtext");
 
-                    b.Property<int>("DuracionMinutos")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("EsProgramado")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -156,9 +153,6 @@ namespace DogGo.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("FechaInicio")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("FechaProgramada")
                         .HasColumnType("datetime(6)");
 
                     b.Property<decimal>("LatitudActual")

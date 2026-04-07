@@ -86,7 +86,6 @@ namespace DogGo.Hubs
             if (paseo.PaseadorId != paseador.Id)
                 return;
 
-            // Validar transiciones permitidas
             var estadoActual = paseo.Estado;
 
             var transicionValida =
@@ -95,6 +94,17 @@ namespace DogGo.Hubs
 
             if (!transicionValida)
                 return;
+
+            // Si es programado, solo puede iniciar 15 minutos antes o después de la hora programada
+            if (estadoActual == "Pendiente" && nuevoEstado == "EnCurso" &&
+                paseo.EsProgramado && paseo.FechaProgramada.HasValue)
+            {
+                var ahoraUtc = DateTime.UtcNow;
+                var fechaProgramadaUtc = paseo.FechaProgramada.Value;
+
+                if (ahoraUtc < fechaProgramadaUtc.AddMinutes(-15))
+                    return;
+            }
 
             paseo.Estado = nuevoEstado;
 

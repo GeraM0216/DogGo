@@ -13,6 +13,13 @@
         public decimal LatitudActual { get; set; }
         public decimal LongitudActual { get; set; }
         public decimal Precio { get; set; }
+        public int DuracionMinutos { get; set; }
+        public bool EsProgramado { get; set; } = false;
+        public DateTime? FechaProgramada { get; set; }
+
+        public string? MotivoCancelacion { get; set; }
+        public string? CanceladoPor { get; set; }
+        public DateTime? FechaCancelacion { get; set; }
 
         // Navegación
         public Paseador Paseador { get; set; }

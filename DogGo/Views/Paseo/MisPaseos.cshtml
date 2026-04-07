@@ -28,7 +28,19 @@
                                class="text-decoration-none text-dark flex-grow-1">
                             <div>
                                 <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
-                                <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+                                @if (p.EsProgramado)
+                                {
+                                    <span class="badge bg-info text-dark ms-2">Programado</span>
+                                }
+
+                                <div class="text-muted small">
+                                    @p.FechaInicio.ToString("dd/MM/yyyy HH:mm")
+                                    <div>Duración: @p.DuracionMinutos min</div>
+                                    @if (p.EsProgramado && p.FechaProgramada != null)
+                                    {
+                                        <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                    }
+                                </div>
                             </div>
                         </a>
 
@@ -49,11 +61,42 @@
                                class="text-decoration-none text-dark flex-grow-1">
                             <div>
                                 <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
-                                <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+                                @if (p.EsProgramado)
+                                {
+                                    <span class="badge bg-info text-dark ms-2">Programado</span>
+                                }
+
+                                <div class="text-muted small">
+                                    @p.FechaInicio.ToString("dd/MM/yyyy HH:mm")
+                                    <div>Duración: @p.DuracionMinutos min</div>
+                                    @if (p.EsProgramado && p.FechaProgramada != null)
+                                    {
+                                        <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                    }
+                                </div>
                             </div>
                         </a>
 
-                        <span class="badge bg-warning text-dark">Pendiente</span>
+                        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                            <span class="badge bg-warning text-dark">Pendiente</span>
+
+                            <form asp-action="Cancelar" asp-route-id="@p.Id" method="post"
+                                  class="m-0 d-flex gap-2 align-items-center flex-wrap justify-content-end">
+                                @Html.AntiForgeryToken()
+
+                                <input type="text"
+                                       name="motivo"
+                                       class="form-control form-control-sm"
+                                       placeholder="Motivo (opcional)"
+                                       style="max-width: 220px;" />
+
+                                <button type="submit"
+                                        class="btn btn-outline-danger btn-sm"
+                                        onclick="return confirm('¿Seguro que quieres cancelar este paseo?');">
+                                    Cancelar
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 }
             </div>
@@ -70,7 +113,19 @@
                                class="text-decoration-none text-dark flex-grow-1">
                             <div>
                                 <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
-                                <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+                                @if (p.EsProgramado)
+                                {
+                                    <span class="badge bg-info text-dark ms-2">Programado</span>
+                                }
+
+                                <div class="text-muted small">
+                                    @p.FechaInicio.ToString("dd/MM/yyyy HH:mm")
+                                    <div>Duración: @p.DuracionMinutos min</div>
+                                    @if (p.EsProgramado && p.FechaProgramada != null)
+                                    {
+                                        <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                    }
+                                </div>
 
                                 @if (p.Calificacion != null)
                                 {
@@ -120,7 +175,39 @@
                                class="text-decoration-none text-dark flex-grow-1">
                             <div>
                                 <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
-                                <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+                                @if (p.EsProgramado)
+                                {
+                                    <span class="badge bg-info text-dark ms-2">Programado</span>
+                                }
+
+                                <div class="text-muted small">
+                                    @p.FechaInicio.ToString("dd/MM/yyyy HH:mm")
+                                    <div>Duración: @p.DuracionMinutos min</div>
+                                    @if (p.EsProgramado && p.FechaProgramada != null)
+                                    {
+                                        <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                    }
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(p.CanceladoPor) || !string.IsNullOrWhiteSpace(p.MotivoCancelacion) || p.FechaCancelacion != null)
+                                {
+                                    <div class="small text-muted mt-1">
+                                        @if (!string.IsNullOrWhiteSpace(p.CanceladoPor))
+                                        {
+                                            <div>Cancelado por: @p.CanceladoPor</div>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(p.MotivoCancelacion))
+                                        {
+                                            <div>Motivo: @p.MotivoCancelacion</div>
+                                        }
+
+                                        @if (p.FechaCancelacion != null)
+                                        {
+                                            <div>Fecha de cancelación: @p.FechaCancelacion?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        }
+                                    </div>
+                                }
                             </div>
                         </a>
 

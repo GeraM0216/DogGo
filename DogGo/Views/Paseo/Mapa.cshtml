@@ -16,11 +16,26 @@
                                                      Model.Estado == "Finalizado" ? "bg-secondary" : "bg-warning text-dark")">
                 @Model.Estado
             </span>
+
+            @if (Model.EsProgramado)
+            {
+                <span class="badge bg-info text-dark ms-2">Programado</span>
+            }
         </h5>
+
         <div class="mapa-info">
             <span>@Model.Perro.Nombre</span>
             <span>@Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</span>
+            <span>Duración: @Model.DuracionMinutos min</span>
         </div>
+
+        @if (Model.EsProgramado && Model.FechaProgramada != null)
+        {
+            <div class="mapa-programado">
+                <strong>Programado para:</strong>
+                @Model.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+            </div>
+        }
     </div>
 
     <div id="map"></div>
@@ -200,6 +215,22 @@
         }
 
         function cambiarEstado(nuevoEstado) {
+        if (nuevoEstado === "EnCurso") {
+        const esProgramado = @(Model.EsProgramado ? "true" : "false");
+        const fechaProgramada = "@(Model.FechaProgramada?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "")";
+
+        if (esProgramado && fechaProgramada) {
+        const ahora = new Date();
+        const programada = new Date(fechaProgramada);
+        const inicioPermitido = new Date(programada.getTime() - 15 * 60 * 1000);
+
+        if (ahora < inicioPermitido) {
+        alert("Este paseo programado solo puede iniciarse 15 minutos antes de la hora programada.");
+        return;
+        }
+        }
+        }
+
         connection.invoke("CambiarEstado", paseoId, nuevoEstado)
         .catch(err => console.error("Error al cambiar estado:", err));
         }
@@ -234,6 +265,18 @@
     color: #6c757d;
     display: flex;
     gap: 1rem;
+    flex-wrap: wrap;
+    }
+
+    .mapa-programado {
+    margin-top: 6px;
+    font-size: 0.9rem;
+    color: #0c5460;
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 8px;
+    padding: 6px 10px;
+    width: fit-content;
     }
 
     #map {
