@@ -229,10 +229,41 @@ namespace DogGo.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+
+        // GET: /Perro/MisPerrosJson
+        // Devuelve las mascotas del usuario logueado como JSON
+        // Lo usa el widget de la página de inicio.
+        [HttpGet]
+        public async Task<IActionResult> MisPerrosJson()
+        {
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return Unauthorized();
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
+            var perros = await _context.Perros
+                .Where(p => p.DueñoId == usuarioId)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Nombre,
+                    p.Raza,
+                    p.Edad,
+                    p.Tamaño,
+                    p.Notas,
+                    p.ImagenUrl
+                })
+                .ToListAsync();
+
+            return Json(perros);
+        }
+
         private bool PerroExiste(int id)
         {
             return _context.Perros.Any(e => e.Id == id);
         }
+
 
 
     }

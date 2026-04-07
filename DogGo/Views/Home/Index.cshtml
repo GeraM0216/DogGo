@@ -1,220 +1,703 @@
 ﻿@{
     ViewData["Title"] = "Inicio";
-    var nombre = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Usuario";
+    var nombreUsuario = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? "Usuario";
+    var esDuenio = User.IsInRole("Duenio");
+    var esPaseador = User.IsInRole("Paseador");
 }
 
 @if (User.Identity.IsAuthenticated)
 {
-    <!-- ── HERO (usuario logueado) ── -->
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-kicker"><span>👋</span> Bienvenido de vuelta</div>
-            <h1 class="hero-h1">
-                ¡Hola,<br>
-                <span class="line-purple">@nombre!</span> 🐾
-            </h1>
-            <p class="hero-sub">
-                Gestiona tus paseos, revisa tu información y accede rápido a las
-                funciones principales de DogGo.
-            </p>
-            <div class="hero-ctas">
-                <a asp-controller="Paseo" asp-action="MisPaseos" class="btn-main">
-                    Ver mis paseos
-                </a>
-                @if (User.IsInRole("Duenio"))
-                {
-                    <a asp-controller="Paseador" asp-action="Directorio" class="btn-ghost">
-                        Buscar paseador
-                    </a>
-                }
-                else if (User.IsInRole("Paseador"))
-                {
-                    <a asp-controller="Paseador" asp-action="Perfil" class="btn-ghost">
-                        Ver mi perfil
-                    </a>
-                }
-            </div>
-        </div>
+    <!-- ══ HERO — USUARIO LOGUEADO ══ -->
+    <section class="hero-section">
+        <div class="hero-inner">
+            <div class="hero-left">
+                <div class="hero-eyebrow">👋 Bienvenido de vuelta</div>
+                <h1 class="hero-title">
+                    Hola, <span class="hero-name">@nombreUsuario</span>.<br>
+                    ¿Listo para el paseo de hoy?
+                </h1>
+                <p class="hero-sub">
+                    Aquí tienes todo lo de tus mascotas y paseos en un solo lugar. Rápido y sencillo.
+                </p>
 
-        <div class="hero-visual">
-            <div class="float-badge b1"><div class="dot dot-g"></div> 1 paseo activo</div>
-            <div class="hero-card">
-                <span class="card-dog-big">🐕</span>
-                <div class="card-title">Tu espacio DogGo</div>
-                <div class="card-sub">
-                    Accede rápido a tus paseos, perfil y herramientas principales
-                    desde un panel claro y moderno.
-                </div>
-                <div class="card-tags">
-                    @if (User.IsInRole("Duenio"))
+                @if (esDuenio)
+                {
+                    <div class="paseo-banner" id="paseo-banner" style="display:none">
+                        <div class="pb-icon">🦮</div>
+                        <div class="pb-info">
+                            <div class="pb-title" id="pb-title">Próximo paseo</div>
+                            <div class="pb-sub">Revisa tus paseos activos para más detalles.</div>
+                        </div>
+                        <a asp-controller="Paseo" asp-action="MisPaseos" class="pb-btn">Ver detalles</a>
+                    </div>
+                }
+
+                <div class="hero-ctas">
+                    <a asp-controller="Paseo" asp-action="MisPaseos" class="btn-primary-doggo">Ver mis paseos</a>
+                    @if (esDuenio)
                     {
-                        <span class="tag tag-p">Cliente</span>
+                        <a asp-controller="Paseador" asp-action="Directorio" class="btn-secondary-doggo">Buscar paseador</a>
                     }
-                    else if (User.IsInRole("Paseador"))
+                    @if (esPaseador)
                     {
-                        <span class="tag tag-p">Paseador</span>
+                        <a asp-controller="Paseador" asp-action="Perfil" class="btn-secondary-doggo">Ver mi perfil</a>
                     }
-                    <span class="tag tag-g">Activo</span>
-                    <span class="tag tag-b">DogGo</span>
                 </div>
             </div>
-            <div class="float-badge b2"><div class="dot dot-p"></div> 4.9 ⭐ promedio</div>
+
+            @if (esDuenio)
+            {
+                <div class="hero-right">
+                    <div class="pet-widget">
+                        <div class="pw-header">
+                            <div>
+                                <div class="pw-title">Tus mascotas</div>
+                                <div class="pw-subtitle">Toca las flechas para cambiar</div>
+                            </div>
+                            <a asp-controller="Perro" asp-action="Create" class="pw-add-btn">+ Añadir</a>
+                        </div>
+
+                        <div id="pw-loading" class="pw-state">
+                            <div class="pw-spinner"></div>
+                            <p>Cargando tus mascotas...</p>
+                        </div>
+
+                        <div id="pw-empty" class="pw-state" style="display:none">
+                            <div class="pw-empty-icon">🐾</div>
+                            <p>Aún no tienes mascotas registradas.</p>
+                            <a asp-controller="Perro" asp-action="Create" class="btn-primary-doggo" style="margin-top:.75rem;display:inline-block">
+                                Registrar mi primer perro
+                            </a>
+                        </div>
+
+                        <div id="pw-card" style="display:none">
+                            <div class="pet-photo-wrap">
+                                <img id="pw-foto" src="" alt="" class="pet-photo-img" style="display:none" />
+                                <div id="pw-foto-fallback" class="pet-photo-fallback">🐶</div>
+                            </div>
+                            <div class="pet-info">
+                                <div class="pet-name" id="pw-nombre"></div>
+                                <div class="pet-breed" id="pw-raza"></div>
+                            </div>
+                            <div class="pet-stats">
+                                <div class="pstat">
+                                    <div class="pstat-val" id="pw-edad"></div>
+                                    <div class="pstat-lbl">Edad</div>
+                                </div>
+                                <div class="pstat">
+                                    <div class="pstat-val" id="pw-tamaño"></div>
+                                    <div class="pstat-lbl">Tamaño</div>
+                                </div>
+                            </div>
+                            <div id="pw-notas-wrap" class="pet-notas" style="display:none">
+                                <span class="notas-label">📝 Notas:</span>
+                                <span id="pw-notas"></span>
+                            </div>
+                            <div class="pet-nav">
+                                <button class="pnav-btn" onclick="DogGoWidget.prev()" aria-label="Anterior">&#8249;</button>
+                                <div class="pet-dots" id="pw-dots"></div>
+                                <button class="pnav-btn" onclick="DogGoWidget.next()" aria-label="Siguiente">&#8250;</button>
+                            </div>
+                            <a id="pw-ver-perfil" href="#" class="pet-ver-perfil">Ver perfil completo →</a>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     </section>
 
-    <!-- ── TICKER ── -->
-    <div class="ticker-wrap">
-        <div class="ticker">
-            <span class="ticker-item"><span class="ticker-dot">●</span> Paseadores verificados</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Seguimiento GPS</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Chat en tiempo real</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Calificaciones visibles</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Perfiles detallados</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Historial de paseos</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Paseadores verificados</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Seguimiento GPS</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Chat en tiempo real</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Calificaciones visibles</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Perfiles detallados</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Historial de paseos</span>
+    <!-- ══ BANDA ESTADÍSTICAS ══ -->
+    <div class="stats-band">
+        <div class="stat-item">
+            <div class="stat-num" id="s1">247+</div>
+            <div class="stat-lbl">Paseos realizados</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" id="s2">38+</div>
+            <div class="stat-lbl">Paseadores activos</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num" id="s3">183+</div>
+            <div class="stat-lbl">Mascotas felices</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">4.9★</div>
+            <div class="stat-lbl">Calificación promedio</div>
         </div>
     </div>
 
-    <!-- ── ACCESOS RÁPIDOS ── -->
-    <section class="home-section">
-        <div class="section-label">Accesos rápidos</div>
-        <h2 class="section-title">Todo en<br>un solo lugar.</h2>
-        <p class="section-sub">Las funciones que más usas, siempre a un clic de distancia.</p>
+    <!-- ══ CARRUSEL POR QUÉ DOGGO ══ -->
+    <section class="why-section">
+        <div class="why-header">
+            <div class="sec-label">¿Por qué DogGo?</div>
+            <h2 class="sec-title">Somos la mejor opción para tu mascota</h2>
+            <p class="sec-sub">Cada detalle fue pensado para darte paz mental y a tu perro, la mejor experiencia.</p>
+        </div>
+        <div class="carousel-wrap">
+            <div class="carousel-track" id="carousel">
+                <div class="why-card">
+                    <span class="wc-icon">🔒</span>
+                    <span class="wc-tag tag-teal">Seguridad</span>
+                    <div class="wc-title">Paseadores 100% verificados</div>
+                    <div class="wc-desc">Revisamos identidad, referencias y antecedentes de cada paseador antes de que pueda aparecer en la plataforma. Tu perro siempre en manos confiables.</div>
+                    <div class="wc-stat">✓ Verificación de identidad obligatoria</div>
+                </div>
+                <div class="why-card">
+                    <span class="wc-icon">📍</span>
+                    <span class="wc-tag tag-amber">Seguimiento</span>
+                    <div class="wc-title">GPS en tiempo real</div>
+                    <div class="wc-desc">Sigue cada paso del paseo desde tu celular. Recibe actualizaciones de ubicación y sabe exactamente por dónde va tu mejor amigo en todo momento.</div>
+                    <div class="wc-stat">✓ Actualizaciones en tiempo real</div>
+                </div>
+                <div class="why-card">
+                    <span class="wc-icon">💬</span>
+                    <span class="wc-tag tag-coral">Comunicación</span>
+                    <div class="wc-title">Chat directo con el paseador</div>
+                    <div class="wc-desc">Comunícate sin intermediarios antes, durante y después del paseo. Fotos, mensajes y actualizaciones directamente desde el paseador a tu teléfono.</div>
+                    <div class="wc-stat">✓ Mensajería instantánea incluida</div>
+                </div>
+                <div class="why-card">
+                    <span class="wc-icon">⭐</span>
+                    <span class="wc-tag tag-teal">Calidad</span>
+                    <div class="wc-title">Calificaciones transparentes</div>
+                    <div class="wc-desc">Cada paseo puede ser calificado. Los puntajes son públicos y acumulativos, así siempre sabes con quién confiar basándote en experiencias reales.</div>
+                    <div class="wc-stat">✓ 4.9 de promedio en la plataforma</div>
+                </div>
+                <div class="why-card">
+                    <span class="wc-icon">🐾</span>
+                    <span class="wc-tag tag-amber">Personalización</span>
+                    <div class="wc-title">Perfil completo de tu mascota</div>
+                    <div class="wc-desc">Registra raza, edad, tamaño, notas especiales y foto. El paseador llega preparado y ya conoce a tu perro antes de su primer paseo juntos.</div>
+                    <div class="wc-stat">✓ Información siempre disponible</div>
+                </div>
+            </div>
+            <div class="carousel-nav">
+                <button class="cnav-btn" onclick="CarouselDG.prev()">&#8249;</button>
+                <div class="cdots" id="cdots"></div>
+                <button class="cnav-btn" onclick="CarouselDG.next()">&#8250;</button>
+            </div>
+        </div>
+    </section>
 
-        <div class="qa-grid">
-            <a asp-controller="Paseo" asp-action="MisPaseos" class="qa-card">
-                <div class="feat-icon ic-p">🦮</div>
-                <h5>Mis paseos</h5>
-                <p>Revisa el estado de tus paseos activos, historial y seguimiento.</p>
-            </a>
+    <!-- ══ CÓMO FUNCIONA ══ -->
+    <section class="how-section">
+        <div class="how-inner">
+            <div class="how-header">
+                <div class="sec-label">Proceso simple</div>
+                <h2 class="sec-title">¿Cómo funciona DogGo?</h2>
+                <p class="sec-sub">En cuatro pasos sencillos tu perro ya está listo para su próximo paseo.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-icon">📝</div>
+                    <div class="step-title">Regístrate</div>
+                    <div class="step-desc">Crea tu cuenta en minutos y registra el perfil de tu mascota con foto y datos.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-icon">🔍</div>
+                    <div class="step-title">Elige paseador</div>
+                    <div class="step-desc">Explora perfiles, lee calificaciones y elige al paseador que más te convenza.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-icon">📅</div>
+                    <div class="step-title">Agenda el paseo</div>
+                    <div class="step-desc">Selecciona fecha y hora. El paseador confirma y listo, todo queda registrado.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-icon">🦮</div>
+                    <div class="step-title">¡Disfruta!</div>
+                    <div class="step-desc">Sigue el paseo en tiempo real y recibe actualizaciones directo de tu paseador.</div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-            @if (User.IsInRole("Duenio"))
-            {
-                <a asp-controller="Paseador" asp-action="Directorio" class="qa-card">
-                    <div class="feat-icon ic-g">🔍</div>
-                    <h5>Buscar paseador</h5>
-                    <p>Encuentra el paseador ideal para tu mascota de forma rápida.</p>
+    <!-- ══ TESTIMONIOS ══ -->
+    <section class="test-section">
+        <div class="test-inner">
+            <div class="test-header">
+                <div class="sec-label">Lo que dicen nuestros usuarios</div>
+                <h2 class="sec-title">Dueños que ya confían en DogGo</h2>
+            </div>
+            <div class="test-grid">
+                <div class="test-card">
+                    <div class="test-stars">★★★★★</div>
+                    <p class="test-text">"Desde que uso DogGo duermo tranquila. Puedo ver en el mapa exactamente dónde está mi perro y el paseador me manda fotos a cada rato. ¡Increíble!"</p>
+                    <div class="test-author">
+                        <div class="test-avatar av-t">MG</div>
+                        <div>
+                            <div class="test-aname">María González</div>
+                            <div class="test-asub">Dueña de Luna, Poodle</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="test-card">
+                    <div class="test-stars">★★★★★</div>
+                    <p class="test-text">"Lo mejor es que puedo ver las calificaciones reales de cada paseador. Encontré al indicado para Rocky en 5 minutos. Ya lleva 3 meses paseando con él."</p>
+                    <div class="test-author">
+                        <div class="test-avatar av-a">CR</div>
+                        <div>
+                            <div class="test-aname">Carlos Rodríguez</div>
+                            <div class="test-asub">Dueño de Rocky, Labrador</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="test-card">
+                    <div class="test-stars">★★★★★</div>
+                    <p class="test-text">"El chat con el paseador es muy útil. Le puedo dar instrucciones especiales sobre Max y él las sigue al pie de la letra. Muy fácil de usar."</p>
+                    <div class="test-author">
+                        <div class="test-avatar av-c">AL</div>
+                        <div>
+                            <div class="test-aname">Ana López</div>
+                            <div class="test-asub">Dueña de Max, Golden Retriever</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ CTA ACCESOS RÁPIDOS ══ -->
+    <section class="cta-section">
+        <div class="cta-inner">
+            <div class="cta-header">
+                <div class="cta-badge">🎉 ¡Todo listo para ti!</div>
+                <h2 class="cta-title">Prueba nuestros <span class="cta-em">servicios hoy</span></h2>
+                <p class="cta-sub">Las funciones que más usas, siempre a un clic de distancia.</p>
+            </div>
+            <div class="cta-grid">
+                <a asp-controller="Paseo" asp-action="MisPaseos" class="cta-card">
+                    <span class="cta-card-icon">🦮</span>
+                    <div class="cta-card-title">Ver mis paseos</div>
+                    <div class="cta-card-desc">Activos, historial y seguimiento en tiempo real.</div>
                 </a>
-
-                <a asp-controller="Perro" asp-action="Index" class="qa-card">
-                    <div class="feat-icon ic-b">🐶</div>
-                    <h5>Mis perros</h5>
-                    <p>Administra los perfiles y datos de tus mascotas.</p>
-                </a>
-            }
-
-            @if (User.IsInRole("Paseador"))
-            {
-                <a asp-controller="Paseador" asp-action="Perfil" class="qa-card">
-                    <div class="feat-icon ic-g">⭐</div>
-                    <h5>Mi perfil</h5>
-                    <p>Consulta tus calificaciones y mantén tu información actualizada.</p>
-                </a>
-            }
+                @if (esDuenio)
+                {
+                    <a asp-controller="Paseador" asp-action="Directorio" class="cta-card">
+                        <span class="cta-card-icon">🔍</span>
+                        <div class="cta-card-title">Buscar paseador</div>
+                        <div class="cta-card-desc">Encuentra al paseador perfecto para tu mascota.</div>
+                    </a>
+                    <a asp-controller="Perro" asp-action="Index" class="cta-card">
+                        <span class="cta-card-icon">🐶</span>
+                        <div class="cta-card-title">Mis perros</div>
+                        <div class="cta-card-desc">Administra perfiles, fotos y datos de tus mascotas.</div>
+                    </a>
+                }
+                @if (esPaseador)
+                {
+                    <a asp-controller="Paseador" asp-action="Perfil" class="cta-card">
+                        <span class="cta-card-icon">⭐</span>
+                        <div class="cta-card-title">Mi perfil</div>
+                        <div class="cta-card-desc">Revisa calificaciones y mantén tu info al día.</div>
+                    </a>
+                }
+            </div>
         </div>
     </section>
 }
 else
 {
-    <!-- ── HERO (visitante) ── -->
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-kicker"><span>🐾</span> Plataforma de paseos</div>
-            <h1 class="hero-h1">
-                Tu perro merece<br>
-                <span class="line-purple">paseos</span><br>
-                <span class="line-green">increíbles.</span>
-            </h1>
-            <p class="hero-sub">
-                Conectamos dueños con paseadores confiables. Chat en tiempo real,
-                seguimiento GPS y perfiles verificados.
-            </p>
-            <div class="hero-ctas">
-                <a asp-controller="Auth" asp-action="Register" class="btn-main">
-                    Comenzar ahora
-                </a>
-                <a asp-controller="Paseador" asp-action="Directorio" class="btn-ghost">
-                    Ver paseadores
-                </a>
+    <!-- ══ HERO — VISITANTE ══ -->
+    <section class="hero-section">
+        <div class="hero-inner">
+            <div class="hero-left">
+                <div class="hero-eyebrow">🐶 Paseos seguros y felices</div>
+                <h1 class="hero-title">
+                    Tu mejor amigo merece<br>
+                    <span class="hero-name">el mejor cuidado</span>
+                </h1>
+                <p class="hero-sub">
+                    Conectamos dueños con paseadores verificados. Seguimiento GPS
+                    en tiempo real, chat directo y tranquilidad total.
+                </p>
+                <div class="hero-ctas">
+                    <a asp-controller="Auth" asp-action="Register" class="btn-primary-doggo">Comenzar ahora</a>
+                    <a asp-controller="Paseador" asp-action="Directorio" class="btn-secondary-doggo">Ver paseadores</a>
+                </div>
+                <div class="trust-row">
+                    <div class="trust-item"><span class="trust-dot"></span> Paseadores verificados</div>
+                    <div class="trust-item"><span class="trust-dot"></span> GPS en tiempo real</div>
+                    <div class="trust-item"><span class="trust-dot"></span> Sin costos ocultos</div>
+                </div>
             </div>
-        </div>
 
-        <div class="hero-visual">
-            <div class="float-badge b1"><div class="dot dot-g"></div> Paseo activo</div>
-            <div class="hero-card">
-                <span class="card-dog-big">🐶</span>
-                <div class="card-title">DogGo</div>
-                <div class="card-sub">
-                    Una forma simple de organizar paseos y seguir a tu mascota
-                    en tiempo real.
-                </div>
-                <div class="card-tags">
-                    <span class="tag tag-p">Paseadores verificados</span>
-                    <span class="tag tag-g">GPS en tiempo real</span>
-                    <span class="tag tag-b">Chat directo</span>
+            <div class="hero-right">
+                <div class="pet-widget">
+                    <div class="pw-header">
+                        <div>
+                            <div class="pw-title">Mascotas en DogGo</div>
+                            <div class="pw-subtitle">Así cuidan a sus perros nuestros usuarios</div>
+                        </div>
+                    </div>
+                    <div class="pet-photo-wrap">
+                        <div class="pet-photo-fallback">🐕</div>
+                    </div>
+                    <div class="pet-info">
+                        <div class="pet-name">Max</div>
+                        <div class="pet-breed">Golden Retriever</div>
+                    </div>
+                    <div class="pet-stats">
+                        <div class="pstat"><div class="pstat-val">3 años</div><div class="pstat-lbl">Edad</div></div>
+                        <div class="pstat"><div class="pstat-val">Grande</div><div class="pstat-lbl">Tamaño</div></div>
+                    </div>
+                    <div class="pet-nav">
+                        <button class="pnav-btn">&#8249;</button>
+                        <div class="pet-dots">
+                            <div class="pdot active"></div>
+                            <div class="pdot"></div>
+                            <div class="pdot"></div>
+                        </div>
+                        <button class="pnav-btn">&#8250;</button>
+                    </div>
+                    <a asp-controller="Auth" asp-action="Register" class="pet-ver-perfil">
+                        Regístrate para ver tus mascotas →
+                    </a>
                 </div>
             </div>
-            <div class="float-badge b2"><div class="dot dot-p"></div> 3 paseadores cerca</div>
         </div>
     </section>
 
-    <!-- ── TICKER ── -->
-    <div class="ticker-wrap">
-        <div class="ticker">
-            <span class="ticker-item"><span class="ticker-dot">●</span> Paseadores verificados</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Seguimiento GPS</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Chat en tiempo real</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Calificaciones visibles</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Perfiles detallados</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Historial de paseos</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Paseadores verificados</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Seguimiento GPS</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Chat en tiempo real</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Calificaciones visibles</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Perfiles detallados</span>
-            <span class="ticker-item"><span class="ticker-dot">●</span> Historial de paseos</span>
+    <!-- ══ BANDA ESTADÍSTICAS ══ -->
+    <div class="stats-band">
+        <div class="stat-item">
+            <div class="stat-num">247+</div>
+            <div class="stat-lbl">Paseos realizados</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">38+</div>
+            <div class="stat-lbl">Paseadores activos</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">183+</div>
+            <div class="stat-lbl">Mascotas felices</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-num">4.9★</div>
+            <div class="stat-lbl">Calificación promedio</div>
         </div>
     </div>
 
-    <!-- ── POR QUÉ DOGGO ── -->
-    <section class="home-section">
-        <div class="section-label">¿Por qué DogGo?</div>
-        <h2 class="section-title">Funciones pensadas<br>para ti y tu mascota.</h2>
-        <p class="section-sub">
-            Todo lo que necesitas para organizar paseos seguros, cómodos
-            y con total transparencia.
-        </p>
-
-        <div class="cards-grid">
-            <div class="feat-card c-p">
-                <div class="feat-icon ic-p">🔒</div>
-                <div class="feat-title">Paseadores verificados</div>
-                <p class="feat-desc">
-                    Consulta perfiles, calificaciones e información antes de
-                    elegir a alguien para tu perro.
-                </p>
+    <!-- ══ CARRUSEL POR QUÉ DOGGO ══ -->
+    <section class="why-section">
+        <div class="why-header">
+            <div class="sec-label">¿Por qué DogGo?</div>
+            <h2 class="sec-title">Somos la mejor opción para tu mascota</h2>
+            <p class="sec-sub">Cada detalle fue pensado para darte paz mental y a tu perro, la mejor experiencia.</p>
+        </div>
+        <div class="carousel-wrap">
+            <div class="carousel-track" id="carousel">
+                <div class="why-card">
+                    <span class="wc-icon">🔒</span>
+                    <span class="wc-tag tag-teal">Seguridad</span>
+                    <div class="wc-title">Paseadores 100% verificados</div>
+                    <div class="wc-desc">Revisamos identidad, referencias y antecedentes de cada paseador antes de que pueda aparecer en la plataforma. Tu perro siempre en manos confiables.</div>
+                    <div class="wc-stat">✓ Verificación de identidad obligatoria</div>
+                </div>
+                <div class="why-card">
+                    <span class="wc-icon">📍</span>
+                    <span class="wc-tag tag-amber">Seguimiento</span>
+                    <div class="wc-title">GPS en tiempo real</div>
+                    <div class="wc-desc">Sigue cada paso del paseo desde tu celular. Recibe actualizaciones de ubicación y sabe exactamente por dónde va tu mejor amigo en todo momento.</div>
+                    <div class="wc-stat">✓ Actualizaciones en tiempo real</div>
+                </div>
+                <div class="why-card">
+                    <span class="wc-icon">💬</span>
+                    <span class="wc-tag tag-coral">Comunicación</span>
+                    <div class="wc-title">Chat directo con el paseador</div>
+                    <div class="wc-desc">Comunícate sin intermediarios antes, durante y después del paseo. Fotos, mensajes y actualizaciones directamente desde el paseador a tu teléfono.</div>
+                    <div class="wc-stat">✓ Mensajería instantánea incluida</div>
+                </div>
+                <div class="why-card">
+                    <span class="wc-icon">⭐</span>
+                    <span class="wc-tag tag-teal">Calidad</span>
+                    <div class="wc-title">Calificaciones transparentes</div>
+                    <div class="wc-desc">Cada paseo puede ser calificado. Los puntajes son públicos y acumulativos, así siempre sabes con quién confiar basándote en experiencias reales.</div>
+                    <div class="wc-stat">✓ 4.9 de promedio en la plataforma</div>
+                </div>
+                <div class="why-card">
+                    <span class="wc-icon">🐾</span>
+                    <span class="wc-tag tag-amber">Personalización</span>
+                    <div class="wc-title">Perfil completo de tu mascota</div>
+                    <div class="wc-desc">Registra raza, edad, tamaño, notas especiales y foto. El paseador llega preparado y ya conoce a tu perro antes de su primer paseo juntos.</div>
+                    <div class="wc-stat">✓ Información siempre disponible</div>
+                </div>
             </div>
-            <div class="feat-card c-g">
-                <div class="feat-icon ic-g">📍</div>
-                <div class="feat-title">Seguimiento en tiempo real</div>
-                <p class="feat-desc">
-                    Sigue la ubicación de tu mascota durante todo el paseo
-                    desde la app.
-                </p>
-            </div>
-            <div class="feat-card c-b">
-                <div class="feat-icon ic-b">💬</div>
-                <div class="feat-title">Chat directo</div>
-                <p class="feat-desc">
-                    Comunícate con el paseador en cualquier momento,
-                    sin intermediarios.
-                </p>
+            <div class="carousel-nav">
+                <button class="cnav-btn" onclick="CarouselDG.prev()">&#8249;</button>
+                <div class="cdots" id="cdots"></div>
+                <button class="cnav-btn" onclick="CarouselDG.next()">&#8250;</button>
             </div>
         </div>
     </section>
+
+    <!-- ══ CÓMO FUNCIONA ══ -->
+    <section class="how-section">
+        <div class="how-inner">
+            <div class="how-header">
+                <div class="sec-label">Proceso simple</div>
+                <h2 class="sec-title">¿Cómo funciona DogGo?</h2>
+                <p class="sec-sub">En cuatro pasos sencillos tu perro ya está listo para su próximo paseo.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-icon">📝</div>
+                    <div class="step-title">Regístrate</div>
+                    <div class="step-desc">Crea tu cuenta en minutos y registra el perfil de tu mascota con foto y datos.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-icon">🔍</div>
+                    <div class="step-title">Elige paseador</div>
+                    <div class="step-desc">Explora perfiles, lee calificaciones y elige al paseador que más te convenza.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-icon">📅</div>
+                    <div class="step-title">Agenda el paseo</div>
+                    <div class="step-desc">Selecciona fecha y hora. El paseador confirma y listo, todo queda registrado.</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-icon">🦮</div>
+                    <div class="step-title">¡Disfruta!</div>
+                    <div class="step-desc">Sigue el paseo en tiempo real y recibe actualizaciones directo de tu paseador.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ TESTIMONIOS ══ -->
+    <section class="test-section">
+        <div class="test-inner">
+            <div class="test-header">
+                <div class="sec-label">Lo que dicen nuestros usuarios</div>
+                <h2 class="sec-title">Dueños que ya confían en DogGo</h2>
+            </div>
+            <div class="test-grid">
+                <div class="test-card">
+                    <div class="test-stars">★★★★★</div>
+                    <p class="test-text">"Desde que uso DogGo duermo tranquila. Puedo ver en el mapa exactamente dónde está mi perro y el paseador me manda fotos a cada rato. ¡Increíble!"</p>
+                    <div class="test-author">
+                        <div class="test-avatar av-t">MG</div>
+                        <div>
+                            <div class="test-aname">María González</div>
+                            <div class="test-asub">Dueña de Luna, Poodle</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="test-card">
+                    <div class="test-stars">★★★★★</div>
+                    <p class="test-text">"Lo mejor es que puedo ver las calificaciones reales de cada paseador. Encontré al indicado para Rocky en 5 minutos. Ya lleva 3 meses paseando con él."</p>
+                    <div class="test-author">
+                        <div class="test-avatar av-a">CR</div>
+                        <div>
+                            <div class="test-aname">Carlos Rodríguez</div>
+                            <div class="test-asub">Dueño de Rocky, Labrador</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="test-card">
+                    <div class="test-stars">★★★★★</div>
+                    <p class="test-text">"El chat con el paseador es muy útil. Le puedo dar instrucciones especiales sobre Max y él las sigue al pie de la letra. Muy fácil de usar."</p>
+                    <div class="test-author">
+                        <div class="test-avatar av-c">AL</div>
+                        <div>
+                            <div class="test-aname">Ana López</div>
+                            <div class="test-asub">Dueña de Max, Golden Retriever</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ CTA FINAL ══ -->
+    <section class="cta-section">
+        <div class="cta-inner">
+            <div class="cta-header">
+                <div class="cta-badge">🎉 ¿Te convencimos?</div>
+                <h2 class="cta-title">Prueba nuestros <span class="cta-em">servicios hoy</span></h2>
+                <p class="cta-sub">Únete a la comunidad de dueños que ya le dan a sus mascotas la mejor experiencia de paseo.</p>
+            </div>
+            <div class="cta-grid">
+                <div class="cta-card">
+                    <span class="cta-card-icon">🔒</span>
+                    <div class="cta-card-title">Paseadores verificados</div>
+                    <div class="cta-card-desc">Perfiles reales con calificaciones de otros dueños.</div>
+                </div>
+                <div class="cta-card">
+                    <span class="cta-card-icon">📍</span>
+                    <div class="cta-card-title">Seguimiento GPS</div>
+                    <div class="cta-card-desc">Ve en tiempo real por dónde va tu perro en el paseo.</div>
+                </div>
+                <div class="cta-card">
+                    <span class="cta-card-icon">💬</span>
+                    <div class="cta-card-title">Chat directo</div>
+                    <div class="cta-card-desc">Habla con el paseador cuando lo necesites.</div>
+                </div>
+            </div>
+            <div class="cta-btn-wrap">
+                <a asp-controller="Auth" asp-action="Register" class="cta-main-btn">
+                    Comenzar ahora — es gratis 🐾
+                </a>
+            </div>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    @if (User.Identity.IsAuthenticated && User.IsInRole("Duenio"))
+    {
+        <script>
+            // ── Widget mascotas ──────────────────────────────────────
+            const DogGoWidget = (() => {
+                let pets = [], cur = 0;
+
+                async function init() {
+                    try {
+                        const res  = await fetch('/Perro/MisPerrosJson');
+                        const data = await res.json();
+                        pets = data;
+                        if (!pets || pets.length === 0) { show('pw-empty'); return; }
+                        show('pw-card');
+                        render();
+                        if (pets.length > 0) {
+                            const banner = document.getElementById('paseo-banner');
+                            const title  = document.getElementById('pb-title');
+                            if (banner && title) {
+                                title.textContent    = 'Próximo paseo de ' + pets[0].nombre;
+                                banner.style.display = 'flex';
+                            }
+                        }
+                    } catch (e) { show('pw-empty'); }
+                }
+
+                function show(id) {
+                    ['pw-loading','pw-empty','pw-card'].forEach(i => {
+                        const el = document.getElementById(i);
+                        if (el) el.style.display = (i === id) ? 'block' : 'none';
+                    });
+                }
+
+                function render() {
+                    const p   = pets[cur];
+                    const img = document.getElementById('pw-foto');
+                    const fb  = document.getElementById('pw-foto-fallback');
+                    if (p.imagenUrl) {
+                        img.src = p.imagenUrl; img.style.display = 'block'; fb.style.display = 'none';
+                    } else {
+                        img.style.display = 'none'; fb.style.display = 'flex';
+                    }
+                    document.getElementById('pw-nombre').textContent = p.nombre;
+                    document.getElementById('pw-raza').textContent   = p.raza   || 'Sin raza registrada';
+                    document.getElementById('pw-edad').textContent   = p.edad   ? p.edad + ' año' + (p.edad === 1 ? '' : 's') : '—';
+                    document.getElementById('pw-tamaño').textContent = p.tamaño || '—';
+                    const nw = document.getElementById('pw-notas-wrap');
+                    const ne = document.getElementById('pw-notas');
+                    if (p.notas) { ne.textContent = p.notas; nw.style.display = 'block'; }
+                    else { nw.style.display = 'none'; }
+                    const lnk = document.getElementById('pw-ver-perfil');
+                    if (lnk) lnk.href = '/Perro/Details/' + p.id;
+                    renderDots();
+                }
+
+                function renderDots() {
+                    const c = document.getElementById('pw-dots');
+                    if (!c) return;
+                    c.innerHTML = '';
+                    pets.forEach((_, i) => {
+                        const d = document.createElement('div');
+                        d.className = 'pdot' + (i === cur ? ' active' : '');
+                        d.onclick = () => { cur = i; render(); };
+                        c.appendChild(d);
+                    });
+                }
+
+                function next() { cur = (cur + 1) % pets.length; render(); }
+                function prev() { cur = (cur - 1 + pets.length) % pets.length; render(); }
+                return { init, next, prev };
+            })();
+
+            document.addEventListener('DOMContentLoaded', () => DogGoWidget.init());
+        </script>
+    }
+
+    <script>
+        // ── Carrusel ─────────────────────────────────────────────────
+        const CarouselDG = (() => {
+            const track   = document.getElementById('carousel');
+            if (!track) return { next(){}, prev(){} };
+            const cards   = track.querySelectorAll('.why-card');
+            const total   = cards.length;
+            const visible = 3;
+            let ci = 0, autoTimer;
+
+            function render() {
+                const gap = 20;
+                const w   = track.parentElement.offsetWidth;
+                const cw  = (w - gap * (visible - 1)) / visible;
+                cards.forEach(c => c.style.minWidth = cw + 'px');
+                track.style.transform = `translateX(-${ci * (cw + gap)}px)`;
+                const cd    = document.getElementById('cdots');
+                const pages = total - visible + 1;
+                if (cd) {
+                    cd.innerHTML = '';
+                    for (let i = 0; i < pages; i++) {
+                        const d = document.createElement('div');
+                        d.className = 'cdot' + (i === ci ? ' active' : '');
+                        d.onclick = () => { ci = i; render(); resetAuto(); };
+                        cd.appendChild(d);
+                    }
+                }
+            }
+
+            function next() { ci = (ci < total - visible) ? ci + 1 : 0; render(); resetAuto(); }
+            function prev() { ci = (ci > 0) ? ci - 1 : total - visible; render(); resetAuto(); }
+
+            function resetAuto() { clearInterval(autoTimer); autoTimer = setInterval(next, 3800); }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                render();
+                window.addEventListener('resize', render);
+                resetAuto();
+            });
+
+            return { next, prev };
+        })();
+
+        // ── Contadores animados ───────────────────────────────────────
+        function animateCount(id, target, suffix, duration) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let start = 0;
+            const step = target / 60;
+            const timer = setInterval(() => {
+                start += step;
+                if (start >= target) { el.textContent = target + suffix; clearInterval(timer); }
+                else { el.textContent = Math.floor(start) + suffix; }
+            }, duration / 60);
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCount('s1', 247, '+', 1200);
+                    animateCount('s2', 38,  '+', 1000);
+                    animateCount('s3', 183, '+', 1100);
+                    observer.disconnect();
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const band = document.querySelector('.stats-band');
+            if (band) observer.observe(band);
+        });
+    </script>
 }
