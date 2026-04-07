@@ -267,5 +267,113 @@ namespace DogGo.Controllers
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
             return Convert.ToHexString(bytes);
         }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                ViewBag.Error = "Debes capturar tu correo.";
+                return View();
+            }
+
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (usuario == null)
+            {
+                ViewBag.Error = "No existe una cuenta con ese correo.";
+                return View();
+            }
+
+            var codigo = GenerarCodigoConfirmacion();
+
+            usuario.CodigoRecuperacion = codigo;
+            usuario.CodigoRecuperacionExpiraEn = DateTime.UtcNow.AddMinutes(10);
+
+            await _context.SaveChangesAsync();
+
+            await _emailService.EnviarCorreoAsync(
+                usuario.Email,
+                "Recuperación de contraseña - DogGo",
+                $"Tu código de recuperación es: {codigo}. Expira en 10 minutos."
+            );
+
+            TempData["Success"] = "Te enviamos un código de recuperación a tu correo.";
+            TempData["EmailRecuperacion"] = usuario.Email;
+
+            return RedirectToAction("ResetPassword");
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword()
+        {
+            ViewBag.Email = TempData["EmailRecuperacion"]?.ToString();
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(string email, string codigo, string nuevaPassword, string confirmarPassword)
+        {
+            if (string.IsNullOrWhiteSpace(email) ||
+                string.IsNullOrWhiteSpace(codigo) ||
+                string.IsNullOrWhiteSpace(nuevaPassword) ||
+                string.IsNullOrWhiteSpace(confirmarPassword))
+            {
+                ViewBag.Error = "Debes completar todos los campos.";
+                ViewBag.Email = email;
+                return View();
+            }
+
+            if (nuevaPassword != confirmarPassword)
+            {
+                ViewBag.Error = "Las contraseñas no coinciden.";
+                ViewBag.Email = email;
+                return View();
+            }
+
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+
+            if (usuario == null)
+            {
+                ViewBag.Error = "No se encontró una cuenta con ese correo.";
+                ViewBag.Email = email;
+                return View();
+            }
+
+            if (usuario.CodigoRecuperacionExpiraEn == null || usuario.CodigoRecuperacionExpiraEn < DateTime.UtcNow)
+            {
+                ViewBag.Error = "El código ya expiró. Solicita uno nuevo.";
+                ViewBag.Email = email;
+                return View();
+            }
+
+            if (usuario.CodigoRecuperacion != codigo)
+            {
+                ViewBag.Error = "El código es incorrecto.";
+                ViewBag.Email = email;
+                return View();
+            }
+
+            usuario.PasswordHash = HashPassword(nuevaPassword);
+            usuario.CodigoRecuperacion = null;
+            usuario.CodigoRecuperacionExpiraEn = null;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Tu contraseña fue actualizada correctamente.";
+            return RedirectToAction("Login");
+        }
+
+
+
+
     }
 }

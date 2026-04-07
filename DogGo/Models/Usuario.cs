@@ -17,6 +17,9 @@ namespace DogGo.Models
         public string? CodigoConfirmacion { get; set; }
         public DateTime? CodigoExpiraEn { get; set; }
 
+        public string? CodigoRecuperacion { get; set; }
+        public DateTime? CodigoRecuperacionExpiraEn { get; set; }
+
         /// <summary>"Duenio" o "Paseador"</summary>
         [Required] public string Rol { get; set; }
 
