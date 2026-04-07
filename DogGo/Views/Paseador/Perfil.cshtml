@@ -7,26 +7,38 @@
 
 <div class="perfil-container">
 
-    <!-- Encabezado -->
     <div class="perfil-header">
         <div class="perfil-avatar">🐾</div>
+
         <div class="perfil-info">
             <h3>@Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</h3>
-            <p class="text-muted">@Model.Paseador.Descripcion</p>
+            <p class="perfil-descripcion">
+                @(string.IsNullOrWhiteSpace(Model.Paseador.Descripcion)
+                    ? "Este paseador aún no ha agregado una descripción."
+                    : Model.Paseador.Descripcion)
+            </p>
 
             <div class="perfil-stats">
                 <div class="stat">
                     <span class="stat-valor">@Model.TotalPaseos</span>
-                    <span class="stat-label">Paseos</span>
+                    <span class="stat-label">Paseos finalizados</span>
                 </div>
+
                 <div class="stat">
                     <span class="stat-valor">@Model.Promedio.ToString("0.0") ⭐</span>
                     <span class="stat-label">Promedio</span>
                 </div>
+
                 <div class="stat">
-                    <span class="stat-valor">$@Model.Paseador.TarifaPorHora</span>
+                    <span class="stat-valor">@Model.Calificaciones.Count</span>
+                    <span class="stat-label">Reseñas</span>
+                </div>
+
+                <div class="stat">
+                    <span class="stat-valor">$@Model.Paseador.TarifaPorHora.ToString("0.##")</span>
                     <span class="stat-label">Por hora</span>
                 </div>
+
                 <div class="stat">
                     <span class="stat-valor @(Model.Paseador.Disponible ? "text-success" : "text-danger")">
                         @(Model.Paseador.Disponible ? "Disponible" : "No disponible")
@@ -42,22 +54,28 @@
         }
     </div>
 
-    <!-- Estrellas visuales del promedio -->
-    <div class="perfil-estrellas">
-        @for (int i = 1; i <= 5; i++)
-        {
-            <span class="@(i <= Math.Round(Model.Promedio) ? "estrella-llena" : "estrella-vacia")">★</span>
-        }
-        <span class="ms-2 text-muted small">(@Model.Calificaciones.Count reseñas)</span>
+    <div class="perfil-resumen">
+        <div class="perfil-estrellas">
+            @for (int i = 1; i <= 5; i++)
+            {
+                <span class="@(i <= Math.Round(Model.Promedio) ? "estrella-llena" : "estrella-vacia")">★</span>
+            }
+            <span class="perfil-resumen-texto">
+                @Model.Promedio.ToString("0.0") de 5 · @Model.Calificaciones.Count reseña(s)
+            </span>
+        </div>
     </div>
 
-    <!-- Reseñas -->
     <div class="perfil-resenas">
-        <h5 class="mb-3">Reseñas</h5>
+        <div class="resenas-header">
+            <h5>Reseñas recientes</h5>
+        </div>
 
         @if (!Model.Calificaciones.Any())
         {
-            <p class="text-muted">Aún no hay reseñas para este paseador.</p>
+            <div class="resena-vacia">
+                Aún no hay reseñas para este paseador.
+            </div>
         }
         else
         {
@@ -65,18 +83,26 @@
             {
                 <div class="resena-card">
                     <div class="resena-header">
-                        <strong>@c.Dueño.Nombre @c.Dueño.Apellido</strong>
-                        <span class="resena-fecha text-muted">@c.Fecha.ToString("dd/MM/yyyy")</span>
+                        <div>
+                            <strong>@c.Dueño.Nombre @c.Dueño.Apellido</strong>
+                            <div class="resena-fecha">@c.Fecha.ToString("dd/MM/yyyy")</div>
+                        </div>
+
+                        <div class="resena-estrellas">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <span class="@(i <= c.Puntaje ? "estrella-llena" : "estrella-vacia")">★</span>
+                            }
+                        </div>
                     </div>
-                    <div class="resena-estrellas">
-                        @for (int i = 1; i <= 5; i++)
-                        {
-                            <span class="@(i <= c.Puntaje ? "estrella-llena" : "estrella-vacia")">★</span>
-                        }
-                    </div>
-                    @if (!string.IsNullOrEmpty(c.Comentario))
+
+                    @if (!string.IsNullOrWhiteSpace(c.Comentario))
                     {
                         <p class="resena-comentario">@c.Comentario</p>
+                    }
+                    else
+                    {
+                        <p class="resena-comentario text-muted">Sin comentario adicional.</p>
                     }
                 </div>
             }
@@ -85,36 +111,158 @@
 </div>
 
 <style>
-.perfil-container { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
-.perfil-header {
-    display: flex;
-    gap: 1.5rem;
-    align-items: flex-start;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-}
-.perfil-avatar { font-size: 3.5rem; }
-.perfil-info { flex: 1; }
-.perfil-info h3 { margin: 0 0 4px; }
-.perfil-stats { display: flex; gap: 1.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
-.stat { display: flex; flex-direction: column; }
-.stat-valor { font-size: 1.1rem; font-weight: 500; }
-.stat-label { font-size: 0.75rem; color: #6c757d; }
-.perfil-estrellas { font-size: 1.5rem; margin-bottom: 1.5rem; }
-.estrella-llena { color: #ffc107; }
-.estrella-vacia { color: #dee2e6; }
-.perfil-resenas { display: flex; flex-direction: column; gap: 1rem; }
-.resena-card {
-    background: white;
-    border: 1px solid #eee;
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-}
-.resena-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
-.resena-fecha { font-size: 0.82rem; }
-.resena-estrellas { font-size: 1rem; margin-bottom: 6px; }
-.resena-comentario { margin: 0; color: #444; font-size: 0.92rem; }
+    .perfil-container {
+        max-width: 820px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .perfil-header {
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 14px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+    }
+
+    .perfil-avatar {
+        font-size: 3.8rem;
+        line-height: 1;
+    }
+
+    .perfil-info {
+        flex: 1;
+    }
+
+        .perfil-info h3 {
+            margin: 0 0 6px;
+        }
+
+    .perfil-descripcion {
+        margin: 0;
+        color: #6c757d;
+    }
+
+    .perfil-stats {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .stat {
+        min-width: 120px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 0.75rem 0.9rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-valor {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .stat-label {
+        font-size: 0.78rem;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+
+    .perfil-resumen {
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .perfil-estrellas {
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+
+    .perfil-resumen-texto {
+        font-size: 0.95rem;
+        color: #6c757d;
+        margin-left: 10px;
+    }
+
+    .estrella-llena {
+        color: #ffc107;
+    }
+
+    .estrella-vacia {
+        color: #dee2e6;
+    }
+
+    .perfil-resenas {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .resenas-header h5 {
+        margin: 0;
+    }
+
+    .resena-vacia {
+        background: white;
+        border: 1px dashed #ced4da;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        color: #6c757d;
+    }
+
+    .resena-card {
+        background: white;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.03);
+    }
+
+    .resena-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 0.5rem;
+    }
+
+    .resena-fecha {
+        font-size: 0.82rem;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+
+    .resena-estrellas {
+        font-size: 1rem;
+        white-space: nowrap;
+    }
+
+    .resena-comentario {
+        margin: 0;
+        color: #444;
+        font-size: 0.94rem;
+        line-height: 1.45;
+    }
+
+    @@media (max-width: 768px) {
+        .perfil-header {
+            flex-direction: column;
+        }
+
+        .resena-header {
+            flex-direction: column;
+        }
+    }
 </style>

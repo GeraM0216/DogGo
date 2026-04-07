@@ -69,6 +69,7 @@ namespace DogGo.Controllers
                 paseos = await _context.Paseos
                     .Where(p => p.PaseadorId == paseador.Id)
                     .Include(p => p.Perro).ThenInclude(pe => pe.Dueño)
+                    .Include(p => p.Calificacion)
                     .OrderByDescending(p => p.FechaInicio)
                     .ToListAsync();
             }
@@ -78,6 +79,7 @@ namespace DogGo.Controllers
                     .Where(p => p.Perro.DueñoId == usuarioId)
                     .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
                     .Include(p => p.Perro)
+                    .Include(p => p.Calificacion)
                     .OrderByDescending(p => p.FechaInicio)
                     .ToListAsync();
             }

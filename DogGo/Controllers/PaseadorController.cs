@@ -62,7 +62,7 @@ namespace DogGo.Controllers
                 Promedio = calificaciones.Any()
                                     ? calificaciones.Average(c => c.Puntaje)
                                     : 0,
-                TotalPaseos = perfil.Paseos.Count
+                TotalPaseos = perfil.Paseos.Count(p => p.Estado == "Finalizado")
             };
 
             return View(vm);

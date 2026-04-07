@@ -18,13 +18,11 @@ namespace DogGo.Controllers
             _context = context;
         }
 
-        // GET: /Calificacion/Crear/5  (5 = paseoId)
-        [Authorize(Roles = "Dueño")]
+        // GET: /Calificacion/Crear/5
+        [Authorize(Roles = "Duenio")]
         public async Task<IActionResult> Crear(int paseoId)
         {
-            var usuarioId = int.Parse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)
-            );
+            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var paseo = await _context.Paseos
                 .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
@@ -32,19 +30,18 @@ namespace DogGo.Controllers
                 .Include(p => p.Calificacion)
                 .FirstOrDefaultAsync(p => p.Id == paseoId);
 
-            if (paseo == null) return NotFound();
+            if (paseo == null)
+                return NotFound();
 
-            // Solo el dueño del perro puede calificar
-            if (paseo.Perro.DueñoId != usuarioId) return Forbid();
+            if (paseo.Perro.DueñoId != usuarioId)
+                return Forbid();
 
-            // Solo se puede calificar un paseo finalizado
             if (paseo.Estado != "Finalizado")
             {
                 TempData["Error"] = "Solo puedes calificar un paseo finalizado.";
                 return RedirectToAction("Mapa", "Paseo", new { id = paseoId });
             }
 
-            // Ya fue calificado
             if (paseo.Calificacion != null)
             {
                 TempData["Error"] = "Este paseo ya fue calificado.";
@@ -58,14 +55,40 @@ namespace DogGo.Controllers
         // POST: /Calificacion/Crear
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Dueño")]
+        [Authorize(Roles = "Duenio")]
         public async Task<IActionResult> Crear(CalificacionViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
+            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            var usuarioId = int.Parse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)
-            );
+            var paseo = await _context.Paseos
+                .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
+                .Include(p => p.Perro)
+                .Include(p => p.Calificacion)
+                .FirstOrDefaultAsync(p => p.Id == model.PaseoId);
+
+            if (paseo == null)
+                return NotFound();
+
+            if (paseo.Perro.DueñoId != usuarioId)
+                return Forbid();
+
+            if (paseo.Estado != "Finalizado")
+            {
+                TempData["Error"] = "Solo puedes calificar un paseo finalizado.";
+                return RedirectToAction("Mapa", "Paseo", new { id = model.PaseoId });
+            }
+
+            if (paseo.Calificacion != null)
+            {
+                TempData["Error"] = "Este paseo ya fue calificado.";
+                return RedirectToAction("Mapa", "Paseo", new { id = model.PaseoId });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Paseo = paseo;
+                return View(model);
+            }
 
             var calificacion = new Calificacion
             {
@@ -79,21 +102,21 @@ namespace DogGo.Controllers
             _context.Calificaciones.Add(calificacion);
             await _context.SaveChangesAsync();
 
-            // Recalcular promedio del paseador
             await RecalcularPromedio(model.PaseoId);
 
             TempData["Exito"] = "¡Calificación enviada con éxito!";
             return RedirectToAction("MisPaseos", "Paseo");
         }
 
-        // ── Helper: recalcular promedio ───────────────────────────
+        // Helper: recalcular promedio
         private async Task RecalcularPromedio(int paseoId)
         {
             var paseo = await _context.Paseos
                 .Include(p => p.Paseador)
                 .FirstOrDefaultAsync(p => p.Id == paseoId);
 
-            if (paseo == null) return;
+            if (paseo == null)
+                return;
 
             var promedio = await _context.Calificaciones
                 .Where(c => c.Paseo.PaseadorId == paseo.PaseadorId)

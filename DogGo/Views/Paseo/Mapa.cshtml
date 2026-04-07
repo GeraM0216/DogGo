@@ -9,23 +9,22 @@
 <div class="mapa-container">
 
     <div class="mapa-header">
-        <h5>Paseo #@Model.Id —
+        <h5>
+            Paseo #@Model.Id —
             <span id="estadoBadge" class="badge
                 @(Model.Estado == "EnCurso" ? "bg-success" :
-                  Model.Estado == "Finalizado" ? "bg-secondary" : "bg-warning text-dark")">
+                                                     Model.Estado == "Finalizado" ? "bg-secondary" : "bg-warning text-dark")">
                 @Model.Estado
             </span>
         </h5>
         <div class="mapa-info">
             <span>@Model.Perro.Nombre</span>
-            <span> @Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</span>
+            <span>@Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</span>
         </div>
     </div>
 
-    <!-- Mapa Leaflet -->
     <div id="map"></div>
 
-    <!-- Controles del paseador -->
     @if (esPaseador)
     {
         <div class="mapa-controles">
@@ -46,179 +45,210 @@
         </div>
     }
 
-    <!-- Botón al chat -->
-<div class="mapa-footer d-flex gap-2">
-    <a asp-controller="Paseo" asp-action="MisPaseos"
-       class="btn btn-outline-secondary w-100">
-        ← Volver a mis paseos
-    </a>
+    <div class="mapa-footer d-flex gap-2">
+        <a asp-controller="Paseo" asp-action="MisPaseos"
+               class="btn btn-outline-secondary w-100">
+            ← Volver a mis paseos
+        </a>
 
-    <a asp-controller="Chat" asp-action="Index"
-       asp-route-paseoId="@Model.Id"
-       class="btn btn-outline-primary w-100">
-        Abrir chat del paseo
-    </a>
-</div>
+        <a asp-controller="Chat" asp-action="Index"
+               asp-route-paseoId="@Model.Id"
+               class="btn btn-outline-primary w-100">
+            Abrir chat del paseo
+        </a>
+    </div>
 
 </div>
 
 @section Scripts {
-<!-- Leaflet CSS y JS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 
-<script>
-    const paseoId    = @Model.Id;
-    const esPaseador = @(esPaseador ? "true" : "false");
-    let watchId      = null;
-    let marker       = null;
-    let ruta         = [];
+    <script>
+        const paseoId = @Model.Id;
+        const esPaseador = @(esPaseador ? "true" : "false");
+        let watchId = null;
+        let marker = null;
+        let ruta = [];
+        let polyline = null;
 
-    // ── Inicializar mapa ──────────────────────────────────────
-    const map = L.map("map").setView([@lat, @lng], 15);
+        const map = L.map("map").setView([@lat, @lng], 15);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors"
-    }).addTo(map);
+        }).addTo(map);
 
-    // Ícono personalizado
-    const iconoPaseo = L.divIcon({
+        const iconoPaseo = L.divIcon({
         className: "",
         html: `<div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))">🐕</div>`,
         iconSize: [32, 32],
         iconAnchor: [16, 32]
-    });
+        });
 
-    marker = L.marker([@lat, @lng], { icon: iconoPaseo })
-              .addTo(map)
-              .bindPopup("Ubicación actual del paseo");
+        marker = L.marker([@lat, @lng], { icon: iconoPaseo })
+        .addTo(map)
+        .bindPopup("Ubicación actual del paseo");
 
-    // Dibujar historial de ruta si existe
-    @if (Model.Ubicaciones != null && Model.Ubicaciones.Any())
-    {
-        <text>
-        const historial = [
-            @foreach (var u in Model.Ubicaciones)
-            {
-                @:[@((double)u.Latitud), @((double)u.Longitud)],
-            }
-        ];
-        if (historial.length > 1) {
-            L.polyline(historial, { color: "#0d6efd", weight: 3, opacity: 0.7 }).addTo(map);
+        @if (Model.Ubicaciones != null && Model.Ubicaciones.Any())
+        {
+            <text>
+                const historial = [
+                @foreach (var u in Model.Ubicaciones)
+                {
+                    @:[@((double)u.Latitud), @((double)u.Longitud)],
+                }
+                ];
+
+                ruta = [...historial];
+
+                if (historial.length > 1) {
+                polyline = L.polyline(historial, { color: "#0d6efd", weight: 3, opacity: 0.7 }).addTo(map);
+                }
+            </text>
         }
-        </text>
-    }
 
-    // ── SignalR ───────────────────────────────────────────────
-    const connection = new signalR.HubConnectionBuilder()
+        const connection = new signalR.HubConnectionBuilder()
         .withUrl("/paseoHub")
         .withAutomaticReconnect()
         .build();
 
-    // Recibir ubicación (dueño y paseador)
-    connection.on("RecibirUbicacion", (lat, lng) => {
+        connection.on("RecibirUbicacion", (lat, lng) => {
         const pos = [lat, lng];
         marker.setLatLng(pos);
         map.panTo(pos);
+
         ruta.push(pos);
-        if (ruta.length > 1) {
-            L.polyline(ruta, { color: "#0d6efd", weight: 3, opacity: 0.7 }).addTo(map);
+
+        if (polyline) {
+        map.removeLayer(polyline);
         }
-    });
 
-    // Recibir cambio de estado
-    connection.on("EstadoCambiado", (estado) => {
+        if (ruta.length > 1) {
+        polyline = L.polyline(ruta, { color: "#0d6efd", weight: 3, opacity: 0.7 }).addTo(map);
+        }
+        });
 
+        connection.on("EstadoCambiado", (estado) => {
         const badge = document.getElementById("estadoBadge");
         badge.textContent = estado;
 
         badge.classList.remove("bg-warning", "text-dark", "bg-success", "bg-secondary");
 
         if (estado === "Pendiente") {
-            badge.classList.add("bg-warning", "text-dark");
+        badge.classList.add("bg-warning", "text-dark");
         } else if (estado === "EnCurso") {
-            badge.classList.add("bg-success");
+        badge.classList.add("bg-success");
         } else if (estado === "Finalizado") {
-            badge.classList.add("bg-secondary");
+        badge.classList.add("bg-secondary");
         }
 
+        const contenedor = document.querySelector(".mapa-controles");
+
         if (estado === "EnCurso" && esPaseador) {
-            iniciarGPS();
-            document.getElementById("btnIniciar")?.remove();
+        iniciarGPS();
+
+        if (contenedor) {
+        contenedor.innerHTML = `
+        <button id="btnFinalizar" class="btn btn-danger w-100"
+        onclick="cambiarEstado('Finalizado')">
+        ⏹ Finalizar paseo
+        </button>
+        `;
+        }
         }
 
         if (estado === "Finalizado") {
-            detenerGPS();
-            document.getElementById("btnFinalizar")?.remove();
+        detenerGPS();
+
+        if (contenedor) {
+        contenedor.innerHTML = "";
         }
-    });
+        }
+        });
 
-
-
-
-
-
-    connection.start()
+        connection.start()
         .then(() => connection.invoke("UnirseAPaseo", paseoId))
         .catch(err => console.error("SignalR error:", err));
 
-    // ── GPS (solo paseador) ───────────────────────────────────
-    function iniciarGPS() {
+        function iniciarGPS() {
         if (!navigator.geolocation) {
-            alert("Tu navegador no soporta geolocalización");
-            return;
+        alert("Tu navegador no soporta geolocalización");
+        return;
         }
+
+        if (watchId !== null) return;
+
         watchId = navigator.geolocation.watchPosition(
-            (pos) => {
-                const lat = pos.coords.latitude;
-                const lng = pos.coords.longitude;
-                connection.invoke("EnviarUbicacion", paseoId, lat, lng)
-                    .catch(err => console.error("Error GPS:", err));
-            },
-            (err) => console.error("Error geolocalización:", err),
-            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        connection.invoke("EnviarUbicacion", paseoId, lat, lng)
+        .catch(err => console.error("Error GPS:", err));
+        },
+        (err) => console.error("Error geolocalización:", err),
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
         );
-    }
-
-    function detenerGPS() {
-        if (watchId !== null) {
-            navigator.geolocation.clearWatch(watchId);
-            watchId = null;
         }
-    }
 
-    function cambiarEstado(nuevoEstado) {
+        function detenerGPS() {
+        if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        }
+        }
+
+        function cambiarEstado(nuevoEstado) {
         connection.invoke("CambiarEstado", paseoId, nuevoEstado)
-            .catch(err => console.error("Error al cambiar estado:", err));
-    }
+        .catch(err => console.error("Error al cambiar estado:", err));
+        }
 
-    // Si el paseo ya está en curso y es paseador, iniciar GPS de inmediato
-    @if (Model.Estado == "EnCurso" && esPaseador)
-    {
-        <text>iniciarGPS();</text>
-    }
-</script>
+        @if (Model.Estado == "EnCurso" && esPaseador)
+        {
+            <text>iniciarGPS();</text>
+        }
+    </script>
 }
 
 <style>
-.mapa-container {
+    .mapa-container {
     max-width: 760px;
     margin: 1.5rem auto;
     border: 1px solid #ddd;
     border-radius: 12px;
     overflow: hidden;
-}
-.mapa-header {
+    }
+
+    .mapa-header {
     padding: 1rem 1.25rem;
     background: #f8f9fa;
     border-bottom: 1px solid #ddd;
     display: flex;
     flex-direction: column;
     gap: 4px;
-}
-.mapa-info { font-size: 0.88rem; color: #6c757d; display: flex; gap: 1rem; }
-#map { height: 420px; width: 100%; }
-.mapa-controles { padding: 0.75rem 1rem; border-top: 1px solid #ddd; }
-.mapa-footer { padding: 0.75rem 1rem; border-top: 1px solid #eee; background: #fafafa; }
+    }
+
+    .mapa-info {
+    font-size: 0.88rem;
+    color: #6c757d;
+    display: flex;
+    gap: 1rem;
+    }
+
+    #map {
+    height: 420px;
+    width: 100%;
+    }
+
+    .mapa-controles {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #ddd;
+    }
+
+    .mapa-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #eee;
+    background: #fafafa;
+    }
 </style>

@@ -1,40 +1,146 @@
 ﻿@model List<DogGo.Models.Paseo>
 @{
     ViewData["Title"] = "Mis paseos";
+
+    var enCurso = Model.Where(p => p.Estado == "EnCurso").ToList();
+    var pendientes = Model.Where(p => p.Estado == "Pendiente").ToList();
+    var finalizados = Model.Where(p => p.Estado == "Finalizado").ToList();
+    var cancelados = Model.Where(p => p.Estado == "Cancelado").ToList();
 }
 
 <div class="container mt-4">
-    <h4> Mis paseos</h4>
+    <h2 class="mb-4">Mis paseos</h2>
 
     @if (!Model.Any())
     {
-        <p class="text-muted mt-3">No tienes paseos registrados aún.</p>
+        <p class="text-muted">No tienes paseos registrados aún.</p>
     }
     else
     {
-        <div class="list-group mt-3">
-            @foreach (var p in Model)
-            {
-                <a asp-action="Mapa" asp-route-id="@p.Id"
-                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
-                        <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+        @if (enCurso.Any())
+        {
+            <h5 class="seccion-titulo text-success">En curso</h5>
+            <div class="list-group mb-4">
+                @foreach (var p in enCurso)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <a asp-action="Mapa" asp-route-id="@p.Id"
+                               class="text-decoration-none text-dark flex-grow-1">
+                            <div>
+                                <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
+                                <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                        </a>
+
+                        <span class="badge bg-success">EnCurso</span>
                     </div>
-                    <span class="badge
-                        @(p.Estado == "EnCurso" ? "bg-success" :
-                                                p.Estado == "Finalizado" ? "bg-secondary" :
-                                                p.Estado == "Cancelado" ? "bg-danger" : "bg-warning text-dark")">
-                        @p.Estado
-                    </span>
-                    @if (p.Estado == "Finalizado" && p.Calificacion == null && User.IsInRole("Dueño"))
-                    {
-                        <a asp-controller="Calificacion" asp-action="Crear"
-                           asp-route-paseoId="@p.Id"
-                           class="btn btn-warning btn-sm ms-2"> Calificar</a>
-                    }
-                </a>
-            }
-        </div>
+                }
+            </div>
+        }
+
+        @if (pendientes.Any())
+        {
+            <h5 class="seccion-titulo text-warning">Pendientes</h5>
+            <div class="list-group mb-4">
+                @foreach (var p in pendientes)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <a asp-action="Mapa" asp-route-id="@p.Id"
+                               class="text-decoration-none text-dark flex-grow-1">
+                            <div>
+                                <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
+                                <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                        </a>
+
+                        <span class="badge bg-warning text-dark">Pendiente</span>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (finalizados.Any())
+        {
+            <h5 class="seccion-titulo text-secondary">Finalizados</h5>
+            <div class="list-group mb-4">
+                @foreach (var p in finalizados)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <a asp-action="Mapa" asp-route-id="@p.Id"
+                               class="text-decoration-none text-dark flex-grow-1">
+                            <div>
+                                <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
+                                <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+
+                                @if (p.Calificacion != null)
+                                {
+                                    <div class="small text-muted mt-1">
+                                        Ya calificado: @p.Calificacion.Puntaje ★
+                                        @if (!string.IsNullOrWhiteSpace(p.Calificacion.Comentario))
+                                        {
+                                            <span>— "@p.Calificacion.Comentario"</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </a>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary">Finalizado</span>
+
+                            @if (p.Calificacion == null && User.IsInRole("Duenio"))
+                            {
+                                <a asp-controller="Calificacion"
+                                       asp-action="Crear"
+                                       asp-route-paseoId="@p.Id"
+                                       class="btn btn-warning btn-sm">
+                                    Calificar
+                                </a>
+                            }
+                            else if (p.Calificacion != null)
+                            {
+                                <span class="btn btn-outline-success btn-sm disabled">
+                                    Ya calificado
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (cancelados.Any())
+        {
+            <h5 class="seccion-titulo text-danger">Cancelados</h5>
+            <div class="list-group mb-4">
+                @foreach (var p in cancelados)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <a asp-action="Mapa" asp-route-id="@p.Id"
+                               class="text-decoration-none text-dark flex-grow-1">
+                            <div>
+                                <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
+                                <div class="text-muted small">@p.FechaInicio.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                        </a>
+
+                        <span class="badge bg-danger">Cancelado</span>
+                    </div>
+                }
+            </div>
+        }
     }
 </div>
+
+<style>
+    .seccion-titulo {
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+    }
+
+    .list-group-item {
+        border-radius: 10px !important;
+        margin-bottom: 8px;
+        border: 1px solid #dee2e6;
+    }
+</style>
