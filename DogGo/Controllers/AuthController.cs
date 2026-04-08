@@ -51,6 +51,27 @@ namespace DogGo.Controllers
             }
 
             await SignInUser(usuario, model.RememberMe);
+
+            if (usuario.Rol == "Paseador")
+            {
+                var paseador = await _context.Paseadores
+                    .FirstOrDefaultAsync(p => p.UsuarioId == usuario.Id);
+
+                if (paseador != null)
+                {
+                    var perfilIncompleto =
+                        string.IsNullOrWhiteSpace(paseador.Descripcion) ||
+                        string.IsNullOrWhiteSpace(paseador.FotoUrl) ||
+                        string.IsNullOrWhiteSpace(paseador.ZonaServicio);
+
+                    if (perfilIncompleto)
+                    {
+                        TempData["Exito"] = "Completa tu perfil para aparecer mejor ante los dueños.";
+                        return RedirectToAction("Editar", "Paseador");
+                    }
+                }
+            }
+
             return RedirectToAction("Index", "Home");
         }
 

@@ -11,6 +11,10 @@ namespace DogGo.Models
         public decimal CalificacionPromedio { get; set; }
         public bool Disponible { get; set; } = true;
 
+        public string? FotoUrl { get; set; }
+        public string? ZonaServicio { get; set; }
+        public int? ExperienciaAnios { get; set; }
+
         // Navegación
         public Usuario Usuario { get; set; }
         public ICollection<Paseo> Paseos { get; set; }

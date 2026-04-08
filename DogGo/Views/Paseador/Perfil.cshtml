@@ -3,20 +3,60 @@
     ViewData["Title"] = "Perfil del paseador";
     var esPropietario = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                         == Model.Paseador.UsuarioId.ToString();
+
+    var zonas = string.IsNullOrWhiteSpace(Model.Paseador.ZonaServicio)
+        ? new List<string>()
+        : Model.Paseador.ZonaServicio.Split(',').Select(z => z.Trim()).Where(z => !string.IsNullOrWhiteSpace(z)).ToList();
 }
 
 <div class="perfil-container">
 
     <div class="perfil-header">
-        <div class="perfil-avatar">🐾</div>
+        <div class="perfil-avatar">
+            @if (!string.IsNullOrWhiteSpace(Model.Paseador.FotoUrl))
+            {
+                <img src="@Model.Paseador.FotoUrl" alt="Foto del paseador" class="perfil-foto" />
+            }
+            else
+            {
+                <div class="perfil-foto-placeholder">🐾</div>
+            }
+        </div>
 
         <div class="perfil-info">
             <h3>@Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</h3>
+
             <p class="perfil-descripcion">
                 @(string.IsNullOrWhiteSpace(Model.Paseador.Descripcion)
                     ? "Este paseador aún no ha agregado una descripción."
                     : Model.Paseador.Descripcion)
             </p>
+
+            @if (zonas.Any() || Model.Paseador.ExperienciaAnios != null)
+            {
+                <div class="perfil-extra mt-2">
+                    @if (zonas.Any())
+                    {
+                        <div class="perfil-extra-item">
+                            <strong>Zonas:</strong> @string.Join(", ", zonas)
+                        </div>
+                    }
+
+                    @if (Model.Paseador.ExperienciaAnios != null)
+                    {
+                        <div class="perfil-extra-item">
+                            <strong>Experiencia:</strong> @Model.Paseador.ExperienciaAnios año(s)
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Paseador.Usuario.Telefono))
+                    {
+                        <div class="perfil-extra-item">
+                            <strong>Teléfono:</strong> @Model.Paseador.Usuario.Telefono
+                        </div>
+                    }
+                </div>
+            }
 
             <div class="perfil-stats">
                 <div class="stat">
@@ -112,7 +152,7 @@
 
 <style>
     .perfil-container {
-        max-width: 820px;
+        max-width: 860px;
         margin: 2rem auto;
         padding: 0 1rem;
     }
@@ -130,8 +170,28 @@
     }
 
     .perfil-avatar {
-        font-size: 3.8rem;
-        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .perfil-foto {
+        width: 110px;
+        height: 110px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid #f1f3f5;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .perfil-foto-placeholder {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        background: #f8f9fa;
+        border: 3px solid #f1f3f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
     }
 
     .perfil-info {
@@ -145,6 +205,18 @@
     .perfil-descripcion {
         margin: 0;
         color: #6c757d;
+    }
+
+    .perfil-extra {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        color: #495057;
+        font-size: 0.95rem;
+    }
+
+    .perfil-extra-item strong {
+        color: #212529;
     }
 
     .perfil-stats {

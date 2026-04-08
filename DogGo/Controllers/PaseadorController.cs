@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 
 namespace DogGo.Controllers
 {
@@ -11,10 +13,11 @@ namespace DogGo.Controllers
     public class PaseadorController : Controller
     {
         private readonly DogGoDbContext _context;
-
-        public PaseadorController(DogGoDbContext context)
+        private readonly IWebHostEnvironment _environment;
+        public PaseadorController(DogGoDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // GET: /Paseador/Perfil/5  (5 = paseadorId, opcional)
@@ -87,7 +90,14 @@ namespace DogGo.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Paseador")]
-        public async Task<IActionResult> Editar(int id, string descripcion, decimal tarifaPorHora, bool disponible)
+        public async Task<IActionResult> Editar(
+            int id,
+            string descripcion,
+            decimal tarifaPorHora,
+            bool disponible,
+            string? zonaServicio,
+            int? experienciaAnios,
+            IFormFile? fotoArchivo)
         {
             var paseador = await _context.Paseadores.FindAsync(id);
             if (paseador == null) return NotFound();
@@ -95,12 +105,31 @@ namespace DogGo.Controllers
             paseador.Descripcion = descripcion;
             paseador.TarifaPorHora = tarifaPorHora;
             paseador.Disponible = disponible;
+            paseador.ZonaServicio = string.IsNullOrWhiteSpace(zonaServicio) ? null : zonaServicio.Trim();
+            paseador.ExperienciaAnios = experienciaAnios;
+
+            if (fotoArchivo != null && fotoArchivo.Length > 0)
+            {
+                var carpeta = Path.Combine(_environment.WebRootPath, "uploads", "paseadores");
+                Directory.CreateDirectory(carpeta);
+
+                var nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(fotoArchivo.FileName);
+                var rutaCompleta = Path.Combine(carpeta, nombreArchivo);
+
+                using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+                {
+                    await fotoArchivo.CopyToAsync(stream);
+                }
+
+                paseador.FotoUrl = "/uploads/paseadores/" + nombreArchivo;
+            }
 
             await _context.SaveChangesAsync();
 
             TempData["Exito"] = "Perfil actualizado correctamente.";
             return RedirectToAction("Perfil");
         }
+
 
         // GET: /Paseador/Directorio
         // Lista de paseadores disponibles para que los dueños contraten
