@@ -2,8 +2,8 @@
 using DogGo.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace DogGo.Hubs
 {
@@ -20,8 +20,11 @@ namespace DogGo.Hubs
         // El paseador envía su ubicación cada X segundos
         public async Task EnviarUbicacion(int paseoId, decimal latitud, decimal longitud)
         {
-            var usuarioIdClaim = Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var usuarioIdClaim = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return;
+
+            if (latitud < -90 || latitud > 90 || longitud < -180 || longitud > 180)
                 return;
 
             var usuarioId = int.Parse(usuarioIdClaim);
@@ -66,7 +69,7 @@ namespace DogGo.Hubs
         // Cambiar estado del paseo
         public async Task CambiarEstado(int paseoId, string nuevoEstado)
         {
-            var usuarioIdClaim = Context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var usuarioIdClaim = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(usuarioIdClaim))
                 return;
 
@@ -82,22 +85,27 @@ namespace DogGo.Hubs
             if (paseador == null)
                 return;
 
-            // Solo el paseador asignado a este paseo puede cambiar su estado
+            // Solo el paseador asignado puede cambiar el estado
             if (paseo.PaseadorId != paseador.Id)
                 return;
 
-            var estadoActual = paseo.Estado;
+            if (paseo.Estado == "Cancelado" || paseo.Estado == "Finalizado")
+                return;
+
+            nuevoEstado = nuevoEstado?.Trim() ?? string.Empty;
 
             var transicionValida =
-                (estadoActual == "Pendiente" && nuevoEstado == "EnCurso") ||
-                (estadoActual == "EnCurso" && nuevoEstado == "Finalizado");
+                (paseo.Estado == "Pendiente" && nuevoEstado == "EnCurso") ||
+                (paseo.Estado == "EnCurso" && nuevoEstado == "Finalizado");
 
             if (!transicionValida)
                 return;
 
-            // Si es programado, solo puede iniciar 15 minutos antes o después de la hora programada
-            if (estadoActual == "Pendiente" && nuevoEstado == "EnCurso" &&
-                paseo.EsProgramado && paseo.FechaProgramada.HasValue)
+            // Si es programado, solo puede iniciar 15 min antes de la hora programada
+            if (paseo.Estado == "Pendiente" &&
+                nuevoEstado == "EnCurso" &&
+                paseo.EsProgramado &&
+                paseo.FechaProgramada.HasValue)
             {
                 var ahoraUtc = DateTime.UtcNow;
                 var fechaProgramadaUtc = paseo.FechaProgramada.Value;
@@ -109,9 +117,13 @@ namespace DogGo.Hubs
             paseo.Estado = nuevoEstado;
 
             if (nuevoEstado == "EnCurso")
+            {
                 paseo.FechaInicio = DateTime.UtcNow;
+            }
             else if (nuevoEstado == "Finalizado")
+            {
                 paseo.FechaFin = DateTime.UtcNow;
+            }
 
             await _context.SaveChangesAsync();
 
@@ -119,14 +131,35 @@ namespace DogGo.Hubs
                 .SendAsync("EstadoCambiado", nuevoEstado);
         }
 
-
-
-
-
-
         // Unirse al grupo del paseo al conectarse
         public async Task UnirseAPaseo(int paseoId)
         {
+            var usuarioIdClaim = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return;
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
+            var paseo = await _context.Paseos
+                .Include(p => p.Perro)
+                .Include(p => p.Paseador)
+                .FirstOrDefaultAsync(p => p.Id == paseoId);
+
+            if (paseo == null || paseo.Perro == null || paseo.Paseador == null)
+                return;
+
+            var esDuenio = paseo.Perro.DueñoId == usuarioId;
+            var esPaseador = false;
+
+            var paseador = await _context.Paseadores
+                .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
+
+            if (paseador != null)
+                esPaseador = paseo.PaseadorId == paseador.Id;
+
+            if (!esDuenio && !esPaseador)
+                return;
+
             await Groups.AddToGroupAsync(Context.ConnectionId, paseoId.ToString());
         }
     }

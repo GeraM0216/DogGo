@@ -11,11 +11,12 @@
 
 <div class="row">
     <div class="col-md-6">
-        <form asp-action="Edit" method="post">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="ImagenUrl" />
 
             <div class="mb-3">
                 <label asp-for="Nombre" class="form-label"></label>
@@ -50,6 +51,23 @@
                 <label asp-for="Notas" class="form-label"></label>
                 <textarea asp-for="Notas" class="form-control"></textarea>
                 <span asp-validation-for="Notas" class="text-danger"></span>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ImagenUrl))
+            {
+                <div class="mb-3">
+                    <label class="form-label">Foto actual</label>
+                    <div>
+                        <img src="@Model.ImagenUrl" alt="Foto de @Model.Nombre"
+                             style="max-width: 220px; border-radius: 12px;" class="img-fluid border" />
+                    </div>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label for="imagenArchivo" class="form-label">Nueva foto</label>
+                <input type="file" name="imagenArchivo" id="imagenArchivo" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                <small class="text-muted">Opcional. Formatos permitidos: JPG, JPEG, PNG, WEBP. Máximo 5 MB.</small>
             </div>
 
             <div class="mb-3">

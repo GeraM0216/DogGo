@@ -2,9 +2,7 @@
 using DogGo.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
@@ -85,29 +83,28 @@ namespace DogGo.Controllers
             ModelState.Remove("Paseos");
             ModelState.Remove("DueñoId");
 
+            ValidarImagen(imagenArchivo);
+
             if (!ModelState.IsValid)
-            {
                 return View(perro);
-            }
 
             if (imagenArchivo != null && imagenArchivo.Length > 0)
             {
-                var carpeta = Path.Combine(_environment.WebRootPath, "uploads", "perros");
-                Directory.CreateDirectory(carpeta);
-
-                var nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(imagenArchivo.FileName);
-                var rutaCompleta = Path.Combine(carpeta, nombreArchivo);
-
-                using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+                try
                 {
-                    await imagenArchivo.CopyToAsync(stream);
+                    perro.ImagenUrl = await GuardarImagenPerro(imagenArchivo);
                 }
-
-                perro.ImagenUrl = "/uploads/perros/" + nombreArchivo;
+                catch
+                {
+                    ModelState.AddModelError("ImagenUrl", "Ocurrió un error al guardar la imagen.");
+                    return View(perro);
+                }
             }
 
             _context.Perros.Add(perro);
             await _context.SaveChangesAsync();
+
+            TempData["Exito"] = "Perro agregado correctamente.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -135,7 +132,7 @@ namespace DogGo.Controllers
         // POST: /Perro/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Perro perro)
+        public async Task<IActionResult> Edit(int id, Perro perro, IFormFile? imagenArchivo)
         {
             if (id != perro.Id)
                 return NotFound();
@@ -156,9 +153,12 @@ namespace DogGo.Controllers
             ModelState.Remove("Paseos");
             ModelState.Remove("DueñoId");
 
+            ValidarImagen(imagenArchivo);
+
             if (!ModelState.IsValid)
             {
                 perro.DueñoId = usuarioId;
+                perro.ImagenUrl = perroExistente.ImagenUrl;
                 return View(perro);
             }
 
@@ -169,9 +169,19 @@ namespace DogGo.Controllers
                 perroExistente.Edad = perro.Edad;
                 perroExistente.Tamaño = perro.Tamaño;
                 perroExistente.Notas = perro.Notas;
-                perroExistente.ImagenUrl = perro.ImagenUrl;
+
+                if (imagenArchivo != null && imagenArchivo.Length > 0)
+                {
+                    var imagenAnterior = perroExistente.ImagenUrl;
+
+                    perroExistente.ImagenUrl = await GuardarImagenPerro(imagenArchivo);
+
+                    EliminarImagenSiExiste(imagenAnterior);
+                }
 
                 await _context.SaveChangesAsync();
+
+                TempData["Exito"] = "Perro actualizado correctamente.";
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -179,6 +189,12 @@ namespace DogGo.Controllers
                     return NotFound();
 
                 throw;
+            }
+            catch
+            {
+                ModelState.AddModelError("ImagenUrl", "Ocurrió un error al actualizar el perro o su imagen.");
+                perro.ImagenUrl = perroExistente.ImagenUrl;
+                return View(perro);
             }
 
             return RedirectToAction(nameof(Index));
@@ -222,17 +238,20 @@ namespace DogGo.Controllers
 
             if (perro != null)
             {
+                var imagenUrl = perro.ImagenUrl;
+
                 _context.Perros.Remove(perro);
                 await _context.SaveChangesAsync();
+
+                EliminarImagenSiExiste(imagenUrl);
+
+                TempData["Exito"] = "Perro eliminado correctamente.";
             }
 
             return RedirectToAction(nameof(Index));
         }
 
-
         // GET: /Perro/MisPerrosJson
-        // Devuelve las mascotas del usuario logueado como JSON
-        // Lo usa el widget de la página de inicio.
         [HttpGet]
         public async Task<IActionResult> MisPerrosJson()
         {
@@ -259,12 +278,61 @@ namespace DogGo.Controllers
             return Json(perros);
         }
 
+        private void ValidarImagen(IFormFile? imagenArchivo)
+        {
+            if (imagenArchivo == null || imagenArchivo.Length == 0)
+                return;
+
+            var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            var extension = Path.GetExtension(imagenArchivo.FileName).ToLowerInvariant();
+
+            if (!extensionesPermitidas.Contains(extension))
+            {
+                ModelState.AddModelError("ImagenUrl", "Solo se permiten imágenes .jpg, .jpeg, .png o .webp.");
+            }
+
+            if (imagenArchivo.Length > 5 * 1024 * 1024)
+            {
+                ModelState.AddModelError("ImagenUrl", "La imagen no debe superar los 5 MB.");
+            }
+        }
+
+        private async Task<string> GuardarImagenPerro(IFormFile imagenArchivo)
+        {
+            var carpeta = Path.Combine(_environment.WebRootPath, "uploads", "perros");
+            Directory.CreateDirectory(carpeta);
+
+            var extension = Path.GetExtension(imagenArchivo.FileName).ToLowerInvariant();
+            var nombreArchivo = Guid.NewGuid().ToString() + extension;
+            var rutaCompleta = Path.Combine(carpeta, nombreArchivo);
+
+            using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+            {
+                await imagenArchivo.CopyToAsync(stream);
+            }
+
+            return "/uploads/perros/" + nombreArchivo;
+        }
+
+        private void EliminarImagenSiExiste(string? imagenUrl)
+        {
+            if (string.IsNullOrWhiteSpace(imagenUrl))
+                return;
+
+            var rutaRelativa = imagenUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+            var rutaFisica = Path.Combine(_environment.WebRootPath, rutaRelativa.Replace("uploads" + Path.DirectorySeparatorChar, ""));
+
+            var rutaCompleta = Path.Combine(_environment.WebRootPath, rutaRelativa);
+
+            if (System.IO.File.Exists(rutaCompleta))
+            {
+                System.IO.File.Delete(rutaCompleta);
+            }
+        }
+
         private bool PerroExiste(int id)
         {
             return _context.Perros.Any(e => e.Id == id);
         }
-
-
-
     }
 }
