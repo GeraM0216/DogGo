@@ -1,9 +1,11 @@
 ﻿@model DogGo.Models.Paseo
+@using System.Globalization
+
 @{
     ViewData["Title"] = "Mapa del paseo";
     var esPaseador = (bool)ViewBag.EsPaseador;
-    var lat = Model.LatitudActual != 0 ? (double)Model.LatitudActual : 25.6866;
-    var lng = Model.LongitudActual != 0 ? (double)Model.LongitudActual : -100.3161;
+    var lat = Model.LatitudActual != 0 ? Model.LatitudActual : 25.6866m;
+    var lng = Model.LongitudActual != 0 ? Model.LongitudActual : -100.3161m;
 }
 
 <div class="mapa-container">
@@ -83,12 +85,22 @@
     <script>
         const paseoId = @Model.Id;
         const esPaseador = @(esPaseador ? "true" : "false");
+        const latInicial = @lat.ToString(CultureInfo.InvariantCulture);
+        const lngInicial = @lng.ToString(CultureInfo.InvariantCulture);
+
         let watchId = null;
         let marker = null;
         let ruta = [];
         let polyline = null;
+        let map = null;
 
-        const map = L.map("map").setView([@lat, @lng], 15);
+        const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/paseohub")
+        .withAutomaticReconnect()
+        .build();
+
+        try {
+        map = L.map("map").setView([latInicial, lngInicial], 15);
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors"
@@ -101,7 +113,7 @@
         iconAnchor: [16, 32]
         });
 
-        marker = L.marker([@lat, @lng], { icon: iconoPaseo })
+        marker = L.marker([latInicial, lngInicial], { icon: iconoPaseo })
         .addTo(map)
         .bindPopup("Ubicación actual del paseo");
 
@@ -111,36 +123,50 @@
                 const historial = [
                 @foreach (var u in Model.Ubicaciones)
                 {
-                    @:[@((double)u.Latitud), @((double)u.Longitud)],
+                    @:[@u.Latitud.ToString(CultureInfo.InvariantCulture), @u.Longitud.ToString(CultureInfo.InvariantCulture)],
                 }
                 ];
 
                 ruta = [...historial];
 
                 if (historial.length > 1) {
-                polyline = L.polyline(historial, { color: "#0d6efd", weight: 3, opacity: 0.7 }).addTo(map);
+                polyline = L.polyline(historial, {
+                color: "#0d6efd",
+                weight: 3,
+                opacity: 0.7
+                }).addTo(map);
+
+                map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
                 }
             </text>
         }
-
-        const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/paseoHub")
-        .withAutomaticReconnect()
-        .build();
+        } catch (err) {
+        console.error("Error al inicializar el mapa:", err);
+        }
 
         connection.on("RecibirUbicacion", (lat, lng) => {
         const pos = [lat, lng];
+
+        if (marker) {
         marker.setLatLng(pos);
+        }
+
+        if (map) {
         map.panTo(pos);
+        }
 
         ruta.push(pos);
 
-        if (polyline) {
+        if (polyline && map) {
         map.removeLayer(polyline);
         }
 
-        if (ruta.length > 1) {
-        polyline = L.polyline(ruta, { color: "#0d6efd", weight: 3, opacity: 0.7 }).addTo(map);
+        if (ruta.length > 1 && map) {
+        polyline = L.polyline(ruta, {
+        color: "#0d6efd",
+        weight: 3,
+        opacity: 0.7
+        }).addTo(map);
         }
         });
 
