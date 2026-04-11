@@ -4,6 +4,7 @@ using DogGo.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DogGo.Migrations
 {
     [DbContext(typeof(DogGoDbContext))]
-    partial class DogGoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260411050136_HacerFechaInicioNullableEnPaseo")]
+    partial class HacerFechaInicioNullableEnPaseo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -169,9 +172,6 @@ namespace DogGo.Migrations
 
                     b.Property<DateTime?>("FechaProgramada")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("FotoInicioUrl")
-                        .HasColumnType("longtext");
 
                     b.Property<decimal>("LatitudActual")
                         .HasPrecision(10, 7)

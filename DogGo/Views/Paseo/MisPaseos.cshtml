@@ -26,20 +26,65 @@
                     <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <a asp-action="Mapa" asp-route-id="@p.Id"
                                class="text-decoration-none text-dark flex-grow-1">
-                            <div>
-                                <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
-                                @if (p.EsProgramado)
-                                {
-                                    <span class="badge bg-info text-dark ms-2">Programado</span>
-                                }
-
-                                <div class="text-muted small">
-                                    @p.FechaInicio.ToString("dd/MM/yyyy HH:mm")
-                                    <div>Duración: @p.DuracionMinutos min</div>
-                                    @if (p.EsProgramado && p.FechaProgramada != null)
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="paseo-fotos">
+                                    @if (!string.IsNullOrWhiteSpace(p.Perro.ImagenUrl))
                                     {
-                                        <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="paseo-foto" />
                                     }
+                                    else
+                                    {
+                                        <div class="paseo-foto-placeholder">🐶</div>
+                                    }
+
+                                    @if (p.Paseador != null && !string.IsNullOrWhiteSpace(p.Paseador.FotoUrl))
+                                    {
+                                        <img src="@p.Paseador.FotoUrl" alt="Foto del paseador" class="paseo-foto-secundaria" />
+                                    }
+                                    else
+                                    {
+                                        <div class="paseo-foto-secundaria-placeholder">🐾</div>
+                                    }
+                                </div>
+
+                                <div>
+                                    <strong>Paseo de: @p.Perro.Nombre</strong>
+                                    @if (p.EsProgramado)
+                                    {
+                                        <span class="badge bg-info text-dark ms-2">Programado</span>
+                                    }
+
+                                    <div class="small text-muted mt-1">
+                                        Paseador:
+                                        @if (p.Paseador != null && p.Paseador.Usuario != null)
+                                        {
+                                            @($"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}")
+                                        }
+                                        else
+                                        {
+                                            <span>No disponible</span>
+                                        }
+                                    </div>
+
+                                    <div class="text-muted small mt-1">
+                                        <div>Duración solicitada: @p.DuracionMinutos min</div>
+
+                                        @if (p.FechaInicio != null)
+                                        {
+                                            <div>Inicio real: @p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                            var duracionActual = DateTime.UtcNow - p.FechaInicio.Value;
+                                            <div>Duración actual: @((int)duracionActual.TotalMinutes) min</div>
+                                        }
+                                        else
+                                        {
+                                            <div>Aún no inicia</div>
+                                        }
+
+                                        @if (p.EsProgramado && p.FechaProgramada != null)
+                                        {
+                                            <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </a>
@@ -59,20 +104,55 @@
                     <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <a asp-action="Mapa" asp-route-id="@p.Id"
                                class="text-decoration-none text-dark flex-grow-1">
-                            <div>
-                                <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
-                                @if (p.EsProgramado)
-                                {
-                                    <span class="badge bg-info text-dark ms-2">Programado</span>
-                                }
-
-                                <div class="text-muted small">
-                                    @p.FechaInicio.ToString("dd/MM/yyyy HH:mm")
-                                    <div>Duración: @p.DuracionMinutos min</div>
-                                    @if (p.EsProgramado && p.FechaProgramada != null)
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="paseo-fotos">
+                                    @if (!string.IsNullOrWhiteSpace(p.Perro.ImagenUrl))
                                     {
-                                        <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="paseo-foto" />
                                     }
+                                    else
+                                    {
+                                        <div class="paseo-foto-placeholder">🐶</div>
+                                    }
+
+                                    @if (p.Paseador != null && !string.IsNullOrWhiteSpace(p.Paseador.FotoUrl))
+                                    {
+                                        <img src="@p.Paseador.FotoUrl" alt="Foto del paseador" class="paseo-foto-secundaria" />
+                                    }
+                                    else
+                                    {
+                                        <div class="paseo-foto-secundaria-placeholder">🐾</div>
+                                    }
+                                </div>
+
+                                <div>
+                                    <strong>Paseo de: @p.Perro.Nombre</strong>
+                                    @if (p.EsProgramado)
+                                    {
+                                        <span class="badge bg-info text-dark ms-2">Programado</span>
+                                    }
+
+                                    <div class="small text-muted mt-1">
+                                        Paseador:
+                                        @if (p.Paseador != null && p.Paseador.Usuario != null)
+                                        {
+                                            @($"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}")
+                                        }
+                                        else
+                                        {
+                                            <span>No disponible</span>
+                                        }
+                                    </div>
+
+                                    <div class="text-muted small mt-1">
+                                        <div>Duración solicitada: @p.DuracionMinutos min</div>
+                                        <div>Aún no inicia</div>
+
+                                        @if (p.EsProgramado && p.FechaProgramada != null)
+                                        {
+                                            <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </a>
@@ -111,32 +191,82 @@
                     <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <a asp-action="Mapa" asp-route-id="@p.Id"
                                class="text-decoration-none text-dark flex-grow-1">
-                            <div>
-                                <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
-                                @if (p.EsProgramado)
-                                {
-                                    <span class="badge bg-info text-dark ms-2">Programado</span>
-                                }
-
-                                <div class="text-muted small">
-                                    @p.FechaInicio.ToString("dd/MM/yyyy HH:mm")
-                                    <div>Duración: @p.DuracionMinutos min</div>
-                                    @if (p.EsProgramado && p.FechaProgramada != null)
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="paseo-fotos">
+                                    @if (!string.IsNullOrWhiteSpace(p.Perro.ImagenUrl))
                                     {
-                                        <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="paseo-foto" />
+                                    }
+                                    else
+                                    {
+                                        <div class="paseo-foto-placeholder">🐶</div>
+                                    }
+
+                                    @if (p.Paseador != null && !string.IsNullOrWhiteSpace(p.Paseador.FotoUrl))
+                                    {
+                                        <img src="@p.Paseador.FotoUrl" alt="Foto del paseador" class="paseo-foto-secundaria" />
+                                    }
+                                    else
+                                    {
+                                        <div class="paseo-foto-secundaria-placeholder">🐾</div>
                                     }
                                 </div>
 
-                                @if (p.Calificacion != null)
-                                {
+                                <div>
+                                    <strong>Paseo de: @p.Perro.Nombre</strong>
+                                    @if (p.EsProgramado)
+                                    {
+                                        <span class="badge bg-info text-dark ms-2">Programado</span>
+                                    }
+
                                     <div class="small text-muted mt-1">
-                                        Ya calificado: @p.Calificacion.Puntaje ★
-                                        @if (!string.IsNullOrWhiteSpace(p.Calificacion.Comentario))
+                                        Paseador:
+                                        @if (p.Paseador != null && p.Paseador.Usuario != null)
                                         {
-                                            <span>— "@p.Calificacion.Comentario"</span>
+                                            @($"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}")
+                                        }
+                                        else
+                                        {
+                                            <span>No disponible</span>
                                         }
                                     </div>
-                                }
+
+                                    <div class="text-muted small mt-1">
+                                        <div>Duración solicitada: @p.DuracionMinutos min</div>
+
+                                        @if (p.FechaInicio != null)
+                                        {
+                                            <div>Inicio real: @p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        }
+
+                                        @if (p.FechaFin != null)
+                                        {
+                                            <div>Fin real: @p.FechaFin?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        }
+
+                                        @if (p.FechaInicio != null && p.FechaFin != null)
+                                        {
+                                            var duracionReal = p.FechaFin.Value - p.FechaInicio.Value;
+                                            <div>Duración real: @((int)duracionReal.TotalMinutes) min</div>
+                                        }
+
+                                        @if (p.EsProgramado && p.FechaProgramada != null)
+                                        {
+                                            <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        }
+                                    </div>
+
+                                    @if (p.Calificacion != null)
+                                    {
+                                        <div class="small text-muted mt-1">
+                                            Ya calificado: @p.Calificacion.Puntaje ★
+                                            @if (!string.IsNullOrWhiteSpace(p.Calificacion.Comentario))
+                                            {
+                                                <span>— "@p.Calificacion.Comentario"</span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </a>
 
@@ -173,41 +303,84 @@
                     <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <a asp-action="Mapa" asp-route-id="@p.Id"
                                class="text-decoration-none text-dark flex-grow-1">
-                            <div>
-                                <strong>Paseo #@p.Id</strong> — 🐶 @p.Perro.Nombre
-                                @if (p.EsProgramado)
-                                {
-                                    <span class="badge bg-info text-dark ms-2">Programado</span>
-                                }
-
-                                <div class="text-muted small">
-                                    @p.FechaInicio.ToString("dd/MM/yyyy HH:mm")
-                                    <div>Duración: @p.DuracionMinutos min</div>
-                                    @if (p.EsProgramado && p.FechaProgramada != null)
+                            <div class="d-flex gap-3 align-items-start">
+                                <div class="paseo-fotos">
+                                    @if (!string.IsNullOrWhiteSpace(p.Perro.ImagenUrl))
                                     {
-                                        <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="paseo-foto" />
+                                    }
+                                    else
+                                    {
+                                        <div class="paseo-foto-placeholder">🐶</div>
+                                    }
+
+                                    @if (p.Paseador != null && !string.IsNullOrWhiteSpace(p.Paseador.FotoUrl))
+                                    {
+                                        <img src="@p.Paseador.FotoUrl" alt="Foto del paseador" class="paseo-foto-secundaria" />
+                                    }
+                                    else
+                                    {
+                                        <div class="paseo-foto-secundaria-placeholder">🐾</div>
                                     }
                                 </div>
 
-                                @if (!string.IsNullOrWhiteSpace(p.CanceladoPor) || !string.IsNullOrWhiteSpace(p.MotivoCancelacion) || p.FechaCancelacion != null)
-                                {
+                                <div>
+                                    <strong>Paseo de: @p.Perro.Nombre</strong>
+                                    @if (p.EsProgramado)
+                                    {
+                                        <span class="badge bg-info text-dark ms-2">Programado</span>
+                                    }
+
                                     <div class="small text-muted mt-1">
-                                        @if (!string.IsNullOrWhiteSpace(p.CanceladoPor))
+                                        Paseador:
+                                        @if (p.Paseador != null && p.Paseador.Usuario != null)
                                         {
-                                            <div>Cancelado por: @p.CanceladoPor</div>
+                                            @($"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}")
                                         }
-
-                                        @if (!string.IsNullOrWhiteSpace(p.MotivoCancelacion))
+                                        else
                                         {
-                                            <div>Motivo: @p.MotivoCancelacion</div>
-                                        }
-
-                                        @if (p.FechaCancelacion != null)
-                                        {
-                                            <div>Fecha de cancelación: @p.FechaCancelacion?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                            <span>No disponible</span>
                                         }
                                     </div>
-                                }
+
+                                    <div class="text-muted small mt-1">
+                                        <div>Duración solicitada: @p.DuracionMinutos min</div>
+
+                                        @if (p.FechaInicio != null)
+                                        {
+                                            <div>Inicio real: @p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        }
+                                        else
+                                        {
+                                            <div>No inició</div>
+                                        }
+
+                                        @if (p.EsProgramado && p.FechaProgramada != null)
+                                        {
+                                            <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                        }
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(p.CanceladoPor) || !string.IsNullOrWhiteSpace(p.MotivoCancelacion) || p.FechaCancelacion != null)
+                                    {
+                                        <div class="small text-muted mt-1">
+                                            @if (!string.IsNullOrWhiteSpace(p.CanceladoPor))
+                                            {
+                                                <div>Cancelado por: @p.CanceladoPor</div>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(p.MotivoCancelacion))
+                                            {
+                                                <div>Motivo: @p.MotivoCancelacion</div>
+                                            }
+
+                                            @if (p.FechaCancelacion != null)
+                                            {
+                                                <div>Fecha de cancelación: @p.FechaCancelacion?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </a>
 
@@ -229,5 +402,36 @@
         border-radius: 10px !important;
         margin-bottom: 8px;
         border: 1px solid #dee2e6;
+    }
+
+    .paseo-fotos {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 64px;
+    }
+
+    .paseo-foto,
+    .paseo-foto-secundaria {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+        flex-shrink: 0;
+    }
+
+    .paseo-foto-placeholder,
+    .paseo-foto-secundaria-placeholder {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        font-size: 1.5rem;
+        flex-shrink: 0;
     }
 </style>

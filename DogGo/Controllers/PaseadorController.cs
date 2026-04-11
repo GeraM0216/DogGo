@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 
 namespace DogGo.Controllers
@@ -14,16 +13,23 @@ namespace DogGo.Controllers
     {
         private readonly DogGoDbContext _context;
         private readonly IWebHostEnvironment _environment;
+
         public PaseadorController(DogGoDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
             _environment = environment;
         }
 
-        // GET: /Paseador/Perfil/5  (5 = paseadorId, opcional)
-        // Sin id muestra el perfil propio del paseador logueado
+        // GET: /Paseador/Perfil/5
         public async Task<IActionResult> Perfil(int? id)
         {
+            if (!id.HasValue)
+            {
+                var redireccionPerfil = await RedirigirSiPerfilPaseadorIncompleto();
+                if (redireccionPerfil != null)
+                    return redireccionPerfil;
+            }
+
             int paseadorId;
 
             if (id.HasValue)
@@ -32,13 +38,14 @@ namespace DogGo.Controllers
             }
             else
             {
-                var usuarioId = int.Parse(
-                    User.FindFirstValue(ClaimTypes.NameIdentifier)
-                );
+                var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
                 var paseador = await _context.Paseadores
                     .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
 
-                if (paseador == null) return Forbid();
+                if (paseador == null)
+                    return Forbid();
+
                 paseadorId = paseador.Id;
             }
 
@@ -50,7 +57,8 @@ namespace DogGo.Controllers
                     .ThenInclude(pa => pa.Perro)
                 .FirstOrDefaultAsync(p => p.Id == paseadorId);
 
-            if (perfil == null) return NotFound();
+            if (perfil == null)
+                return NotFound();
 
             var calificaciones = await _context.Calificaciones
                 .Where(c => c.Paseo.PaseadorId == paseadorId)
@@ -62,9 +70,7 @@ namespace DogGo.Controllers
             {
                 Paseador = perfil,
                 Calificaciones = calificaciones,
-                Promedio = calificaciones.Any()
-                                    ? calificaciones.Average(c => c.Puntaje)
-                                    : 0,
+                Promedio = calificaciones.Any() ? calificaciones.Average(c => c.Puntaje) : 0,
                 TotalPaseos = perfil.Paseos.Count(p => p.Estado == "Finalizado")
             };
 
@@ -75,14 +81,14 @@ namespace DogGo.Controllers
         [Authorize(Roles = "Paseador")]
         public async Task<IActionResult> Editar()
         {
-            var usuarioId = int.Parse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)
-            );
+            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var paseador = await _context.Paseadores
                 .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
 
-            if (paseador == null) return NotFound();
+            if (paseador == null)
+                return NotFound();
+
             return View(paseador);
         }
 
@@ -92,28 +98,78 @@ namespace DogGo.Controllers
         [Authorize(Roles = "Paseador")]
         public async Task<IActionResult> Editar(
             int id,
-            string descripcion,
+            string? descripcion,
             decimal tarifaPorHora,
             bool disponible,
             string? zonaServicio,
             int? experienciaAnios,
             IFormFile? fotoArchivo)
         {
-            var paseador = await _context.Paseadores.FindAsync(id);
-            if (paseador == null) return NotFound();
+            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            paseador.Descripcion = descripcion;
+            var paseador = await _context.Paseadores
+                .FirstOrDefaultAsync(p => p.Id == id && p.UsuarioId == usuarioId);
+
+            if (paseador == null)
+                return NotFound();
+
+            descripcion = string.IsNullOrWhiteSpace(descripcion) ? null : descripcion.Trim();
+            zonaServicio = string.IsNullOrWhiteSpace(zonaServicio) ? null : zonaServicio.Trim();
+
+            if (descripcion == null)
+                ModelState.AddModelError("Descripcion", "La descripción es obligatoria.");
+
+            if (zonaServicio == null)
+                ModelState.AddModelError("ZonaServicio", "Debes seleccionar al menos una zona.");
+
+            if (tarifaPorHora <= 0)
+                ModelState.AddModelError("TarifaPorHora", "La tarifa debe ser mayor a 0.");
+
+            if (!experienciaAnios.HasValue || experienciaAnios.Value < 0)
+                ModelState.AddModelError("ExperienciaAnios", "Debes indicar los años de experiencia.");
+
+            var yaTieneFoto = !string.IsNullOrWhiteSpace(paseador.FotoUrl);
+            var subioNuevaFoto = fotoArchivo != null && fotoArchivo.Length > 0;
+
+            if (!yaTieneFoto && !subioNuevaFoto)
+                ModelState.AddModelError("FotoUrl", "La foto de perfil es obligatoria.");
+
+            if (subioNuevaFoto)
+            {
+                var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                var extension = Path.GetExtension(fotoArchivo!.FileName).ToLowerInvariant();
+
+                if (!extensionesPermitidas.Contains(extension))
+                    ModelState.AddModelError("FotoUrl", "Solo se permiten imágenes JPG, JPEG, PNG o WEBP.");
+
+                if (fotoArchivo.Length > 5 * 1024 * 1024)
+                    ModelState.AddModelError("FotoUrl", "La imagen no debe superar los 5 MB.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                paseador.Descripcion = descripcion ?? paseador.Descripcion;
+                paseador.TarifaPorHora = tarifaPorHora;
+                paseador.Disponible = disponible;
+                paseador.ZonaServicio = zonaServicio;
+                paseador.ExperienciaAnios = experienciaAnios;
+
+                return View(paseador);
+            }
+
+            paseador.Descripcion = descripcion!;
             paseador.TarifaPorHora = tarifaPorHora;
             paseador.Disponible = disponible;
-            paseador.ZonaServicio = string.IsNullOrWhiteSpace(zonaServicio) ? null : zonaServicio.Trim();
+            paseador.ZonaServicio = zonaServicio;
             paseador.ExperienciaAnios = experienciaAnios;
 
-            if (fotoArchivo != null && fotoArchivo.Length > 0)
+            if (subioNuevaFoto)
             {
                 var carpeta = Path.Combine(_environment.WebRootPath, "uploads", "paseadores");
                 Directory.CreateDirectory(carpeta);
 
-                var nombreArchivo = Guid.NewGuid().ToString() + Path.GetExtension(fotoArchivo.FileName);
+                var extension = Path.GetExtension(fotoArchivo!.FileName).ToLowerInvariant();
+                var nombreArchivo = Guid.NewGuid().ToString() + extension;
                 var rutaCompleta = Path.Combine(carpeta, nombreArchivo);
 
                 using (var stream = new FileStream(rutaCompleta, FileMode.Create))
@@ -130,11 +186,7 @@ namespace DogGo.Controllers
             return RedirectToAction("Perfil");
         }
 
-
         // GET: /Paseador/Directorio
-        // Lista de paseadores disponibles para que los dueños contraten
-        // GET: /Paseador/Directorio
-        // Lista de paseadores disponibles para que los dueños contraten
         public async Task<IActionResult> Directorio()
         {
             var paseadores = await _context.Paseadores
@@ -145,9 +197,7 @@ namespace DogGo.Controllers
 
             if (User.IsInRole("Duenio"))
             {
-                var usuarioId = int.Parse(
-                    User.FindFirstValue(ClaimTypes.NameIdentifier)
-                );
+                var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
                 var perros = await _context.Perros
                     .Where(p => p.DueñoId == usuarioId)
@@ -158,6 +208,38 @@ namespace DogGo.Controllers
             }
 
             return View(paseadores);
+        }
+
+        private async Task<IActionResult?> RedirigirSiPerfilPaseadorIncompleto()
+        {
+            if (!User.IsInRole("Paseador"))
+                return null;
+
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return null;
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
+            var paseador = await _context.Paseadores
+                .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
+
+            if (paseador == null)
+                return null;
+
+            var perfilIncompleto =
+                string.IsNullOrWhiteSpace(paseador.Descripcion) ||
+                string.IsNullOrWhiteSpace(paseador.FotoUrl) ||
+                string.IsNullOrWhiteSpace(paseador.ZonaServicio) ||
+                !paseador.ExperienciaAnios.HasValue ||
+                paseador.ExperienciaAnios.Value < 0 ||
+                paseador.TarifaPorHora <= 0;
+
+            if (!perfilIncompleto)
+                return null;
+
+            TempData["Error"] = "Debes completar tu perfil antes de continuar.";
+            return RedirectToAction("Editar", "Paseador");
         }
     }
 }

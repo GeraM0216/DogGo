@@ -23,13 +23,16 @@
     <h4>✏️ Editar mi perfil</h4>
     <p class="text-muted">Completa tu perfil para que los dueños te conozcan mejor.</p>
 
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
     <form asp-action="Editar" method="post" enctype="multipart/form-data" class="mt-3">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
 
         <div class="form-group mb-3">
             <label class="form-label">Foto de perfil</label>
-            <input type="file" name="fotoArchivo" class="form-control" accept="image/*" />
+            <input type="file" name="fotoArchivo" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+            <span asp-validation-for="FotoUrl" class="text-danger"></span>
         </div>
 
         @if (!string.IsNullOrWhiteSpace(Model.FotoUrl))
@@ -59,32 +62,36 @@
                 }
             </div>
             <input type="hidden" name="zonaServicio" id="zonaServicio" value="@Model.ZonaServicio" />
+            <span asp-validation-for="ZonaServicio" class="text-danger"></span>
         </div>
 
         <div class="form-group mb-3">
-            <label for="ExperienciaAnios">Años de experiencia</label>
+            <label asp-for="ExperienciaAnios"></label>
             <input asp-for="ExperienciaAnios"
                    type="number"
                    class="form-control"
                    min="0"
                    placeholder="Ej. 2" />
+            <span asp-validation-for="ExperienciaAnios" class="text-danger"></span>
         </div>
 
         <div class="form-group mb-3">
-            <label>Descripción</label>
+            <label asp-for="Descripcion"></label>
             <textarea asp-for="Descripcion"
                       class="form-control"
                       rows="4"
                       placeholder="Cuéntales a los dueños sobre ti, tu experiencia y cómo cuidas a los perritos..."></textarea>
+            <span asp-validation-for="Descripcion" class="text-danger"></span>
         </div>
 
         <div class="form-group mb-3">
-            <label asp-for="TarifaPorHora">Tarifa por hora ($)</label>
+            <label asp-for="TarifaPorHora"></label>
             <input asp-for="TarifaPorHora"
                    type="number"
                    step="0.01"
                    class="form-control"
-                   min="0" />
+                   min="0.01" />
+            <span asp-validation-for="TarifaPorHora" class="text-danger"></span>
         </div>
 
         <div class="form-check mb-3">
@@ -100,6 +107,10 @@
 </div>
 
 @section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
     <script>
         function actualizarZonas() {
             const checks = document.querySelectorAll(".zona-check:checked");

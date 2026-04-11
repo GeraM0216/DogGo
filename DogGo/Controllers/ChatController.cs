@@ -60,6 +60,7 @@ namespace DogGo.Controllers
             ViewBag.UsuarioId = usuarioId;
             ViewBag.ReceptorId = receptorId;
             ViewBag.Mensajes = mensajes;
+            ViewBag.NombrePerro = paseo.Perro.Nombre;
 
             return View();
         }

@@ -11,15 +11,21 @@ namespace DogGo.Controllers
     public class PaseoController : Controller
     {
         private readonly DogGoDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public PaseoController(DogGoDbContext context)
+        public PaseoController(DogGoDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         // GET: /Paseo/Mapa/5
         public async Task<IActionResult> Mapa(int id)
         {
+            var redireccionPerfil = await RedirigirSiPerfilPaseadorIncompleto();
+            if (redireccionPerfil != null)
+                return redireccionPerfil;
+
             var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var paseo = await _context.Paseos
@@ -47,6 +53,10 @@ namespace DogGo.Controllers
         // GET: /Paseo/MisPaseos
         public async Task<IActionResult> MisPaseos()
         {
+            var redireccionPerfil = await RedirigirSiPerfilPaseadorIncompleto();
+            if (redireccionPerfil != null)
+                return redireccionPerfil;
+
             var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var rol = User.FindFirstValue(ClaimTypes.Role);
 
@@ -63,6 +73,7 @@ namespace DogGo.Controllers
                 paseos = await _context.Paseos
                     .Where(p => p.PaseadorId == paseador.Id)
                     .Include(p => p.Perro).ThenInclude(pe => pe.Dueño)
+                    .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
                     .Include(p => p.Calificacion)
                     .OrderByDescending(p => p.EsProgramado && p.FechaProgramada != null
                         ? p.FechaProgramada
@@ -128,7 +139,10 @@ namespace DogGo.Controllers
 
             if (string.IsNullOrWhiteSpace(paseador.Descripcion) ||
                 string.IsNullOrWhiteSpace(paseador.FotoUrl) ||
-                string.IsNullOrWhiteSpace(paseador.ZonaServicio))
+                string.IsNullOrWhiteSpace(paseador.ZonaServicio) ||
+                !paseador.ExperienciaAnios.HasValue ||
+                paseador.ExperienciaAnios.Value < 0 ||
+                paseador.TarifaPorHora <= 0)
             {
                 TempData["Error"] = "El paseador aún no tiene su perfil completo.";
                 return RedirectToAction("Directorio", "Paseador");
@@ -204,12 +218,14 @@ namespace DogGo.Controllers
             {
                 PaseadorId = paseadorId,
                 PerroId = perroId,
-                FechaInicio = esProgramado ? fechaProgramada!.Value.ToUniversalTime() : DateTime.UtcNow,
+                FechaInicio = null,
+                FechaFin = null,
                 Estado = "Pendiente",
                 Precio = precio,
                 DuracionMinutos = duracionMinutos,
                 EsProgramado = esProgramado,
-                FechaProgramada = esProgramado ? fechaProgramada!.Value.ToUniversalTime() : null
+                FechaProgramada = esProgramado ? fechaProgramada!.Value.ToUniversalTime() : null,
+                FotoInicioUrl = null
             };
 
             _context.Paseos.Add(paseo);
@@ -222,10 +238,82 @@ namespace DogGo.Controllers
             return RedirectToAction("Mapa", new { id = paseo.Id });
         }
 
+        // POST: /Paseo/SubirFotoInicio
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Paseador")]
+        public async Task<IActionResult> SubirFotoInicio(int paseoId, IFormFile? fotoInicio)
+        {
+            var redireccionPerfil = await RedirigirSiPerfilPaseadorIncompleto();
+            if (redireccionPerfil != null)
+                return redireccionPerfil;
+
+            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var paseo = await _context.Paseos
+                .Include(p => p.Paseador)
+                .FirstOrDefaultAsync(p => p.Id == paseoId);
+
+            if (paseo == null || paseo.Paseador == null)
+                return NotFound();
+
+            if (paseo.Paseador.UsuarioId != usuarioId)
+                return Forbid();
+
+            if (paseo.Estado != "Pendiente")
+            {
+                TempData["Error"] = "Solo puedes subir la foto antes de iniciar un paseo pendiente.";
+                return RedirectToAction("Mapa", new { id = paseoId });
+            }
+
+            if (fotoInicio == null || fotoInicio.Length == 0)
+            {
+                TempData["Error"] = "Debes subir una foto del perro para iniciar el paseo.";
+                return RedirectToAction("Mapa", new { id = paseoId });
+            }
+
+            var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            var extension = Path.GetExtension(fotoInicio.FileName).ToLowerInvariant();
+
+            if (!extensionesPermitidas.Contains(extension))
+            {
+                TempData["Error"] = "Solo se permiten imágenes JPG, JPEG, PNG o WEBP.";
+                return RedirectToAction("Mapa", new { id = paseoId });
+            }
+
+            if (fotoInicio.Length > 5 * 1024 * 1024)
+            {
+                TempData["Error"] = "La imagen no debe superar los 5 MB.";
+                return RedirectToAction("Mapa", new { id = paseoId });
+            }
+
+            var carpeta = Path.Combine(_environment.WebRootPath, "uploads", "paseos");
+            Directory.CreateDirectory(carpeta);
+
+            var nombreArchivo = Guid.NewGuid().ToString() + extension;
+            var rutaCompleta = Path.Combine(carpeta, nombreArchivo);
+
+            using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+            {
+                await fotoInicio.CopyToAsync(stream);
+            }
+
+            paseo.FotoInicioUrl = "/uploads/paseos/" + nombreArchivo;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Exito"] = "Foto de inicio subida correctamente.";
+            return RedirectToAction("Mapa", new { id = paseoId });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancelar(int id, string? motivo)
         {
+            var redireccionPerfil = await RedirigirSiPerfilPaseadorIncompleto();
+            if (redireccionPerfil != null)
+                return redireccionPerfil;
+
             var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var paseo = await _context.Paseos
@@ -260,6 +348,38 @@ namespace DogGo.Controllers
 
             TempData["Exito"] = "El paseo fue cancelado correctamente.";
             return RedirectToAction("MisPaseos");
+        }
+
+        private async Task<IActionResult?> RedirigirSiPerfilPaseadorIncompleto()
+        {
+            if (!User.IsInRole("Paseador"))
+                return null;
+
+            var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(usuarioIdClaim))
+                return null;
+
+            var usuarioId = int.Parse(usuarioIdClaim);
+
+            var paseador = await _context.Paseadores
+                .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
+
+            if (paseador == null)
+                return null;
+
+            var perfilIncompleto =
+                string.IsNullOrWhiteSpace(paseador.Descripcion) ||
+                string.IsNullOrWhiteSpace(paseador.FotoUrl) ||
+                string.IsNullOrWhiteSpace(paseador.ZonaServicio) ||
+                !paseador.ExperienciaAnios.HasValue ||
+                paseador.ExperienciaAnios.Value < 0 ||
+                paseador.TarifaPorHora <= 0;
+
+            if (!perfilIncompleto)
+                return null;
+
+            TempData["Error"] = "Debes completar tu perfil antes de continuar.";
+            return RedirectToAction("Editar", "Paseador");
         }
     }
 }

@@ -12,7 +12,7 @@
 
     <div class="mapa-header">
         <h5>
-            Paseo #@Model.Id —
+            Paseo de: @Model.Perro.Nombre —
             <span id="estadoBadge" class="badge
                 @(Model.Estado == "EnCurso" ? "bg-success" :
                                                      Model.Estado == "Finalizado" ? "bg-secondary" : "bg-warning text-dark")">
@@ -26,9 +26,35 @@
         </h5>
 
         <div class="mapa-info">
-            <span>@Model.Perro.Nombre</span>
-            <span>@Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</span>
-            <span>Duración: @Model.DuracionMinutos min</span>
+            <span>🐶 @Model.Perro.Nombre</span>
+            <span>👤 @Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</span>
+            <span>⏱ Duración solicitada: @Model.DuracionMinutos min</span>
+
+            @if (Model.FechaInicio != null)
+            {
+                <span>▶ Inicio real: @Model.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+            }
+            else
+            {
+                <span>▶ Aún no inicia</span>
+            }
+
+            @if (Model.Estado == "EnCurso" && Model.FechaInicio != null)
+            {
+                var duracionActual = DateTime.UtcNow - Model.FechaInicio.Value;
+                <span>🕒 Duración actual: @((int)duracionActual.TotalMinutes) min</span>
+            }
+
+            @if (Model.FechaFin != null)
+            {
+                <span>⏹ Fin real: @Model.FechaFin?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+            }
+
+            @if (Model.FechaInicio != null && Model.FechaFin != null)
+            {
+                var duracionReal = Model.FechaFin.Value - Model.FechaInicio.Value;
+                <span>✅ Duración real: @((int)duracionReal.TotalMinutes) min</span>
+            }
         </div>
 
         @if (Model.EsProgramado && Model.FechaProgramada != null)
@@ -47,17 +73,92 @@
         <div class="mapa-controles">
             @if (Model.Estado == "Pendiente")
             {
-                <button id="btnIniciar" class="btn btn-success w-100"
-                        onclick="cambiarEstado('EnCurso')">
+                <div class="foto-inicio-box">
+                    <h6 class="mb-2">Evidencia de inicio</h6>
+                    <p class="text-muted small mb-3">
+                        Antes de iniciar el paseo, sube una foto del perro como comprobante.
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
+                    {
+                        <div class="mb-3">
+                            <img src="@Model.FotoInicioUrl"
+                                 alt="Foto de inicio del paseo"
+                                 class="foto-inicio-preview" />
+                        </div>
+
+                        <div class="alert alert-success py-2 mb-3">
+                            Ya subiste la foto de inicio. Ya puedes comenzar el paseo.
+                        </div>
+                    }
+
+                    <form asp-controller="Paseo"
+                          asp-action="SubirFotoInicio"
+                          method="post"
+                          enctype="multipart/form-data"
+                          class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="paseoId" value="@Model.Id" />
+
+                        <div class="mb-2">
+                            <input type="file"
+                                   name="fotoInicio"
+                                   class="form-control"
+                                   accept=".jpg,.jpeg,.png,.webp"
+                                   required="@string.IsNullOrWhiteSpace(Model.FotoInicioUrl)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            @(string.IsNullOrWhiteSpace(Model.FotoInicioUrl) ? "Subir foto de inicio" : "Reemplazar foto de inicio")
+                        </button>
+                    </form>
+                </div>
+
+                <button id="btnIniciar"
+                        class="btn btn-success w-100"
+                        onclick="cambiarEstado('EnCurso')"
+                        disabled="@(string.IsNullOrWhiteSpace(Model.FotoInicioUrl) ? "disabled" : null)">
                     ▶ Iniciar paseo
                 </button>
+
+                @if (string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
+                {
+                    <small class="text-danger d-block mt-2">
+                        Debes subir una foto del perro antes de iniciar el paseo.
+                    </small>
+                }
             }
+
             @if (Model.Estado == "EnCurso")
             {
+                @if (!string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Foto de inicio</label>
+                        <div>
+                            <img src="@Model.FotoInicioUrl"
+                                 alt="Foto de inicio del paseo"
+                                 class="foto-inicio-preview" />
+                        </div>
+                    </div>
+                }
+
                 <button id="btnFinalizar" class="btn btn-danger w-100"
                         onclick="cambiarEstado('Finalizado')">
                     ⏹ Finalizar paseo
                 </button>
+            }
+
+            @if (Model.Estado == "Finalizado" && !string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
+            {
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Foto de inicio</label>
+                    <div>
+                        <img src="@Model.FotoInicioUrl"
+                             alt="Foto de inicio del paseo"
+                             class="foto-inicio-preview" />
+                    </div>
+                </div>
             }
         </div>
     }
@@ -85,6 +186,7 @@
     <script>
         const paseoId = @Model.Id;
         const esPaseador = @(esPaseador ? "true" : "false");
+        const tieneFotoInicio = @(!string.IsNullOrWhiteSpace(Model.FotoInicioUrl) ? "true" : "false");
         const latInicial = @lat.ToString(CultureInfo.InvariantCulture);
         const lngInicial = @lng.ToString(CultureInfo.InvariantCulture);
 
@@ -242,6 +344,11 @@
 
         function cambiarEstado(nuevoEstado) {
         if (nuevoEstado === "EnCurso") {
+        if (!tieneFotoInicio) {
+        alert("Debes subir una foto del perro antes de iniciar el paseo.");
+        return;
+        }
+
         const esProgramado = @(Model.EsProgramado ? "true" : "false");
         const fechaProgramada = "@(Model.FechaProgramada?.ToString("yyyy-MM-ddTHH:mm:ss") ?? "")";
 
@@ -283,14 +390,14 @@
     border-bottom: 1px solid #ddd;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
     }
 
     .mapa-info {
     font-size: 0.88rem;
     color: #6c757d;
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem 1rem;
     flex-wrap: wrap;
     }
 
@@ -319,5 +426,21 @@
     padding: 0.75rem 1rem;
     border-top: 1px solid #eee;
     background: #fafafa;
+    }
+
+    .foto-inicio-box {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    background: #fafafa;
+    }
+
+    .foto-inicio-preview {
+    max-width: 220px;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+    object-fit: cover;
     }
 </style>
