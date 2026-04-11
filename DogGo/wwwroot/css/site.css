@@ -1204,3 +1204,20 @@ a {
         text-align: center;
     }
 }
+
+/* ── Fondo huellas + huesos ───────────────────── */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg transform='translate(30,30) rotate(-30)'%3E%3Cellipse cx='0' cy='0' rx='8' ry='9.5' fill='%230F9B8E' opacity='0.12'/%3E%3Cellipse cx='-9' cy='-11' rx='4.5' ry='5' fill='%230F9B8E' opacity='0.12'/%3E%3Cellipse cx='-3' cy='-15' rx='4.5' ry='5' fill='%230F9B8E' opacity='0.12'/%3E%3Cellipse cx='5' cy='-15' rx='4.5' ry='5' fill='%230F9B8E' opacity='0.12'/%3E%3Cellipse cx='11' cy='-10' rx='4' ry='4.8' fill='%230F9B8E' opacity='0.12'/%3E%3C/g%3E%3Cg transform='translate(30,90) rotate(-30)'%3E%3Crect x='-13' y='-3.5' width='26' height='7' rx='3' fill='%230F9B8E' opacity='0.10'/%3E%3Ccircle cx='-15' cy='-5.5' r='4.2' fill='%230F9B8E' opacity='0.10'/%3E%3Ccircle cx='-15' cy='5.5' r='4.2' fill='%230F9B8E' opacity='0.10'/%3E%3Ccircle cx='15' cy='-5.5' r='4.2' fill='%230F9B8E' opacity='0.10'/%3E%3Ccircle cx='15' cy='5.5' r='4.2' fill='%230F9B8E' opacity='0.10'/%3E%3C/g%3E%3Cg transform='translate(90,30) rotate(-30)'%3E%3Crect x='-13' y='-3.5' width='26' height='7' rx='3' fill='%230F9B8E' opacity='0.10'/%3E%3Ccircle cx='-15' cy='-5.5' r='4.2' fill='%230F9B8E' opacity='0.10'/%3E%3Ccircle cx='-15' cy='5.5' r='4.2' fill='%230F9B8E' opacity='0.10'/%3E%3Ccircle cx='15' cy='-5.5' r='4.2' fill='%230F9B8E' opacity='0.10'/%3E%3Ccircle cx='15' cy='5.5' r='4.2' fill='%230F9B8E' opacity='0.10'/%3E%3C/g%3E%3Cg transform='translate(90,90) rotate(-30)'%3E%3Cellipse cx='0' cy='0' rx='8' ry='9.5' fill='%230F9B8E' opacity='0.12'/%3E%3Cellipse cx='-9' cy='-11' rx='4.5' ry='5' fill='%230F9B8E' opacity='0.12'/%3E%3Cellipse cx='-3' cy='-15' rx='4.5' ry='5' fill='%230F9B8E' opacity='0.12'/%3E%3Cellipse cx='5' cy='-15' rx='4.5' ry='5' fill='%230F9B8E' opacity='0.12'/%3E%3Cellipse cx='11' cy='-10' rx='4' ry='4.8' fill='%230F9B8E' opacity='0.12'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 120px 120px;
+}
+
+body > * {
+    position: relative;
+    z-index: 1;
+}

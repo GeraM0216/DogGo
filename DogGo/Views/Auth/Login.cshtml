@@ -1,53 +1,75 @@
 ﻿@model DogGo.ViewModels.LoginViewModel
 @{
     ViewData["Title"] = "Iniciar sesión";
-}
-
-@{
     Layout = null;
 }
 
-<div class="login-container">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — DogGo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+</head>
+<body>
 
-    <div class="login-left">
-        <h1>DogGo 🐶 </h1>
-        <p>Conecta con paseadores cerca de ti</p>
+<div class="auth-container">
+
+    <!-- Panel izquierdo -->
+    <div class="auth-left">
+        <div class="auth-left-circle"></div>
+        <div class="auth-left-circle2"></div>
+        <img src="https://cdn.phototourl.com/free/2026-04-07-4b0ab729-6be0-43c9-96bb-2189d1589f86.png"
+             alt="DogGo" class="auth-logo-img" />
+        <h1 class="auth-left-title">DogGo</h1>
+        <p class="auth-left-sub">Conecta con paseadores de confianza cerca de ti</p>
+        <div class="auth-trust">
+            <div class="trust-item"><span class="trust-dot"></span> Paseadores verificados</div>
+            <div class="trust-item"><span class="trust-dot"></span> GPS en tiempo real</div>
+            <div class="trust-item"><span class="trust-dot"></span> Chat directo</div>
+        </div>
     </div>
 
-    <div class="login-right">
-        <div class="login-card">
-
-            <h2>Bienvenido</h2>
-            <p>Inicia sesión</p>
+    <!-- Panel derecho -->
+    <div class="auth-right">
+        <div class="auth-card">
+            <div class="auth-card-header">
+                <h2>Bienvenido de vuelta</h2>
+                <p>Inicia sesión en tu cuenta</p>
+            </div>
 
             <form asp-action="Login" method="post">
                 @Html.AntiForgeryToken()
 
-                <div asp-validation-summary="ModelOnly" class="error"></div>
+                <div asp-validation-summary="ModelOnly" class="auth-error"></div>
 
-                <input asp-for="Email" placeholder="Correo" />
-                <span asp-validation-for="Email"></span>
-
-                <input asp-for="Password" type="password" placeholder="Contraseña" />
-                <span asp-validation-for="Password"></span>
-
-                <div class="forgot-password">
-                    <a asp-action="ForgotPassword">¿Olvidaste tu contraseña?</a>
+                <div class="field-group">
+                    <label asp-for="Email">Correo electrónico</label>
+                    <input asp-for="Email" placeholder="tu@correo.com" />
+                    <span asp-validation-for="Email" class="field-error"></span>
                 </div>
 
-                <div class="remember">
-                    <input asp-for="RememberMe" />
-                    <label asp-for="RememberMe">Recordarme</label>
+                <div class="field-group">
+                    <label asp-for="Password">Contraseña</label>
+                    <input asp-for="Password" type="password" placeholder="••••••••" />
+                    <span asp-validation-for="Password" class="field-error"></span>
                 </div>
 
-                <button type="submit">Entrar</button>
+                <div class="auth-row">
+                    <div class="remember">
+                        <input asp-for="RememberMe" />
+                        <label asp-for="RememberMe">Recordarme</label>
+                    </div>
+                    <a asp-action="ForgotPassword" class="forgot-link">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" class="auth-btn">Entrar</button>
             </form>
 
-            <p class="register">
-                ¿No tienes cuenta?
-                <a asp-action="Register">Regístrate</a>
-            </p>
-
+            <div class="auth-footer">
+                ¿No tienes cuenta? <a asp-action="Register">Regístrate gratis</a>
+            </div>
         </div>
     </div>
 
@@ -56,224 +78,349 @@
 @if (TempData["Success"] != null)
 {
     <div id="overlay" class="overlay"></div>
-
-    <div id="toast" class="custom-toast">
-        @TempData["Success"]
-    </div>
+    <div id="toast" class="custom-toast">@TempData["Success"]</div>
 }
 
 <script>
     setTimeout(() => {
-        const toast = document.getElementById('toast');
-        const overlay = document.getElementById('overlay');
-
-        if (toast) toast.remove();
-        if (overlay) overlay.remove();
+        document.getElementById('toast')?.remove();
+        document.getElementById('overlay')?.remove();
     }, 6000);
 </script>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-}
+    *, *::before, *::after { box-sizing: border-box; }
 
-.login-container {
-    display: flex;
-    height: 100vh;
-    width: 100%;
-}
+    body {
+        margin: 0;
+        font-family: 'Nunito', system-ui, sans-serif;
+        background: #FFFBF5;
+        color: #2D3142;
+    }
 
-/* IZQUIERDA */
-.login-left {
-    width: 35%;
-    max-width: 400px;
-    backdrop-filter: blur(10px);
-    background: linear-gradient(135deg, #4f46e5cc, #6366f1cc);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 60px;
-    position: relative;
-}
+    .auth-container {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+    }
 
-.login-left::before {
-    content: "";
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 50%;
-    top: -50px;
-    left: -50px;
-}
+    /* ── Panel izquierdo ── */
+    .auth-left {
+        width: 38%;
+        max-width: 420px;
+        background: linear-gradient(145deg, #0F9B8E, #0d8a7e);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 60px 50px;
+        position: relative;
+        overflow: hidden;
+    }
 
-.login-left p {
-    opacity: 0.85;
-    font-size: 18px;
-    line-height: 1.5;
-    max-width: 300px;
-}
+    .auth-left-circle {
+        position: absolute;
+        width: 320px; height: 320px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 50%;
+        top: -80px; left: -80px;
+    }
 
-.login-left h1 {
-    font-size: 56px;
-    font-weight: bold;
-    margin-bottom: 10px;
-}
+    .auth-left-circle2 {
+        position: absolute;
+        width: 200px; height: 200px;
+        background: rgba(255,255,255,0.06);
+        border-radius: 50%;
+        bottom: -40px; right: -40px;
+    }
 
-/* DERECHA */
-.login-right {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: url('/images/parque-ecologico.jpg') center/cover no-repeat;
-    position: relative;
-}
+    .auth-logo-img {
+        height: 52px;
+        width: auto;
+        object-fit: contain;
+        margin-bottom: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
 
-.login-right::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    background: rgba(0,0,0,0.2);
-}
+    .auth-left-title {
+        font-size: 3.2rem;
+        font-weight: 900;
+        margin: 0 0 .6rem;
+        letter-spacing: -.5px;
+        position: relative;
+        z-index: 1;
+    }
 
-.login-card {
-    width: 320px;
-    padding: 30px;
-    border-radius: 20px;
-    backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.25);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.4);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-    position: relative;
-    z-index: 2;
-}
+    .auth-left-sub {
+        font-size: 1rem;
+        font-weight: 600;
+        opacity: .88;
+        line-height: 1.6;
+        max-width: 280px;
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 1;
+    }
 
-.login-card input {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 12px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.6);
-    border: 1px solid rgba(255,255,255,0.4);
-    outline: none;
-    box-sizing: border-box;
-}
+    .auth-trust {
+        display: flex;
+        flex-direction: column;
+        gap: .55rem;
+        position: relative;
+        z-index: 1;
+    }
 
-.login-card h2 {
-    color: #111;
-}
+    .trust-item {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .85rem;
+        font-weight: 700;
+        opacity: .9;
+    }
 
-.login-card p {
-    color: rgba(0,0,0,0.6);
-}
+    .trust-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: #5DCAA5;
+        flex-shrink: 0;
+    }
 
-.login-card input:focus {
-    background: rgba(255,255,255,0.8);
-    border: 1px solid #6366f1;
-}
+    /* ── Panel derecho ── */
+    .auth-right {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: url('/images/parque-ecologico.jpg') center/cover no-repeat;
+        position: relative;
+    }
 
-.login-card button {
-    width: 100%;
-    padding: 12px;
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-}
+    .auth-right::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        background: rgba(15, 155, 142, 0.12);
+    }
 
-.login-card button:hover {
-    background: #4338ca;
-}
+    /* ── Card ── */
+    .auth-card {
+        width: 360px;
+        max-width: 90%;
+        padding: 2.2rem;
+        border-radius: 24px;
+        background: rgba(255,255,255,0.88);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1.5px solid rgba(255,255,255,0.7);
+        box-shadow: 0 20px 48px rgba(15,155,142,.18);
+        position: relative;
+        z-index: 2;
+        animation: fadeUp .5s ease both;
+    }
 
-.forgot-password {
-    text-align: right;
-    margin-top: -4px;
-    margin-bottom: 10px;
-}
+    .auth-card-header { margin-bottom: 1.4rem; }
 
-.forgot-password a {
-    font-size: 14px;
-    color: #3730a3;
-    text-decoration: none;
-    font-weight: 500;
-}
+    .auth-card-header h2 {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: #2D3142;
+        margin: 0 0 .25rem;
+    }
 
-.forgot-password a:hover {
-    text-decoration: underline;
-}
+    .auth-card-header p {
+        font-size: .88rem;
+        font-weight: 600;
+        color: #7B8194;
+        margin: 0;
+    }
 
-.register {
-    text-align: center;
-    margin-top: 10px;
-}
+    /* ── Campos ── */
+    .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: .3rem;
+        margin-bottom: 1rem;
+    }
 
-/* Checkbox y label limpios */
-.remember {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 10px 0;
-}
+    .field-group label {
+        font-size: .82rem;
+        font-weight: 800;
+        color: #2D3142;
+        letter-spacing: .02em;
+    }
 
-.remember input {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    margin: 0;
-}
+    .field-group input,
+    .auth-card input[type="email"],
+    .auth-card input[type="password"],
+    .auth-card input[type="text"] {
+        width: 100%;
+        padding: .75rem 1rem;
+        border-radius: 12px;
+        background: #F0FAF9;
+        border: 1.5px solid #C5E8E5;
+        outline: none;
+        font-family: 'Nunito', sans-serif;
+        font-size: .92rem;
+        font-weight: 600;
+        color: #2D3142;
+        transition: border-color .18s, background .18s, transform .15s;
+    }
 
-.remember label {
-    font-size: 14px;
-    color: rgba(0,0,0,0.7);
-    cursor: pointer;
-}
+    .field-group input:focus,
+    .auth-card input:focus {
+        background: #fff;
+        border-color: #0F9B8E;
+        transform: scale(1.01);
+    }
 
-.error {
-    color: #b91c1c;
-    margin-bottom: 10px;
-}
+    .field-error {
+        font-size: .78rem;
+        color: #dc2626;
+        font-weight: 700;
+    }
 
-.custom-toast {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.85);
-    color: white;
-    padding: 25px 35px;
-    border-radius: 15px;
-    font-weight: 500;
-    font-size: 18px;
-    text-align: center;
-    z-index: 9999;
-    animation: fadeInOut 6s ease forwards;
-}
+    .auth-error {
+        background: rgba(220,38,38,.08);
+        border: 1px solid rgba(220,38,38,.2);
+        color: #991b1b;
+        border-radius: 10px;
+        padding: .65rem 1rem;
+        font-size: .85rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
 
-@@keyframes fadeInOut {
-    0% { opacity: 0; transform: translate(-50%, -20px); }
-    10% { opacity: 1; transform: translate(-50%, 0); }
-    90% { opacity: 1; }
-    100% { opacity: 0; transform: translate(-50%, -20px); }
-}
+    /* ── Fila recordar / olvidé ── */
+    .auth-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.2rem;
+    }
 
-.overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 9998;
-}
+    .remember {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    .remember input {
+        width: 15px; height: 15px;
+        accent-color: #0F9B8E;
+        cursor: pointer;
+        margin: 0;
+        padding: 0;
+        background: none;
+        border: none;
+        transform: none;
+    }
+
+    .remember label {
+        font-size: .82rem;
+        font-weight: 700;
+        color: #7B8194;
+        cursor: pointer;
+    }
+
+    .forgot-link {
+        font-size: .82rem;
+        font-weight: 700;
+        color: #0F9B8E;
+        text-decoration: none;
+    }
+
+    .forgot-link:hover { text-decoration: underline; }
+
+    /* ── Botón principal ── */
+    .auth-btn {
+        width: 100%;
+        padding: .82rem;
+        border-radius: 999px;
+        background: #0F9B8E;
+        color: #fff;
+        border: none;
+        font-family: 'Nunito', sans-serif;
+        font-size: .97rem;
+        font-weight: 900;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(15,155,142,.35);
+        transition: background .18s, transform .15s, box-shadow .15s;
+    }
+
+    .auth-btn:hover {
+        background: #0d8a7e;
+        transform: translateY(-2px);
+        box-shadow: 0 7px 20px rgba(15,155,142,.45);
+    }
+
+    /* ── Footer card ── */
+    .auth-footer {
+        margin-top: 1.2rem;
+        text-align: center;
+        font-size: .85rem;
+        font-weight: 700;
+        color: #7B8194;
+        padding: .9rem;
+        background: #F0FAF9;
+        border-radius: 12px;
+    }
+
+    .auth-footer a {
+        color: #0F9B8E;
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .auth-footer a:hover { text-decoration: underline; }
+
+    /* ── Toast ── */
+    .custom-toast {
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(15,155,142,.95);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-radius: 16px;
+        font-family: 'Nunito', sans-serif;
+        font-weight: 700;
+        font-size: 1rem;
+        text-align: center;
+        z-index: 9999;
+        animation: fadeInOut 6s ease forwards;
+    }
+
+    .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.4);
+        z-index: 9998;
+    }
+
+    @@keyframes fadeUp {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @@keyframes fadeInOut {
+        0%   { opacity: 0; transform: translate(-50%, -20px); }
+        10%  { opacity: 1; transform: translate(-50%, 0); }
+        90%  { opacity: 1; }
+        100% { opacity: 0; transform: translate(-50%, -20px); }
+    }
+
+    @@media (max-width: 700px) {
+        .auth-left { display: none; }
+        .auth-right { width: 100%; }
+    }
 </style>
+</body>
+</html>
