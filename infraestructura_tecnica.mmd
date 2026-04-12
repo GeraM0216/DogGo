@@ -1,0 +1,82 @@
+%%{init: {'flowchart': {'curve': 'linear'}, 'theme': 'dark'}}%%
+graph TD
+    INFRA["🏗️ INFRAESTRUCTURA<br/>TÉCNICA"]
+    
+    FRONTEND["📱 FRONTEND"]
+    MOBILE["React Native<br/>iOS + Android"]
+    WEB["Web<br/>React"]
+    
+    BACKEND["⚙️ BACKEND"]
+    API["Cloud Run<br/>Node.js/Python"]
+    
+    DB["🗄️ BASE DE DATOS"]
+    MYSQL["Cloud SQL<br/>MySQL 8.0"]
+    
+    SERVICIOS["☁️ SERVICIOS GCP"]
+    STORAGE["Cloud Storage<br/>Archivos"]
+    GPS["Location APIs<br/>Geolocalización"]
+    
+    INTEGRACIONES["🔗 INTEGRACIONES"]
+    STRIPE["Stripe/PayPal<br/>Pagos"]
+    SENDGRID["SendGrid<br/>Emails"]
+    
+    SEGURIDAD["🔒 SEGURIDAD"]
+    SSL["SSL TLS<br/>HTTPS"]
+    AUTH["JWT<br/>Autenticación"]
+    ENCRIPT["Encriptación<br/>Datos sensibles"]
+    
+    MONITOREO["📊 MONITOREO"]
+    LOGS["Cloud Logging<br/>Registros"]
+    METRICS["Cloud Monitoring<br/>Métricas"]
+    
+    INFRA --> FRONTEND
+    INFRA --> BACKEND
+    INFRA --> DB
+    INFRA --> SERVICIOS
+    INFRA --> INTEGRACIONES
+    INFRA --> SEGURIDAD
+    INFRA --> MONITOREO
+    
+    FRONTEND --> MOBILE
+    FRONTEND --> WEB
+    
+    BACKEND --> API
+    DB --> MYSQL
+    SERVICIOS --> STORAGE
+    SERVICIOS --> GPS
+    INTEGRACIONES --> STRIPE
+    INTEGRACIONES --> SENDGRID
+    SEGURIDAD --> SSL
+    SEGURIDAD --> AUTH
+    SEGURIDAD --> ENCRIPT
+    MONITOREO --> LOGS
+    MONITOREO --> METRICS
+    
+    style INFRA fill:#FF9500,stroke:#fff,stroke-width:4px,color:#fff,font-size:24px,font-weight:bold
+    
+    style FRONTEND fill:#e1f5ff,stroke:#0277bd,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style MOBILE fill:#e1f5ff,stroke:#0277bd,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style WEB fill:#e1f5ff,stroke:#0277bd,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    
+    style BACKEND fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style API fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    
+    style DB fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style MYSQL fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    
+    style SERVICIOS fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style STORAGE fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style GPS fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    
+    style INTEGRACIONES fill:#e0f2f1,stroke:#004d40,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style STRIPE fill:#e0f2f1,stroke:#004d40,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style SENDGRID fill:#e0f2f1,stroke:#004d40,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    
+    style SEGURIDAD fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style SSL fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style AUTH fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style ENCRIPT fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    
+    style MONITOREO fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style LOGS fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000,font-size:20px,font-weight:bold
+    style METRICS fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000,font-size:20px,font-weight:bold

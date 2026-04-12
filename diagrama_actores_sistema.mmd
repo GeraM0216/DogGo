@@ -1,0 +1,38 @@
+graph TB
+    subgraph INTERNOS["🔷 ACTORES INTERNOS"]
+        DUENO["👤 DUEÑO<br/>DE PERRO"]
+        PASEADOR["👨‍💼 PASEADOR"]
+        ADMIN["🔐 ADMIN"]
+        SISTEMA["⚙️ SISTEMA"]
+    end
+    
+    subgraph EXTERNOS["🔶 ACTORES EXTERNOS"]
+        VET["🏥 VETERINARIA"]
+        PAGO["💳 PAGOS"]
+        SEGURO["🛡️ SEGURO"]
+        GPS["📍 GPS"]
+    end
+    
+    DOGGO["<b>🐕 DOGGO</b><br/>(App + Backend)"]
+    
+    DUENO -->|Usa| DOGGO
+    PASEADOR -->|Usa| DOGGO
+    ADMIN -->|Gestiona| DOGGO
+    SISTEMA -->|Automático| DOGGO
+    
+    DOGGO -->|Emergencias| VET
+    DOGGO -->|Transacciones| PAGO
+    DOGGO -->|Incidentes| SEGURO
+    DOGGO -->|Rastreo| GPS
+    
+    style DOGGO fill:#FF9500,stroke:#333,stroke-width:4px,color:#fff,font-size:22px,font-weight:bold
+    style DUENO fill:#e1f5ff,stroke:#0277bd,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style PASEADOR fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style ADMIN fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style SISTEMA fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style VET fill:#fff3e0,stroke:#e65100,stroke-width:1.5px,color:#000,font-size:22px,font-weight:bold
+    style PAGO fill:#e0f2f1,stroke:#004d40,stroke-width:1.5px,color:#000,font-size:22px,font-weight:bold
+    style SEGURO fill:#fce4ec,stroke:#880e4f,stroke-width:1.5px,color:#000,font-size:22px,font-weight:bold
+    style GPS fill:#f1f8e9,stroke:#33691e,stroke-width:1.5px,color:#000,font-size:22px,font-weight:bold
+    style INTERNOS fill:none,stroke:none
+    style EXTERNOS fill:none,stroke:none

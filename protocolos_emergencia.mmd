@@ -1,0 +1,74 @@
+%%{init: {'flowchart': {'curve': 'linear'}, 'theme': 'dark'}}%%
+graph TB
+    INCIDENTE["⚠️ INCIDENTE DETECTADO"]
+    
+    TIPO{"¿TIPO DE<br/>INCIDENTE?"}
+    
+    ENFERMEDAD["🤒 ENFERMEDAD"]
+    EXTRAVÍO["🔍 EXTRAVÍO"]
+    GRAVE["🚑 EMERGENCIA GRAVE"]
+    
+    DOGGO["🐕 DOGGO<br/>(Sistema Central)"]
+    
+    ENF1["1. Suspender paseo"]
+    ENF2["2. Lugar seguro"]
+    ENF3["3. Notificar dueño"]
+    ENF4["4. Vet autorizada"]
+    
+    EXT1["1. Activar GPS"]
+    EXT2["2. Notificar dueño"]
+    EXT3["3. Búsqueda"]
+    EXT4["4. Autoridades"]
+    
+    GRA1["1. Emergencia"]
+    GRA2["2. Vet urgente"]
+    GRA3["3. Notificar dueño"]
+    GRA4["4. Seguro + Legal"]
+    
+    INCIDENTE --> TIPO
+    
+    TIPO -->|Enfermedad| ENFERMEDAD
+    TIPO -->|Extravío| EXTRAVÍO
+    TIPO -->|Grave| GRAVE
+    
+    ENFERMEDAD --> DOGGO
+    EXTRAVÍO --> DOGGO
+    GRAVE --> DOGGO
+    
+    DOGGO --> ENF1
+    DOGGO --> ENF2
+    DOGGO --> ENF3
+    DOGGO --> ENF4
+    
+    DOGGO --> EXT1
+    DOGGO --> EXT2
+    DOGGO --> EXT3
+    DOGGO --> EXT4
+    
+    DOGGO --> GRA1
+    DOGGO --> GRA2
+    DOGGO --> GRA3
+    DOGGO --> GRA4
+    
+    style INCIDENTE fill:#ff6b6b,stroke:#fff,stroke-width:3px,color:#fff,font-size:26px,font-weight:bold
+    style TIPO fill:#ff8c00,stroke:#fff,stroke-width:3px,color:#fff,font-size:24px,font-weight:bold
+    style DOGGO fill:#FF9500,stroke:#fff,stroke-width:4px,color:#fff,font-size:26px,font-weight:bold
+    
+    style ENFERMEDAD fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style EXTRAVÍO fill:#e0f2f1,stroke:#004d40,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style GRAVE fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    
+    style ENF1 fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style ENF2 fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style ENF3 fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style ENF4 fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    
+    style EXT1 fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style EXT2 fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style EXT3 fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style EXT4 fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    
+    style GRA1 fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style GRA2 fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style GRA3 fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style GRA4 fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000,font-size:22px,font-weight:bold

@@ -1,0 +1,64 @@
+%%{init: {'flowchart': {'curve': 'linear'}, 'theme': 'dark'}}%%
+graph TB
+    PASEADOR["👨‍💼 PASEADOR"]
+    
+    AUTH1["🔐 Crear<br/>Cuenta"]
+    AUTH2["🔐 Iniciar<br/>Sesión"]
+    
+    VERIF1["📋 Subir<br/>Docs"]
+    VERIF2["📋 Esperar<br/>Aprobación"]
+    
+    CONFIG1["⚙️ Horario"]
+    CONFIG2["⚙️ Tarifa"]
+    
+    SOLIC1["🔔 Recibir<br/>Solicitudes"]
+    SOLIC2["🔔 Aceptar<br/>Paseo"]
+    SOLIC3["🔔 Rechazar"]
+    
+    EJEC1["🚶 Activar<br/>GPS"]
+    EJEC2["🚶 Tomar<br/>Fotos"]
+    EJEC3["🚶 Finalizar"]
+    
+    INCID1["⚠️ Reportar<br/>Incidente"]
+    INCID2["⚠️ Emergencia"]
+    
+    COBRO["💰 Recibir<br/>Dinero"]
+    
+    DOGGO["🐕 DOGGO<br/>(App+Backend)"]
+    
+    PASEADOR --> DOGGO
+    
+    DOGGO --> AUTH1
+    DOGGO --> AUTH2
+    DOGGO --> VERIF1
+    DOGGO --> VERIF2
+    DOGGO --> CONFIG1
+    DOGGO --> CONFIG2
+    DOGGO --> SOLIC1
+    DOGGO --> SOLIC2
+    DOGGO --> SOLIC3
+    DOGGO --> EJEC1
+    DOGGO --> EJEC2
+    DOGGO --> EJEC3
+    DOGGO --> INCID1
+    DOGGO --> INCID2
+    DOGGO --> COBRO
+    
+    style PASEADOR fill:#6a1b9a,stroke:#fff,stroke-width:3px,color:#fff,font-size:26px,font-weight:bold
+    style DOGGO fill:#FF9500,stroke:#fff,stroke-width:4px,color:#fff,font-size:28px,font-weight:bold
+    
+    style AUTH1 fill:#e1f5ff,stroke:#0277bd,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style AUTH2 fill:#e1f5ff,stroke:#0277bd,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style VERIF1 fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style VERIF2 fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style CONFIG1 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style CONFIG2 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style SOLIC1 fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style SOLIC2 fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style SOLIC3 fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style EJEC1 fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style EJEC2 fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style EJEC3 fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style INCID1 fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style INCID2 fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style COBRO fill:#e0f2f1,stroke:#004d40,stroke-width:2px,color:#000,font-size:22px,font-weight:bold

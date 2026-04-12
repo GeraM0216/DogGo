@@ -1,0 +1,58 @@
+%%{init: {'flowchart': {'curve': 'linear'}, 'theme': 'dark'}}%%
+graph TB
+    DUENO["👤 DUEÑO"]
+    
+    AUTH1["🔐 Crear<br/>Cuenta"]
+    AUTH2["🔐 Iniciar<br/>Sesión"]
+    
+    MASC1["🐕 Registrar<br/>Perro"]
+    MASC2["🐕 Ver<br/>Perros"]
+    
+    BUSC1["🔍 Buscar<br/>Paseador"]
+    BUSC2["🔍 Ver<br/>Perfil"]
+    
+    RESERV1["📅 Seleccionar<br/>Fecha"]
+    RESERV2["📅 Reservar<br/>Paseo"]
+    
+    PAGO["💳 Procesar<br/>Pago"]
+    
+    RAST1["📍 Ver<br/>GPS"]
+    RAST2["📍 Ver<br/>Fotos"]
+    
+    CALIF1["⭐ Calificar"]
+    CALIF2["⭐ Reseña"]
+    
+    DOGGO["🐕 DOGGO<br/>(App+Backend)"]
+    
+    DUENO --> DOGGO
+    
+    DOGGO --> AUTH1
+    DOGGO --> AUTH2
+    DOGGO --> MASC1
+    DOGGO --> MASC2
+    DOGGO --> BUSC1
+    DOGGO --> BUSC2
+    DOGGO --> RESERV1
+    DOGGO --> RESERV2
+    DOGGO --> PAGO
+    DOGGO --> RAST1
+    DOGGO --> RAST2
+    DOGGO --> CALIF1
+    DOGGO --> CALIF2
+    
+    style DUENO fill:#0277bd,stroke:#fff,stroke-width:3px,color:#fff,font-size:26px,font-weight:bold
+    style DOGGO fill:#FF9500,stroke:#fff,stroke-width:4px,color:#fff,font-size:28px,font-weight:bold
+    
+    style AUTH1 fill:#e1f5ff,stroke:#0277bd,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style AUTH2 fill:#e1f5ff,stroke:#0277bd,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style MASC1 fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style MASC2 fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style BUSC1 fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style BUSC2 fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style RESERV1 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style RESERV2 fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style PAGO fill:#e0f2f1,stroke:#004d40,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style RAST1 fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style RAST2 fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style CALIF1 fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
+    style CALIF2 fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#000,font-size:22px,font-weight:bold
