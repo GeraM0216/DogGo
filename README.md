@@ -187,25 +187,6 @@ npm start
 
 ---
 
-## 👥 Equipo
-
-**Proyecto de Ingeniería de Software - Tecmilenio**
-
-| Rol | Nombre | Matrícula |
-|-----|--------|-----------|
-| 👨‍💼 Project Lead | Víctor Hugo Herrera Mata | 2763639 |
-| 👨‍💻 Backend Lead | Javier Terrones Pérez | 02910455 |
-| 👨‍💻 Frontend Lead | Moisés Moreno | 03057160 |
-| 👨‍💻 DevOps | Marco Eugenio Zavala | 2868251 |
-| 👨‍💻 QA Lead | Gerardo Molina Abarca | 3068341 |
-| 👨‍💻 Developer | Miguel Ángel Zavala | 2830079 |
-| 👨‍💻 Developer | Armando Hernández Ayala | 2873223 |
-
-**Profesor:** Julio Antonio García Moreno  
-**Módulo:** Proyectos de Ingeniería de Software - Módulo 1, Actividad 3
-
----
-
 ## 📊 Roadmap
 
 ### Fase 1 (ACTUAL - MVP)
@@ -240,43 +221,6 @@ DogGo implementa estándares de seguridad robustos:
 - **Verificación:** KYC para paseadores
 - **Protección:** Rate limiting, CORS, SQL injection prevention
 - **Cumplimiento:** LGPD, privacidad de datos
-
----
-
-## 📞 Contacto & Soporte
-
-- **Email:** doggo@tecmilenio.mx
-- **WhatsApp:** +52 1 871 113 1637
-- **GitHub Issues:** [Reportar bugs](https://github.com/GeraM0216/DogGo/issues)
-
----
-
-## 📄 Licencia
-
-Este proyecto es privado y propiedad de Tecmilenio. 
-**Todos los derechos reservados © 2026 DogGo Team**
-
----
-
-## 🙏 Agradecimientos
-
-- Tecmilenio University
-- Google Cloud Platform
-- Comunidad de desarrollo mexicana
-- Todos nuestros perros beta testers 🐕
-
----
-
-## 📈 Métricas de Éxito (KPIs)
-
-| Métrica | Meta (6 meses) | Estado |
-|---------|----------------|--------|
-| Usuarios Registrados | 500+ | 🔄 |
-| Paseadores Verificados | 50+ | 🔄 |
-| Paseos Completados | 2,000+ | 🔄 |
-| Satisfacción (NPS) | >70 | 🔄 |
-| Retención de Usuarios | >60% | 🔄 |
-| Revenue MXN | $50,000+ | 🔄 |
 
 ---
 
