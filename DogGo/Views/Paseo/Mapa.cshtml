@@ -330,7 +330,9 @@
         connection.invoke("EnviarUbicacion", paseoId, lat, lng)
         .catch(err => console.error("Error GPS:", err));
         },
-        (err) => console.error("Error geolocalización:", err),
+        (err) => {
+        console.error("Error geolocalización:", err);
+        },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
         );
         }
@@ -342,7 +344,7 @@
         }
         }
 
-        function cambiarEstado(nuevoEstado) {
+        async function cambiarEstado(nuevoEstado) {
         if (nuevoEstado === "EnCurso") {
         if (!tieneFotoInicio) {
         alert("Debes subir una foto del perro antes de iniciar el paseo.");
@@ -361,6 +363,28 @@
         alert("Este paseo programado solo puede iniciarse 15 minutos antes de la hora programada.");
         return;
         }
+        }
+
+        if (!navigator.geolocation) {
+        alert("Tu navegador no soporta geolocalización");
+        return;
+        }
+
+        try {
+        await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+        (pos) => {
+        iniciarGPS();
+        resolve(pos);
+        },
+        (err) => reject(err),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+        );
+        });
+        } catch (err) {
+        console.error("Error geolocalización al iniciar:", err);
+        alert("No se pudo obtener tu ubicación. Revisa los permisos del navegador.");
+        return;
         }
         }
 
