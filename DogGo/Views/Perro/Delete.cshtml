@@ -1,42 +1,130 @@
 ﻿@model DogGo.Models.Perro
-
 @{
-    ViewData["Title"] = "Eliminar perro";
+    ViewData["Title"] = "Eliminar a " + Model.Nombre;
 }
 
-<h1>Eliminar perro</h1>
+<div class="delete-wrap">
+    <div class="delete-card">
 
-<h3>¿Estás seguro de que quieres eliminar este perro?</h3>
+        <!-- Icono advertencia -->
+        <div class="delete-icon-wrap">
+            <div class="delete-icon">🗑</div>
+        </div>
 
-<div>
-    <h4>Perro</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">Nombre</dt>
-        <dd class="col-sm-10">@Model.Nombre</dd>
+        <div class="delete-title">¿Eliminar a @Model.Nombre?</div>
+        <p class="delete-sub">
+            Esta acción no se puede deshacer. El perfil de <strong>@Model.Nombre</strong>
+            y todos sus datos serán eliminados permanentemente.
+        </p>
 
-        <dt class="col-sm-2">Raza</dt>
-        <dd class="col-sm-10">@Model.Raza</dd>
+        <!-- Resumen del perro -->
+        <div class="delete-perro-card">
+            <div class="dpc-foto">
+                @if (!string.IsNullOrWhiteSpace(Model.ImagenUrl))
+                {
+                    <img src="@Model.ImagenUrl" alt="@Model.Nombre" class="dpc-img" />
+                }
+                else
+                {
+                    <span class="dpc-emoji">🐶</span>
+                }
+            </div>
+            <div class="dpc-info">
+                <div class="dpc-nombre">@Model.Nombre</div>
+                <div class="dpc-meta">
+                    @if (!string.IsNullOrWhiteSpace(Model.Raza))
+                    {
+                        <span>@Model.Raza</span>
+                    }
+                    @if (Model.Edad > 0)
+                    {
+                        <span>@Model.Edad año@(Model.Edad != 1 ? "s" : "")</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Tamaño))
+                    {
+                        <span>@Model.Tamaño</span>
+                    }
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Notas))
+                {
+                    <div class="dpc-notas">📝 @Model.Notas</div>
+                }
+            </div>
+        </div>
 
-        <dt class="col-sm-2">Edad</dt>
-        <dd class="col-sm-10">@Model.Edad</dd>
+        <!-- Acciones -->
+        <div class="delete-actions">
+            <a asp-action="Index" class="btn-no-delete">Cancelar, conservar</a>
+            <form asp-action="Delete" method="post" style="flex:1">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn-si-delete">
+                    Sí, eliminar
+                </button>
+            </form>
+        </div>
 
-        <dt class="col-sm-2">Tamaño</dt>
-        <dd class="col-sm-10">@Model.Tamaño</dd>
-
-        <dt class="col-sm-2">Notas</dt>
-        <dd class="col-sm-10">@Model.Notas</dd>
-
-        <dt class="col-sm-2">Dueño</dt>
-        <dd class="col-sm-10">
-            @(Model.Dueño != null ? Model.Dueño.Nombre + " " + Model.Dueño.Apellido : "")
-        </dd>
-    </dl>
-
-    <form asp-action="Delete" method="post">
-        @Html.AntiForgeryToken()
-        <input type="hidden" asp-for="Id" />
-        <button type="submit" class="btn btn-danger">Eliminar</button>
-        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-    </form>
+    </div>
 </div>
+
+<style>
+    .delete-wrap {
+        max-width: 480px; margin: 3rem auto; padding: 0 1.5rem 3rem;
+    }
+    .delete-card {
+        background: var(--card); border: 1.5px solid #fca5a5;
+        border-radius: 24px; padding: 2.25rem 2rem;
+        box-shadow: 0 4px 20px rgba(220,38,38,.08);
+        text-align: center; display: flex; flex-direction: column; gap: 1.1rem;
+    }
+
+    .delete-icon-wrap { display: flex; justify-content: center; }
+    .delete-icon {
+        width: 64px; height: 64px; border-radius: 50%;
+        background: #fee2e2; display: flex;
+        align-items: center; justify-content: center;
+        font-size: 1.75rem;
+    }
+
+    .delete-title { font-weight: 900; font-size: 1.3rem; letter-spacing: -.2px; color: var(--text); }
+    .delete-sub   { font-size: .9rem; font-weight: 600; color: var(--muted); line-height: 1.6; margin: 0; }
+    .delete-sub strong { color: var(--text); }
+
+    /* Resumen perro */
+    .delete-perro-card {
+        display: flex; align-items: center; gap: .9rem;
+        background: var(--warm); border: 1.5px solid var(--border);
+        border-radius: 16px; padding: 1rem 1.1rem; text-align: left;
+    }
+    .dpc-foto {
+        width: 52px; height: 52px; border-radius: 50%;
+        background: var(--teal-l); overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .dpc-img   { width: 100%; height: 100%; object-fit: cover; }
+    .dpc-emoji { font-size: 1.6rem; }
+    .dpc-nombre{ font-weight: 900; font-size: 1rem; color: var(--text); margin-bottom: .25rem; }
+    .dpc-meta  { display: flex; gap: .5rem; flex-wrap: wrap; font-size: .8rem; font-weight: 700; color: var(--muted); margin-bottom: .2rem; }
+    .dpc-meta span::after { content: '·'; margin-left: .5rem; }
+    .dpc-meta span:last-child::after { content: ''; }
+    .dpc-notas { font-size: .78rem; font-weight: 600; color: var(--amber-d); background: var(--amber-l); border-radius: 8px; padding: .22rem .6rem; display: inline-block; }
+
+    /* Acciones */
+    .delete-actions { display: flex; gap: .65rem; }
+    .btn-no-delete {
+        flex: 1; padding: .7rem; border-radius: 999px; text-align: center;
+        font-size: .9rem; font-weight: 800;
+        background: #fff; color: var(--muted);
+        border: 1.5px solid var(--border); text-decoration: none;
+        transition: background .18s; display: flex; align-items: center; justify-content: center;
+    }
+    .btn-no-delete:hover { background: var(--warm); color: var(--muted); }
+    .btn-si-delete {
+        width: 100%; padding: .7rem; border-radius: 999px;
+        font-size: .9rem; font-weight: 900; font-family: 'Nunito', sans-serif;
+        background: #dc2626; color: #fff; border: none; cursor: pointer;
+        box-shadow: 0 4px 14px rgba(220,38,38,.25); transition: background .18s;
+    }
+    .btn-si-delete:hover { background: #b91c1c; }
+</style>

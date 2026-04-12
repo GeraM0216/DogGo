@@ -1,437 +1,496 @@
 ﻿@model List<DogGo.Models.Paseo>
 @{
     ViewData["Title"] = "Mis paseos";
-
-    var enCurso = Model.Where(p => p.Estado == "EnCurso").ToList();
+    var enCurso    = Model.Where(p => p.Estado == "EnCurso").ToList();
     var pendientes = Model.Where(p => p.Estado == "Pendiente").ToList();
-    var finalizados = Model.Where(p => p.Estado == "Finalizado").ToList();
+    var finalizados= Model.Where(p => p.Estado == "Finalizado").ToList();
     var cancelados = Model.Where(p => p.Estado == "Cancelado").ToList();
 }
 
-<div class="container mt-4">
-    <h2 class="mb-4">Mis paseos</h2>
+<!-- ── Page Header ── -->
+<div class="page-header-wrap">
+    <div class="page-header-inner">
+        <div class="page-eyebrow">🦮 Tu historial</div>
+        <h1 class="page-title">Mis paseos</h1>
+        <p class="page-sub">Revisa el estado de todos tus paseos, activos e históricos.</p>
+
+        @if (Model.Any())
+        {
+            <!-- Mini resumen estadísticas -->
+            <div class="header-stats">
+                @if (enCurso.Any())
+                {
+                    <div class="hstat hstat-green">
+                        <span class="hstat-num">@enCurso.Count</span>
+                        <span class="hstat-lbl">En curso</span>
+                    </div>
+                }
+                @if (pendientes.Any())
+                {
+                    <div class="hstat hstat-amber">
+                        <span class="hstat-num">@pendientes.Count</span>
+                        <span class="hstat-lbl">Pendiente@(pendientes.Count > 1 ? "s" : "")</span>
+                    </div>
+                }
+                <div class="hstat hstat-muted">
+                    <span class="hstat-num">@finalizados.Count</span>
+                    <span class="hstat-lbl">Finalizado@(finalizados.Count != 1 ? "s" : "")</span>
+                </div>
+                @if (cancelados.Any())
+                {
+                    <div class="hstat hstat-red">
+                        <span class="hstat-num">@cancelados.Count</span>
+                        <span class="hstat-lbl">Cancelado@(cancelados.Count > 1 ? "s" : "")</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="paseos-container">
 
     @if (!Model.Any())
     {
-        <p class="text-muted">No tienes paseos registrados aún.</p>
+        <div class="empty-state">
+            <div class="empty-icon">🦮</div>
+            <h3>No tienes paseos registrados</h3>
+            <p>Cuando solicites o realices un paseo, aparecerá aquí.</p>
+            <a asp-controller="Paseador" asp-action="Directorio" class="btn-primary-doggo" style="margin-top:.75rem;display:inline-block">
+                Buscar paseador
+            </a>
+        </div>
     }
     else
     {
+        <!-- ── EN CURSO ── -->
         @if (enCurso.Any())
         {
-            <h5 class="seccion-titulo text-success">En curso</h5>
-            <div class="list-group mb-4">
-                @foreach (var p in enCurso)
-                {
-                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <a asp-action="Mapa" asp-route-id="@p.Id"
-                               class="text-decoration-none text-dark flex-grow-1">
-                            <div class="d-flex gap-3 align-items-start">
-                                <div class="paseo-fotos">
-                                    @if (!string.IsNullOrWhiteSpace(p.Perro.ImagenUrl))
-                                    {
-                                        <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="paseo-foto" />
-                                    }
-                                    else
-                                    {
-                                        <div class="paseo-foto-placeholder">🐶</div>
-                                    }
-
-                                    @if (p.Paseador != null && !string.IsNullOrWhiteSpace(p.Paseador.FotoUrl))
-                                    {
-                                        <img src="@p.Paseador.FotoUrl" alt="Foto del paseador" class="paseo-foto-secundaria" />
-                                    }
-                                    else
-                                    {
-                                        <div class="paseo-foto-secundaria-placeholder">🐾</div>
-                                    }
-                                </div>
-
-                                <div>
-                                    <strong>Paseo de: @p.Perro.Nombre</strong>
-                                    @if (p.EsProgramado)
-                                    {
-                                        <span class="badge bg-info text-dark ms-2">Programado</span>
-                                    }
-
-                                    <div class="small text-muted mt-1">
-                                        Paseador:
-                                        @if (p.Paseador != null && p.Paseador.Usuario != null)
-                                        {
-                                            @($"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}")
-                                        }
-                                        else
-                                        {
-                                            <span>No disponible</span>
-                                        }
+            <div class="seccion">
+                <div class="seccion-header">
+                    <span class="seccion-dot dot-green"></span>
+                    <h2 class="seccion-titulo">En curso</h2>
+                    <span class="seccion-count count-green">@enCurso.Count</span>
+                </div>
+                <div class="paseos-list">
+                    @foreach (var p in enCurso)
+                    {
+                        <div class="paseo-card card-green">
+                            <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link">
+                                <div class="paseo-card-inner">
+                                    <div class="paseo-icon-wrap icon-green">🐕</div>
+                                    <div class="paseo-info">
+                                        <div class="paseo-top-row">
+                                            <span class="paseo-id">Paseo #@p.Id</span>
+                                            <span class="paseo-perro">🐶 @p.Perro.Nombre</span>
+                                            @if (p.EsProgramado)
+                                            {
+                                                <span class="paseo-badge badge-blue">Programado</span>
+                                            }
+                                        </div>
+                                        <div class="paseo-meta">
+                                            <span>📅 @p.FechaInicio?.ToString("dd/MM/yyyy HH:mm")</span>
+                                            <span>⏱ @p.DuracionMinutos min</span>
+                                            @if (p.EsProgramado && p.FechaProgramada != null)
+                                            {
+                                                <span>🗓 @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                            }
+                                        </div>
                                     </div>
-
-                                    <div class="text-muted small mt-1">
-                                        <div>Duración solicitada: @p.DuracionMinutos min</div>
-
-                                        @if (p.FechaInicio != null)
-                                        {
-                                            <div>Inicio real: @p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
-                                            var duracionActual = DateTime.UtcNow - p.FechaInicio.Value;
-                                            <div>Duración actual: @((int)duracionActual.TotalMinutes) min</div>
-                                        }
-                                        else
-                                        {
-                                            <div>Aún no inicia</div>
-                                        }
-
-                                        @if (p.EsProgramado && p.FechaProgramada != null)
-                                        {
-                                            <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
-                                        }
+                                    <div class="paseo-right">
+                                        <span class="estado-badge estado-green">● En curso</span>
+                                        <span class="paseo-arrow">→</span>
                                     </div>
                                 </div>
-                            </div>
-                        </a>
-
-                        <span class="badge bg-success">EnCurso</span>
-                    </div>
-                }
+                            </a>
+                        </div>
+                    }
+                </div>
             </div>
         }
 
+        <!-- ── PENDIENTES ── -->
         @if (pendientes.Any())
         {
-            <h5 class="seccion-titulo text-warning">Pendientes</h5>
-            <div class="list-group mb-4">
-                @foreach (var p in pendientes)
-                {
-                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <a asp-action="Mapa" asp-route-id="@p.Id"
-                               class="text-decoration-none text-dark flex-grow-1">
-                            <div class="d-flex gap-3 align-items-start">
-                                <div class="paseo-fotos">
-                                    @if (!string.IsNullOrWhiteSpace(p.Perro.ImagenUrl))
-                                    {
-                                        <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="paseo-foto" />
-                                    }
-                                    else
-                                    {
-                                        <div class="paseo-foto-placeholder">🐶</div>
-                                    }
-
-                                    @if (p.Paseador != null && !string.IsNullOrWhiteSpace(p.Paseador.FotoUrl))
-                                    {
-                                        <img src="@p.Paseador.FotoUrl" alt="Foto del paseador" class="paseo-foto-secundaria" />
-                                    }
-                                    else
-                                    {
-                                        <div class="paseo-foto-secundaria-placeholder">🐾</div>
-                                    }
-                                </div>
-
-                                <div>
-                                    <strong>Paseo de: @p.Perro.Nombre</strong>
-                                    @if (p.EsProgramado)
-                                    {
-                                        <span class="badge bg-info text-dark ms-2">Programado</span>
-                                    }
-
-                                    <div class="small text-muted mt-1">
-                                        Paseador:
-                                        @if (p.Paseador != null && p.Paseador.Usuario != null)
-                                        {
-                                            @($"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}")
-                                        }
-                                        else
-                                        {
-                                            <span>No disponible</span>
-                                        }
+            <div class="seccion">
+                <div class="seccion-header">
+                    <span class="seccion-dot dot-amber"></span>
+                    <h2 class="seccion-titulo">Pendientes</h2>
+                    <span class="seccion-count count-amber">@pendientes.Count</span>
+                </div>
+                <div class="paseos-list">
+                    @foreach (var p in pendientes)
+                    {
+                        <div class="paseo-card card-amber">
+                            <div class="paseo-card-inner">
+                                <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link" style="flex:1;display:flex;gap:.9rem;align-items:center;min-width:0">
+                                    <div class="paseo-icon-wrap icon-amber">🕐</div>
+                                    <div class="paseo-info">
+                                        <div class="paseo-top-row">
+                                            <span class="paseo-id">Paseo #@p.Id</span>
+                                            <span class="paseo-perro">🐶 @p.Perro.Nombre</span>
+                                            @if (p.EsProgramado)
+                                            {
+                                                <span class="paseo-badge badge-blue">Programado</span>
+                                            }
+                                        </div>
+                                        <div class="paseo-meta">
+                                            <span>📅 @p.FechaInicio?.ToString("dd/MM/yyyy HH:mm")</span>
+                                            <span>⏱ @p.DuracionMinutos min</span>
+                                            @if (p.EsProgramado && p.FechaProgramada != null)
+                                            {
+                                                <span>🗓 @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                            }
+                                        </div>
                                     </div>
+                                </a>
 
-                                    <div class="text-muted small mt-1">
-                                        <div>Duración solicitada: @p.DuracionMinutos min</div>
-                                        <div>Aún no inicia</div>
-
-                                        @if (p.EsProgramado && p.FechaProgramada != null)
-                                        {
-                                            <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
-                                        }
-                                    </div>
+                                <div class="paseo-right">
+                                    <span class="estado-badge estado-amber">● Pendiente</span>
+                                    <!-- Botón cancelar -->
+                                    <button class="btn-cancelar-toggle"
+                                            onclick="toggleCancelar(@p.Id)"
+                                            title="Cancelar paseo">✕</button>
                                 </div>
                             </div>
-                        </a>
 
-                        <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
-                            <span class="badge bg-warning text-dark">Pendiente</span>
-
-                            <form asp-action="Cancelar" asp-route-id="@p.Id" method="post"
-                                  class="m-0 d-flex gap-2 align-items-center flex-wrap justify-content-end">
-                                @Html.AntiForgeryToken()
-
-                                <input type="text"
-                                       name="motivo"
-                                       class="form-control form-control-sm"
-                                       placeholder="Motivo (opcional)"
-                                       style="max-width: 220px;" />
-
-                                <button type="submit"
-                                        class="btn btn-outline-danger btn-sm"
-                                        onclick="return confirm('¿Seguro que quieres cancelar este paseo?');">
-                                    Cancelar
-                                </button>
-                            </form>
+                            <!-- Panel cancelar (oculto por defecto) -->
+                            <div class="cancelar-panel" id="cancelar-@p.Id" style="display:none">
+                                <form asp-action="Cancelar" asp-route-id="@p.Id" method="post"
+                                      class="cancelar-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="text" name="motivo"
+                                           class="form-ctrl"
+                                           placeholder="Motivo de cancelación (opcional)" />
+                                    <div class="cancelar-actions">
+                                        <button type="button" class="btn-no-cancelar"
+                                                onclick="toggleCancelar(@p.Id)">Volver</button>
+                                        <button type="submit" class="btn-confirmar-cancelar"
+                                                onclick="return confirm('¿Seguro que quieres cancelar este paseo?')">
+                                            Confirmar cancelación
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         }
 
+        <!-- ── FINALIZADOS ── -->
         @if (finalizados.Any())
         {
-            <h5 class="seccion-titulo text-secondary">Finalizados</h5>
-            <div class="list-group mb-4">
-                @foreach (var p in finalizados)
-                {
-                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <a asp-action="Mapa" asp-route-id="@p.Id"
-                               class="text-decoration-none text-dark flex-grow-1">
-                            <div class="d-flex gap-3 align-items-start">
-                                <div class="paseo-fotos">
-                                    @if (!string.IsNullOrWhiteSpace(p.Perro.ImagenUrl))
-                                    {
-                                        <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="paseo-foto" />
-                                    }
-                                    else
-                                    {
-                                        <div class="paseo-foto-placeholder">🐶</div>
-                                    }
-
-                                    @if (p.Paseador != null && !string.IsNullOrWhiteSpace(p.Paseador.FotoUrl))
-                                    {
-                                        <img src="@p.Paseador.FotoUrl" alt="Foto del paseador" class="paseo-foto-secundaria" />
-                                    }
-                                    else
-                                    {
-                                        <div class="paseo-foto-secundaria-placeholder">🐾</div>
-                                    }
-                                </div>
-
-                                <div>
-                                    <strong>Paseo de: @p.Perro.Nombre</strong>
-                                    @if (p.EsProgramado)
-                                    {
-                                        <span class="badge bg-info text-dark ms-2">Programado</span>
-                                    }
-
-                                    <div class="small text-muted mt-1">
-                                        Paseador:
-                                        @if (p.Paseador != null && p.Paseador.Usuario != null)
-                                        {
-                                            @($"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}")
-                                        }
-                                        else
-                                        {
-                                            <span>No disponible</span>
-                                        }
-                                    </div>
-
-                                    <div class="text-muted small mt-1">
-                                        <div>Duración solicitada: @p.DuracionMinutos min</div>
-
-                                        @if (p.FechaInicio != null)
-                                        {
-                                            <div>Inicio real: @p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
-                                        }
-
-                                        @if (p.FechaFin != null)
-                                        {
-                                            <div>Fin real: @p.FechaFin?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
-                                        }
-
-                                        @if (p.FechaInicio != null && p.FechaFin != null)
-                                        {
-                                            var duracionReal = p.FechaFin.Value - p.FechaInicio.Value;
-                                            <div>Duración real: @((int)duracionReal.TotalMinutes) min</div>
-                                        }
-
-                                        @if (p.EsProgramado && p.FechaProgramada != null)
-                                        {
-                                            <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
-                                        }
-                                    </div>
-
-                                    @if (p.Calificacion != null)
-                                    {
-                                        <div class="small text-muted mt-1">
-                                            Ya calificado: @p.Calificacion.Puntaje ★
-                                            @if (!string.IsNullOrWhiteSpace(p.Calificacion.Comentario))
+            <div class="seccion">
+                <div class="seccion-header">
+                    <span class="seccion-dot dot-muted"></span>
+                    <h2 class="seccion-titulo">Finalizados</h2>
+                    <span class="seccion-count count-muted">@finalizados.Count</span>
+                </div>
+                <div class="paseos-list">
+                    @foreach (var p in finalizados)
+                    {
+                        <div class="paseo-card card-muted">
+                            <div class="paseo-card-inner">
+                                <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link" style="flex:1;display:flex;gap:.9rem;align-items:center;min-width:0">
+                                    <div class="paseo-icon-wrap icon-muted">✅</div>
+                                    <div class="paseo-info">
+                                        <div class="paseo-top-row">
+                                            <span class="paseo-id">Paseo #@p.Id</span>
+                                            <span class="paseo-perro">🐶 @p.Perro.Nombre</span>
+                                            @if (p.EsProgramado)
                                             {
-                                                <span>— "@p.Calificacion.Comentario"</span>
+                                                <span class="paseo-badge badge-blue">Programado</span>
                                             }
                                         </div>
+                                        <div class="paseo-meta">
+                                            <span>📅 @p.FechaInicio?.ToString("dd/MM/yyyy HH:mm")</span>
+                                            <span>⏱ @p.DuracionMinutos min</span>
+                                        </div>
+                                        @if (p.Calificacion != null)
+                                        {
+                                            <div class="calificacion-inline">
+                                                <span class="cal-stars">
+                                                    @for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        <span class="@(i <= p.Calificacion.Puntaje ? "star-on" : "star-off")">★</span>
+                                                    }
+                                                </span>
+                                                @if (!string.IsNullOrWhiteSpace(p.Calificacion.Comentario))
+                                                {
+                                                    <span class="cal-texto">"@p.Calificacion.Comentario"</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </a>
+
+                                <div class="paseo-right">
+                                    <span class="estado-badge estado-muted">● Finalizado</span>
+                                    @if (p.Calificacion == null && User.IsInRole("Duenio"))
+                                    {
+                                        <a asp-controller="Calificacion"
+                                           asp-action="Crear"
+                                           asp-route-paseoId="@p.Id"
+                                           class="btn-calificar">
+                                            ⭐ Calificar
+                                        </a>
+                                    }
+                                    else if (p.Calificacion != null)
+                                    {
+                                        <span class="ya-calificado">✓ Calificado</span>
                                     }
                                 </div>
                             </div>
-                        </a>
-
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-secondary">Finalizado</span>
-
-                            @if (p.Calificacion == null && User.IsInRole("Duenio"))
-                            {
-                                <a asp-controller="Calificacion"
-                                       asp-action="Crear"
-                                       asp-route-paseoId="@p.Id"
-                                       class="btn btn-warning btn-sm">
-                                    Calificar
-                                </a>
-                            }
-                            else if (p.Calificacion != null)
-                            {
-                                <span class="btn btn-outline-success btn-sm disabled">
-                                    Ya calificado
-                                </span>
-                            }
                         </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         }
 
+        <!-- ── CANCELADOS ── -->
         @if (cancelados.Any())
         {
-            <h5 class="seccion-titulo text-danger">Cancelados</h5>
-            <div class="list-group mb-4">
-                @foreach (var p in cancelados)
-                {
-                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <a asp-action="Mapa" asp-route-id="@p.Id"
-                               class="text-decoration-none text-dark flex-grow-1">
-                            <div class="d-flex gap-3 align-items-start">
-                                <div class="paseo-fotos">
-                                    @if (!string.IsNullOrWhiteSpace(p.Perro.ImagenUrl))
-                                    {
-                                        <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="paseo-foto" />
-                                    }
-                                    else
-                                    {
-                                        <div class="paseo-foto-placeholder">🐶</div>
-                                    }
-
-                                    @if (p.Paseador != null && !string.IsNullOrWhiteSpace(p.Paseador.FotoUrl))
-                                    {
-                                        <img src="@p.Paseador.FotoUrl" alt="Foto del paseador" class="paseo-foto-secundaria" />
-                                    }
-                                    else
-                                    {
-                                        <div class="paseo-foto-secundaria-placeholder">🐾</div>
-                                    }
-                                </div>
-
-                                <div>
-                                    <strong>Paseo de: @p.Perro.Nombre</strong>
-                                    @if (p.EsProgramado)
-                                    {
-                                        <span class="badge bg-info text-dark ms-2">Programado</span>
-                                    }
-
-                                    <div class="small text-muted mt-1">
-                                        Paseador:
-                                        @if (p.Paseador != null && p.Paseador.Usuario != null)
-                                        {
-                                            @($"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}")
-                                        }
-                                        else
-                                        {
-                                            <span>No disponible</span>
-                                        }
-                                    </div>
-
-                                    <div class="text-muted small mt-1">
-                                        <div>Duración solicitada: @p.DuracionMinutos min</div>
-
-                                        @if (p.FechaInicio != null)
-                                        {
-                                            <div>Inicio real: @p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
-                                        }
-                                        else
-                                        {
-                                            <div>No inició</div>
-                                        }
-
-                                        @if (p.EsProgramado && p.FechaProgramada != null)
-                                        {
-                                            <div>Programado para: @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
-                                        }
-                                    </div>
-
-                                    @if (!string.IsNullOrWhiteSpace(p.CanceladoPor) || !string.IsNullOrWhiteSpace(p.MotivoCancelacion) || p.FechaCancelacion != null)
-                                    {
-                                        <div class="small text-muted mt-1">
-                                            @if (!string.IsNullOrWhiteSpace(p.CanceladoPor))
-                                            {
-                                                <div>Cancelado por: @p.CanceladoPor</div>
-                                            }
-
-                                            @if (!string.IsNullOrWhiteSpace(p.MotivoCancelacion))
-                                            {
-                                                <div>Motivo: @p.MotivoCancelacion</div>
-                                            }
-
-                                            @if (p.FechaCancelacion != null)
-                                            {
-                                                <div>Fecha de cancelación: @p.FechaCancelacion?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
-                                            }
+            <div class="seccion">
+                <div class="seccion-header">
+                    <span class="seccion-dot dot-red"></span>
+                    <h2 class="seccion-titulo">Cancelados</h2>
+                    <span class="seccion-count count-red">@cancelados.Count</span>
+                </div>
+                <div class="paseos-list">
+                    @foreach (var p in cancelados)
+                    {
+                        <div class="paseo-card card-red">
+                            <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link">
+                                <div class="paseo-card-inner">
+                                    <div class="paseo-icon-wrap icon-red">✕</div>
+                                    <div class="paseo-info">
+                                        <div class="paseo-top-row">
+                                            <span class="paseo-id">Paseo #@p.Id</span>
+                                            <span class="paseo-perro">🐶 @p.Perro.Nombre</span>
                                         </div>
-                                    }
+                                        <div class="paseo-meta">
+                                            <span>📅 @p.FechaInicio?.ToString("dd/MM/yyyy HH:mm")</span>
+                                            <span>⏱ @p.DuracionMinutos min</span>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(p.CanceladoPor) || !string.IsNullOrWhiteSpace(p.MotivoCancelacion))
+                                        {
+                                            <div class="cancelacion-info">
+                                                @if (!string.IsNullOrWhiteSpace(p.CanceladoPor))
+                                                {
+                                                    <span>👤 Cancelado por: @p.CanceladoPor</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(p.MotivoCancelacion))
+                                                {
+                                                    <span>💬 @p.MotivoCancelacion</span>
+                                                }
+                                                @if (p.FechaCancelacion != null)
+                                                {
+                                                    <span>🗓 @p.FechaCancelacion?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="paseo-right">
+                                        <span class="estado-badge estado-red">● Cancelado</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </a>
-
-                        <span class="badge bg-danger">Cancelado</span>
-                    </div>
-                }
+                            </a>
+                        </div>
+                    }
+                </div>
             </div>
         }
     }
 </div>
 
 <style>
-    .seccion-titulo {
-        margin-bottom: 0.75rem;
-        font-weight: 600;
+    /* ── Page header ── */
+    .page-header-wrap  { background: var(--warm); border-bottom: 1.5px solid var(--border); padding: 2rem 2rem 1.5rem; }
+    .page-header-inner { max-width: 900px; margin: 0 auto; }
+    .page-eyebrow      { font-size: .74rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--teal); margin-bottom: .4rem; }
+    .page-title        { font-weight: 900; font-size: clamp(1.7rem,3vw,2.2rem); letter-spacing: -.3px; color: var(--text); margin-bottom: .3rem; }
+    .page-sub          { color: var(--muted); font-size: .9rem; font-weight: 600; margin-bottom: 1.25rem; }
+
+    .header-stats { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .hstat {
+        display: flex; flex-direction: column; align-items: center;
+        padding: .5rem .9rem; border-radius: 12px; min-width: 72px;
+        border: 1.5px solid;
+    }
+    .hstat-num { font-weight: 900; font-size: 1.3rem; line-height: 1; }
+    .hstat-lbl { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-top: .15rem; }
+    .hstat-green  { background: #dcfce7; border-color: #86efac; color: #16a34a; }
+    .hstat-amber  { background: var(--amber-l); border-color: #fcd34d; color: var(--amber-d); }
+    .hstat-muted  { background: var(--warm); border-color: var(--border); color: var(--muted); }
+    .hstat-red    { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+
+    /* ── Container ── */
+    .paseos-container { max-width: 900px; margin: 0 auto; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; }
+
+    /* ── Empty ── */
+    .empty-state { text-align: center; padding: 4rem 2rem; background: var(--card); border: 1.5px dashed var(--border); border-radius: 22px; }
+    .empty-icon  { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-weight: 900; font-size: 1.2rem; margin-bottom: .5rem; color: var(--text); }
+    .empty-state p  { color: var(--muted); font-weight: 600; font-size: .9rem; }
+
+    /* ── Sección ── */
+    .seccion { display: flex; flex-direction: column; gap: .75rem; }
+    .seccion-header { display: flex; align-items: center; gap: .6rem; margin-bottom: .25rem; }
+    .seccion-dot    { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot-green { background: #16a34a; } .dot-amber { background: var(--amber); }
+    .dot-muted { background: var(--muted); } .dot-red { background: #dc2626; }
+    .seccion-titulo { font-weight: 900; font-size: 1.05rem; color: var(--text); margin: 0; }
+    .seccion-count  { padding: .18rem .6rem; border-radius: 999px; font-size: .72rem; font-weight: 800; }
+    .count-green { background: #dcfce7; color: #16a34a; }
+    .count-amber { background: var(--amber-l); color: var(--amber-d); }
+    .count-muted { background: var(--warm); color: var(--muted); border: 1px solid var(--border); }
+    .count-red   { background: #fee2e2; color: #dc2626; }
+
+    /* ── Paseo card ── */
+    .paseos-list { display: flex; flex-direction: column; gap: .65rem; }
+
+    .paseo-card {
+        background: var(--card); border: 1.5px solid var(--border);
+        border-radius: 18px; overflow: hidden;
+        transition: border-color .2s, transform .2s, box-shadow .2s;
+    }
+    .paseo-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(45,49,66,.08); }
+
+    .card-green:hover { border-color: #86efac; }
+    .card-amber:hover { border-color: #fcd34d; }
+    .card-muted:hover { border-color: var(--teal-m); }
+    .card-red:hover   { border-color: #fca5a5; }
+
+    .paseo-card-inner {
+        display: flex; align-items: center; gap: .9rem;
+        padding: 1.1rem 1.25rem;
     }
 
-    .list-group-item {
-        border-radius: 10px !important;
-        margin-bottom: 8px;
-        border: 1px solid #dee2e6;
+    .paseo-link {
+        display: flex; align-items: center; gap: .9rem;
+        text-decoration: none; color: var(--text); flex: 1; min-width: 0;
     }
 
-    .paseo-fotos {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        min-width: 64px;
+    .paseo-icon-wrap {
+        width: 42px; height: 42px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem; flex-shrink: 0;
+    }
+    .icon-green { background: #dcfce7; }
+    .icon-amber { background: var(--amber-l); }
+    .icon-muted { background: var(--warm); }
+    .icon-red   { background: #fee2e2; font-size: 1rem; font-weight: 900; color: #dc2626; }
+
+    .paseo-info    { flex: 1; min-width: 0; }
+    .paseo-top-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .35rem; }
+    .paseo-id      { font-weight: 900; font-size: .95rem; color: var(--text); }
+    .paseo-perro   { font-size: .85rem; font-weight: 700; color: var(--muted); }
+    .paseo-badge   { padding: .18rem .6rem; border-radius: 999px; font-size: .7rem; font-weight: 800; }
+    .badge-blue    { background: #dbeafe; color: #1d4ed8; }
+
+    .paseo-meta {
+        display: flex; gap: .75rem; flex-wrap: wrap;
+        font-size: .8rem; font-weight: 600; color: var(--muted);
     }
 
-    .paseo-foto,
-    .paseo-foto-secundaria {
-        width: 64px;
-        height: 64px;
-        border-radius: 12px;
-        object-fit: cover;
-        border: 1px solid #ddd;
-        flex-shrink: 0;
+    .calificacion-inline {
+        display: flex; align-items: center; gap: .5rem;
+        margin-top: .35rem; flex-wrap: wrap;
+    }
+    .cal-stars { font-size: .9rem; }
+    .star-on   { color: var(--amber); }
+    .star-off  { color: var(--border); }
+    .cal-texto { font-size: .8rem; color: var(--muted); font-weight: 600; font-style: italic; }
+
+    .cancelacion-info {
+        display: flex; gap: .5rem; flex-wrap: wrap;
+        font-size: .8rem; font-weight: 600; color: var(--muted);
+        margin-top: .35rem; background: #fee2e2; border-radius: 8px;
+        padding: .35rem .6rem;
     }
 
-    .paseo-foto-placeholder,
-    .paseo-foto-secundaria-placeholder {
-        width: 64px;
-        height: 64px;
-        border-radius: 12px;
-        border: 1px solid #ddd;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f8f9fa;
-        font-size: 1.5rem;
-        flex-shrink: 0;
+    .paseo-right {
+        display: flex; flex-direction: column; align-items: flex-end;
+        gap: .5rem; flex-shrink: 0;
+    }
+    .estado-badge  { font-size: .72rem; font-weight: 800; padding: .22rem .65rem; border-radius: 999px; white-space: nowrap; }
+    .estado-green  { background: #dcfce7; color: #16a34a; }
+    .estado-amber  { background: var(--amber-l); color: var(--amber-d); }
+    .estado-muted  { background: var(--warm); color: var(--muted); border: 1px solid var(--border); }
+    .estado-red    { background: #fee2e2; color: #dc2626; }
+
+    .paseo-arrow { font-size: .9rem; color: var(--muted); }
+
+    .btn-calificar {
+        padding: .28rem .75rem; border-radius: 999px;
+        font-size: .75rem; font-weight: 800;
+        background: var(--amber-l); color: var(--amber-d);
+        border: 1.5px solid #fcd34d; text-decoration: none;
+        transition: all .18s; white-space: nowrap;
+    }
+    .btn-calificar:hover { background: var(--amber); color: #fff; border-color: var(--amber); }
+
+    .ya-calificado {
+        font-size: .75rem; font-weight: 800;
+        color: #16a34a; background: #dcfce7;
+        padding: .22rem .65rem; border-radius: 999px;
+    }
+
+    /* Cancelar inline */
+    .btn-cancelar-toggle {
+        width: 30px; height: 30px; border-radius: 50%;
+        background: #fee2e2; border: 1.5px solid #fca5a5;
+        color: #dc2626; font-size: .85rem; font-weight: 900;
+        cursor: pointer; display: flex; align-items: center;
+        justify-content: center; transition: all .18s;
+    }
+    .btn-cancelar-toggle:hover { background: #dc2626; color: #fff; }
+
+    .cancelar-panel {
+        border-top: 1.5px solid #fee2e2;
+        background: #fff8f8; padding: 1rem 1.25rem;
+        animation: fadeUp .2s ease;
+    }
+    .cancelar-form     { display: flex; flex-direction: column; gap: .65rem; }
+    .cancelar-actions  { display: flex; gap: .6rem; }
+    .form-ctrl {
+        width: 100%; padding: .5rem .85rem; border-radius: 10px;
+        border: 1.5px solid var(--border); font-family: 'Nunito', sans-serif;
+        font-size: .87rem; font-weight: 600; outline: none; color: var(--text);
+        transition: border-color .18s;
+    }
+    .form-ctrl:focus { border-color: var(--teal); }
+
+    .btn-no-cancelar {
+        flex: 1; padding: .5rem; border-radius: 999px;
+        font-size: .83rem; font-weight: 800;
+        background: #fff; color: var(--muted);
+        border: 1.5px solid var(--border); cursor: pointer;
+        transition: background .18s;
+    }
+    .btn-no-cancelar:hover { background: var(--warm); }
+
+    .btn-confirmar-cancelar {
+        flex: 2; padding: .5rem; border-radius: 999px;
+        font-size: .83rem; font-weight: 800;
+        background: #dc2626; color: #fff; border: none;
+        cursor: pointer; transition: background .18s;
+    }
+    .btn-confirmar-cancelar:hover { background: #b91c1c; }
+
+    @@media (max-width: 600px) {
+        .paseo-card-inner { flex-wrap: wrap; }
+        .paseo-right      { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
+        .header-stats     { gap: .5rem; }
     }
 </style>
+
+@section Scripts {
+    <script>
+        function toggleCancelar(id) {
+            const panel = document.getElementById('cancelar-' + id);
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+}

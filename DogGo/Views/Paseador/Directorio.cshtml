@@ -5,207 +5,440 @@
     ViewData["Title"] = "Paseadores disponibles";
 }
 
-<div class="container mt-4">
-    <h4>Paseadores disponibles</h4>
+<!-- ── Page Header ── -->
+<div class="page-header-wrap">
+    <div class="page-header-inner">
+        <div class="page-eyebrow">🐾 Encuentra tu paseador</div>
+        <h1 class="page-title">Paseadores disponibles</h1>
+        <p class="page-sub">Elige al paseador ideal para tu mascota — todos verificados y calificados.</p>
+    </div>
+</div>
+
+<!-- ── Contenido ── -->
+<div class="dir-container">
 
     @if (!Model.Any())
     {
-        <p class="text-muted mt-3">No hay paseadores disponibles en este momento.</p>
+        <div class="empty-state">
+            <div class="empty-icon">🐾</div>
+            <h3>No hay paseadores disponibles</h3>
+            <p>Vuelve a intentarlo más tarde o regresa pronto.</p>
+        </div>
     }
     else
     {
-        <div class="row mt-3 g-3">
+        <div class="dir-grid">
             @foreach (var p in Model)
             {
-                <div class="col-md-6">
-                    <div class="card h-100 p-3 shadow-sm border-0 directorio-card">
-                        <div class="d-flex align-items-center gap-3">
+                <div class="paseador-card">
+
+                    <!-- Top: avatar + nombre + estrellas -->
+                    <div class="pc-top">
+                        <div class="pc-avatar">
                             @if (!string.IsNullOrWhiteSpace(p.FotoUrl))
                             {
-                                <img src="@p.FotoUrl"
-                                     alt="Foto de @p.Usuario.Nombre @p.Usuario.Apellido"
-                                     class="directorio-foto" />
+                                <img src="@p.FotoUrl" alt="@p.Usuario.Nombre" />
                             }
                             else
                             {
-                                <div class="directorio-foto-placeholder">🐾</div>
+                                <span>🐾</span>
                             }
-
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0">@p.Usuario.Nombre @p.Usuario.Apellido</h6>
-                                <small class="text-muted">$@p.TarifaPorHora / hora</small>
-                            </div>
-
-                            <div class="text-end">
-                                <div style="color:#ffc107">
-                                    @for (int i = 1; i <= 5; i++)
-                                    {
-                                        <span>@(i <= Math.Round((double)p.CalificacionPromedio) ? "★" : "☆")</span>
-                                    }
-                                </div>
-                                <small class="text-muted">@p.CalificacionPromedio.ToString("0.0")</small>
-                            </div>
                         </div>
+                        <div class="pc-info">
+                            <div class="pc-name">@p.Usuario.Nombre @p.Usuario.Apellido</div>
+                            <div class="pc-tarifa">$@p.TarifaPorHora / hora</div>
+                        </div>
+                        <div class="pc-stars-wrap">
+                            <div class="pc-stars">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <span class="@(i <= Math.Round((double)p.CalificacionPromedio) ? "star-on" : "star-off")">★</span>
+                                }
+                            </div>
+                            <div class="pc-stars-num">@p.CalificacionPromedio.ToString("0.0")</div>
+                        </div>
+                    </div>
 
-                        @if (!string.IsNullOrEmpty(p.Descripcion))
+                    <!-- Descripción -->
+                    @if (!string.IsNullOrEmpty(p.Descripcion))
+                    {
+                        <p class="pc-desc">@p.Descripcion</p>
+                    }
+
+                    <!-- Tags: zonas + disponibilidad -->
+                    <div class="pc-tags">
+                        @if (!string.IsNullOrWhiteSpace(p.ZonaServicio))
                         {
-                            <p class="mt-3 mb-2 small text-muted">@p.Descripcion</p>
+                            @foreach (var zona in p.ZonaServicio.Split(',').Take(2))
+                            {
+                                <span class="pc-tag">@zona.Trim()</span>
+                            }
                         }
+                        @if (p.ExperienciaAnios != null)
+                        {
+                            <span class="pc-tag-amber">@p.ExperienciaAnios año(s) exp.</span>
+                        }
+                        <span class="pc-disp @(p.Disponible ? "disp-si" : "disp-no")">
+                            ● @(p.Disponible ? "Disponible" : "No disponible")
+                        </span>
+                    </div>
 
-                        <a asp-action="Perfil" asp-route-id="@p.Id"
-                               class="btn btn-outline-primary btn-sm mt-auto">
+                    <!-- Acciones -->
+                    <div class="pc-actions">
+                        <a asp-action="Perfil" asp-route-id="@p.Id" class="btn-ver-perfil">
                             Ver perfil
                         </a>
 
                         @if (User.IsInRole("Duenio"))
                         {
                             var perros = ViewBag.Perros as List<Perro>;
-
                             if (perros != null && perros.Any())
                             {
-                                <form asp-controller="Paseo" asp-action="Crear" method="post" class="mt-2">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="paseadorId" value="@p.Id" />
-
-                                    <div class="mb-2">
-                                        <select name="perroId" class="form-select form-select-sm" required>
-                                            <option value="">Selecciona uno de tus perros</option>
-                                            @foreach (var perro in perros)
-                                            {
-                                                <option value="@perro.Id">@perro.Nombre</option>
-                                            }
-                                        </select>
-                                    </div>
-
-                                    <div class="mb-2">
-                                        <input type="number"
-                                               name="precio"
-                                               class="form-control form-control-sm"
-                                               step="0.01"
-                                               min="0"
-                                               value="@p.TarifaPorHora"
-                                               placeholder="Precio"
-                                               required />
-                                    </div>
-
-                                    <div class="mb-2">
-                                        <label class="form-label small fw-semibold mb-1">Duración del paseo</label>
-                                        <select name="duracionMinutos" class="form-select form-select-sm" required>
-                                            <option value="">Selecciona duración</option>
-                                            <option value="30">30 minutos</option>
-                                            <option value="60">60 minutos</option>
-                                            <option value="90">90 minutos</option>
-                                            <option value="120">120 minutos</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="mb-2">
-                                        <label class="form-label small fw-semibold mb-1">Tipo de paseo</label>
-
-                                        <div class="form-check">
-                                            <input class="form-check-input tipo-paseo"
-                                                   type="radio"
-                                                   name="esProgramado"
-                                                   id="ahora_@p.Id"
-                                                   value="false"
-                                                   checked>
-                                            <label class="form-check-label" for="ahora_@p.Id">
-                                                Paseo ahora
-                                            </label>
-                                        </div>
-
-                                        <div class="form-check">
-                                            <input class="form-check-input tipo-paseo"
-                                                   type="radio"
-                                                   name="esProgramado"
-                                                   id="programado_@p.Id"
-                                                   value="true"
-                                                   data-target="fecha-programada-@p.Id">
-                                            <label class="form-check-label" for="programado_@p.Id">
-                                                Programar paseo
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-2 fecha-programada d-none" id="fecha-programada-@p.Id">
-                                        <label class="form-label small fw-semibold mb-1">Fecha y hora</label>
-                                        <input type="datetime-local"
-                                               name="fechaProgramada"
-                                               class="form-control form-control-sm" />
-                                    </div>
-
-                                    <button type="submit" class="btn btn-primary btn-sm w-100">
-                                        Solicitar paseo
-                                    </button>
-                                </form>
+                                <button class="btn-solicitar"
+                                        onclick="abrirModal(@p.Id, '@p.Usuario.Nombre @p.Usuario.Apellido', @p.TarifaPorHora)"
+                                        @(p.Disponible ? "" : "disabled")>
+                                    Solicitar paseo
+                                </button>
                             }
                             else
                             {
-                                <div class="alert alert-warning mt-2 mb-0 p-2 small">
-                                    Primero registra al menos un perro para poder solicitar paseos.
-                                </div>
+                                <a asp-controller="Perro" asp-action="Create" class="btn-solicitar btn-solicitar-warn">
+                                    Registra un perro primero
+                                </a>
                             }
                         }
                     </div>
+
                 </div>
             }
         </div>
     }
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const radios = document.querySelectorAll(".tipo-paseo");
+<!-- ── Modal solicitar paseo ── -->
+@if (User.IsInRole("Duenio"))
+{
+    var perros = ViewBag.Perros as List<Perro>;
+    if (perros != null && perros.Any())
+    {
+        <div id="modal-overlay" class="modal-overlay" style="display:none" onclick="cerrarModalFuera(event)">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <div>
+                        <div class="modal-title">Solicitar paseo 🦮</div>
+                        <div class="modal-sub" id="modal-sub">Cargando...</div>
+                    </div>
+                    <button class="modal-close" onclick="cerrarModal()">✕</button>
+                </div>
 
-        radios.forEach(radio => {
-            radio.addEventListener("change", function () {
-                const form = this.closest("form");
-                if (!form) return;
+                <form asp-controller="Paseo" asp-action="Crear" method="post" id="modal-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="paseadorId" id="modal-paseador-id" />
 
-                const contenedorFecha = form.querySelector(".fecha-programada");
-                const inputFecha = contenedorFecha?.querySelector("input[name='fechaProgramada']");
+                    <div class="form-group">
+                        <label class="form-lbl">Tu perro</label>
+                        <select name="perroId" class="form-ctrl form-sel" required>
+                            <option value="">Selecciona uno de tus perros</option>
+                            @foreach (var perro in perros)
+                            {
+                                <option value="@perro.Id">@perro.Nombre</option>
+                            }
+                        </select>
+                    </div>
 
-                if (!contenedorFecha || !inputFecha) return;
+                    <div class="form-group">
+                        <label class="form-lbl">Precio ($)</label>
+                        <input type="number" name="precio" id="modal-precio"
+                               class="form-ctrl" step="0.01" min="0" required />
+                    </div>
 
-                const programado = form.querySelector("input[name='esProgramado'][value='true']");
+                    <div class="form-group">
+                        <label class="form-lbl">Duración del paseo</label>
+                        <select name="duracionMinutos" class="form-ctrl form-sel" required>
+                            <option value="">Selecciona duración</option>
+                            <option value="30">30 minutos</option>
+                            <option value="60">60 minutos</option>
+                            <option value="90">90 minutos</option>
+                            <option value="120">120 minutos</option>
+                        </select>
+                    </div>
 
-                if (programado && programado.checked) {
-                    contenedorFecha.classList.remove("d-none");
-                    inputFecha.required = true;
-                } else {
-                    contenedorFecha.classList.add("d-none");
-                    inputFecha.required = false;
-                    inputFecha.value = "";
-                }
-            });
-        });
-    });
-</script>
+                    <div class="form-group">
+                        <label class="form-lbl">Tipo de paseo</label>
+                        <div class="tipo-row">
+                            <label class="tipo-pill">
+                                <input type="radio" name="esProgramado" value="false" checked class="tipo-radio" />
+                                <span>Paseo ahora</span>
+                            </label>
+                            <label class="tipo-pill">
+                                <input type="radio" name="esProgramado" value="true" class="tipo-radio" />
+                                <span>Programar paseo</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="fecha-wrap" style="display:none">
+                        <label class="form-lbl">Fecha y hora</label>
+                        <input type="datetime-local" name="fechaProgramada"
+                               id="input-fecha" class="form-ctrl" />
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-modal-cancel" onclick="cerrarModal()">Cancelar</button>
+                        <button type="submit" class="btn-modal-confirm">Confirmar solicitud</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+}
 
 <style>
-    .directorio-card {
-        border-radius: 16px;
+    /* ── Page header ── */
+    .page-header-wrap {
+        background: var(--warm);
+        border-bottom: 1.5px solid var(--border);
+        padding: 2rem 2rem 1.5rem;
+    }
+    .page-header-inner { max-width: 1100px; margin: 0 auto; }
+    .page-eyebrow {
+        font-size: .74rem; font-weight: 800; letter-spacing: .1em;
+        text-transform: uppercase; color: var(--teal); margin-bottom: .4rem;
+    }
+    .page-title {
+        font-weight: 900; font-size: clamp(1.7rem,3vw,2.2rem);
+        letter-spacing: -.3px; color: var(--text); margin-bottom: .3rem;
+    }
+    .page-sub { color: var(--muted); font-size: .92rem; font-weight: 600; }
+
+    /* ── Container ── */
+    .dir-container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    /* ── Empty state ── */
+    .empty-state {
+        text-align: center; padding: 4rem 2rem;
+        background: var(--card); border: 1.5px dashed var(--border);
+        border-radius: 22px;
+    }
+    .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-weight: 900; font-size: 1.2rem; margin-bottom: .5rem; color: var(--text); }
+    .empty-state p  { color: var(--muted); font-weight: 600; font-size: .9rem; }
+
+    /* ── Grid ── */
+    .dir-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
     }
 
-    .directorio-foto {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 1px solid #ddd;
-        flex-shrink: 0;
-    }
-
-    .directorio-foto-placeholder {
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        border: 1px solid #ddd;
+    /* ── Card ── */
+    .paseador-card {
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: 22px;
+        padding: 1.5rem;
+        transition: border-color .2s, transform .2s, box-shadow .2s;
         display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.8rem;
-        background: #f8f9fa;
-        flex-shrink: 0;
+        flex-direction: column;
+        gap: .85rem;
+    }
+    .paseador-card:hover {
+        border-color: var(--teal-m);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(45,49,66,.08);
+    }
+
+    .pc-top { display: flex; align-items: center; gap: .9rem; }
+
+    .pc-avatar {
+        width: 54px; height: 54px; border-radius: 50%;
+        background: var(--teal-l); display: flex;
+        align-items: center; justify-content: center;
+        font-size: 1.5rem; flex-shrink: 0; overflow: hidden;
+    }
+    .pc-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+    .pc-info    { flex: 1; }
+    .pc-name    { font-weight: 900; font-size: 1rem; color: var(--text); margin-bottom: .15rem; }
+    .pc-tarifa  { font-size: .8rem; font-weight: 700; color: var(--muted); }
+
+    .pc-stars-wrap { text-align: right; }
+    .pc-stars   { font-size: .95rem; letter-spacing: .03em; }
+    .star-on    { color: var(--amber); }
+    .star-off   { color: var(--border); }
+    .pc-stars-num { font-size: .76rem; font-weight: 700; color: var(--muted); margin-top: .1rem; }
+
+    .pc-desc {
+        font-size: .85rem; color: var(--muted); font-weight: 600;
+        line-height: 1.55; margin: 0;
+    }
+
+    .pc-tags { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+    .pc-tag {
+        padding: .22rem .65rem; border-radius: 999px;
+        font-size: .72rem; font-weight: 800;
+        background: var(--teal-l); color: var(--teal);
+    }
+    .pc-tag-amber {
+        padding: .22rem .65rem; border-radius: 999px;
+        font-size: .72rem; font-weight: 800;
+        background: var(--amber-l); color: var(--amber-d);
+    }
+    .pc-disp {
+        padding: .22rem .65rem; border-radius: 999px;
+        font-size: .72rem; font-weight: 800;
+    }
+    .disp-si { background: #dcfce7; color: #16a34a; }
+    .disp-no { background: #fee2e2; color: #dc2626; }
+
+    .pc-actions { display: flex; gap: .6rem; margin-top: auto; }
+
+    .btn-ver-perfil {
+        flex: 1; padding: .5rem; border-radius: 999px;
+        font-size: .83rem; font-weight: 800;
+        background: var(--teal-l); color: var(--teal);
+        border: 1.5px solid var(--teal-m); cursor: pointer;
+        transition: all .18s; text-align: center; text-decoration: none;
+        display: inline-block;
+    }
+    .btn-ver-perfil:hover { background: var(--teal); color: #fff; }
+
+    .btn-solicitar {
+        flex: 2; padding: .5rem; border-radius: 999px;
+        font-size: .83rem; font-weight: 800;
+        background: var(--teal); color: #fff; border: none;
+        cursor: pointer; transition: background .18s;
+        box-shadow: 0 3px 10px rgba(15,155,142,.2);
+        text-align: center; text-decoration: none; display: inline-block;
+    }
+    .btn-solicitar:hover:not(:disabled) { background: var(--teal-d); }
+    .btn-solicitar:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+    .btn-solicitar-warn { background: var(--amber) !important; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(45,49,66,.45);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 500; padding: 1rem;
+    }
+    .modal-box {
+        background: var(--card); border-radius: 24px;
+        padding: 2rem; width: 100%; max-width: 440px;
+        box-shadow: 0 16px 48px rgba(45,49,66,.18);
+        animation: fadeUp .25s ease;
+    }
+    .modal-header {
+        display: flex; justify-content: space-between;
+        align-items: flex-start; margin-bottom: 1.5rem;
+    }
+    .modal-title { font-weight: 900; font-size: 1.15rem; color: var(--text); margin-bottom: .2rem; }
+    .modal-sub   { font-size: .85rem; color: var(--muted); font-weight: 600; }
+    .modal-close {
+        background: var(--warm); border: 1.5px solid var(--border);
+        border-radius: 50%; width: 32px; height: 32px;
+        cursor: pointer; font-size: .85rem; font-weight: 700;
+        color: var(--muted); display: flex; align-items: center;
+        justify-content: center; flex-shrink: 0;
+        transition: background .18s;
+    }
+    .modal-close:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
+    .form-group  { margin-bottom: 1rem; }
+    .form-lbl    { font-size: .82rem; font-weight: 800; color: var(--text); display: block; margin-bottom: .35rem; }
+    .form-ctrl {
+        width: 100%; padding: .5rem .85rem;
+        border-radius: 12px; border: 1.5px solid var(--border);
+        font-family: 'Nunito', sans-serif; font-size: .88rem;
+        font-weight: 600; outline: none; background: #fff;
+        transition: border-color .18s; color: var(--text);
+    }
+    .form-ctrl:focus { border-color: var(--teal); }
+    .form-sel {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237B8194' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right .85rem center;
+        padding-right: 2.2rem;
+    }
+
+    .tipo-row { display: flex; gap: .6rem; }
+    .tipo-pill {
+        flex: 1; padding: .45rem; border-radius: 999px;
+        font-size: .82rem; font-weight: 800;
+        border: 1.5px solid var(--border); background: #fff;
+        color: var(--muted); cursor: pointer; text-align: center;
+        transition: all .18s; display: flex; align-items: center;
+        justify-content: center; gap: .4rem;
+    }
+    .tipo-pill input { display: none; }
+    .tipo-pill:has(input:checked) {
+        background: var(--teal-l); border-color: var(--teal); color: var(--teal);
+    }
+
+    .modal-actions { display: flex; gap: .6rem; margin-top: 1.25rem; }
+    .btn-modal-cancel {
+        flex: 1; padding: .6rem; border-radius: 999px;
+        font-size: .88rem; font-weight: 800;
+        background: #fff; color: var(--muted);
+        border: 1.5px solid var(--border); cursor: pointer;
+        transition: background .18s;
+    }
+    .btn-modal-cancel:hover { background: var(--warm); }
+    .btn-modal-confirm {
+        flex: 2; padding: .6rem; border-radius: 999px;
+        font-size: .88rem; font-weight: 800;
+        background: var(--teal); color: #fff; border: none;
+        cursor: pointer; box-shadow: 0 4px 14px rgba(15,155,142,.25);
+        transition: background .18s;
+    }
+    .btn-modal-confirm:hover { background: var(--teal-d); }
+
+    /* ── Responsive ── */
+    @@media (max-width: 768px) {
+        .dir-grid { grid-template-columns: 1fr; }
+        .pc-actions { flex-direction: column; }
+        .btn-ver-perfil, .btn-solicitar { flex: unset; width: 100%; }
     }
 </style>
+
+@section Scripts {
+    <script>
+        function abrirModal(paseadorId, nombre, tarifa) {
+            document.getElementById('modal-paseador-id').value = paseadorId;
+            document.getElementById('modal-sub').textContent   = 'Con ' + nombre + ' · $' + tarifa + '/hora';
+            document.getElementById('modal-precio').value      = tarifa;
+            document.getElementById('modal-overlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-overlay').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function cerrarModalFuera(e) {
+            if (e.target === document.getElementById('modal-overlay')) cerrarModal();
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const radios = document.querySelectorAll('.tipo-radio');
+            const fechaWrap = document.getElementById('fecha-wrap');
+            const inputFecha = document.getElementById('input-fecha');
+            if (!radios.length) return;
+            radios.forEach(r => {
+                r.addEventListener('change', function () {
+                    const prog = document.querySelector('.tipo-radio[value="true"]');
+                    if (prog && prog.checked) {
+                        fechaWrap.style.display = 'block';
+                        if (inputFecha) inputFecha.required = true;
+                    } else {
+                        fechaWrap.style.display = 'none';
+                        if (inputFecha) { inputFecha.required = false; inputFecha.value = ''; }
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,72 +1,111 @@
 ﻿@model DogGo.Models.Perro
-
 @{
     ViewData["Title"] = "Registrar perro";
 }
 
-<h1>Registrar perro</h1>
+<div class="form-page-wrap">
+    <div class="form-card">
 
-<h4>Perro</h4>
-<hr />
+        <div class="form-card-header">
+            <div class="page-eyebrow">🐾 Nueva mascota</div>
+            <h1 class="form-title">Registrar perro</h1>
+            <p class="form-sub">Completa el perfil de tu mascota para poder solicitar paseos.</p>
+        </div>
 
-<div class="row">
-    <div class="col-md-6">
         <form asp-action="Create" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
-            <div class="mb-3">
-                <label asp-for="Nombre" class="form-label"></label>
-                <input asp-for="Nombre" class="form-control" />
-                <span asp-validation-for="Nombre" class="text-danger"></span>
+            <div class="foto-section">
+                <div class="foto-preview" id="fotoPreview">
+                    <span id="fotoEmoji">🐶</span>
+                    <img id="fotoImg" src="" alt="Vista previa de la foto" style="display:none" />
+                </div>
+                <label class="file-upload-btn">
+                    📷 Subir foto
+                    <input type="file"
+                           name="imagenArchivo"
+                           id="imagenArchivo"
+                           accept=".jpg,.jpeg,.png,.webp"
+                           onchange="previewFoto(this)" />
+                </label>
+                <span class="file-hint">JPG, PNG o WEBP · Máx. 5 MB</span>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Raza" class="form-label"></label>
-                <input asp-for="Raza" class="form-control" />
-                <span asp-validation-for="Raza" class="text-danger"></span>
+            <span asp-validation-for="ImagenUrl" class="val-error"></span>
+
+            <div class="form-group">
+                <label asp-for="Nombre" class="form-lbl">Nombre</label>
+                <input asp-for="Nombre" class="form-ctrl" placeholder="Ej. Max" />
+                <span asp-validation-for="Nombre" class="val-error"></span>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Edad" class="form-label"></label>
-                <input asp-for="Edad" class="form-control" />
-                <span asp-validation-for="Edad" class="text-danger"></span>
+            <div class="form-group">
+                <label asp-for="Raza" class="form-lbl">Raza</label>
+                <input asp-for="Raza" class="form-ctrl" placeholder="Ej. Golden Retriever" />
+                <span asp-validation-for="Raza" class="val-error"></span>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Tamaño" class="form-label"></label>
-                <select asp-for="Tamaño" class="form-control">
-                    <option value="">Selecciona un tamaño</option>
-                    <option value="Pequeño">Pequeño</option>
-                    <option value="Mediano">Mediano</option>
-                    <option value="Grande">Grande</option>
-                </select>
-                <span asp-validation-for="Tamaño" class="text-danger"></span>
+            <div class="form-row">
+                <div class="form-group">
+                    <label asp-for="Edad" class="form-lbl">Edad (años)</label>
+                    <input asp-for="Edad" type="number" min="0" class="form-ctrl" placeholder="Ej. 3" />
+                    <span asp-validation-for="Edad" class="val-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Tamaño" class="form-lbl">Tamaño</label>
+                    <select asp-for="Tamaño" class="form-ctrl form-sel">
+                        <option value="">Selecciona</option>
+                        <option value="Pequeño">Pequeño</option>
+                        <option value="Mediano">Mediano</option>
+                        <option value="Grande">Grande</option>
+                    </select>
+                    <span asp-validation-for="Tamaño" class="val-error"></span>
+                </div>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="Notas" class="form-label"></label>
-                <textarea asp-for="Notas" class="form-control"></textarea>
-                <span asp-validation-for="Notas" class="text-danger"></span>
+            <div class="form-group">
+                <label asp-for="Notas" class="form-lbl">Notas especiales</label>
+                <textarea asp-for="Notas"
+                          class="form-ctrl form-ta"
+                          rows="3"
+                          placeholder="Alergias, comportamiento, instrucciones para el paseador..."></textarea>
+                <span asp-validation-for="Notas" class="val-error"></span>
             </div>
 
-            <div class="mb-3">
-                <label for="imagenArchivo" class="form-label">Imagen del perro</label>
-                <input type="file" name="imagenArchivo" id="imagenArchivo" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
-                <small class="text-muted">Opcional. Formatos permitidos: JPG, JPEG, PNG, WEBP. Máximo 5 MB.</small>
-                <span asp-validation-for="ImagenUrl" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <button type="submit" class="btn btn-primary">Guardar</button>
-                <a asp-action="Index" class="btn btn-secondary">Volver</a>
+            <div class="form-actions">
+                <button type="submit" class="btn-save">Guardar perro 🐾</button>
+                <a asp-action="Index" class="btn-cancel">Cancelar</a>
             </div>
         </form>
+
     </div>
 </div>
+
+@await Html.PartialAsync("_PerroFormStyles")
 
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        function previewFoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const img = document.getElementById('fotoImg');
+                    const emoji = document.getElementById('fotoEmoji');
+
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    emoji.style.display = 'none';
+                };
+
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
 }

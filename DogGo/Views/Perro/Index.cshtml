@@ -1,417 +1,300 @@
 ﻿@model IEnumerable<DogGo.Models.Perro>
-
-
 @{
-    ViewData["Title"] = "Perros";
+    ViewData["Title"] = "Mis perros";
+    var perros = Model.ToList();
 }
 
-<h1 class="titulo-perros">🐶 Mis mejores amigos 🐶</h1>
-
-<div class="carrusel-container">
-
-    <button class="flecha izquierda" onclick="mover(-1)">❮</button>
-
-    <div class="carrusel" id="carrusel">
-
-       @foreach (var item in Model)
-{
-    <div class="perro-wrapper" onclick="irA(@Model.ToList().IndexOf(item))">
-
-        <div class="acciones-externas">
-            <a asp-action="Edit" asp-route-id="@item.Id">
-                <i class="fa-solid fa-pen"></i>
-            </a>
-
-            <a asp-action="Delete" asp-route-id="@item.Id">
-                <i class="fa-solid fa-trash"></i>
+<!-- ── Page Header ── -->
+<div class="page-header-wrap">
+    <div class="page-header-inner">
+        <div class="page-eyebrow">😉 Tu manada</div>
+        <div class="header-row">
+            <div>
+                <h1 class="page-title">Mis perros</h1>
+                <p class="page-sub">
+                    @if (!perros.Any())
+                    {
+                        <span>Aún no tienes perros registrados. ¡Añade al primero!</span>
+                    }
+                    else
+                    {
+                        <span>Tienes <strong>@perros.Count</strong> perro@(perros.Count != 1 ? "s" : "") registrado@(perros.Count != 1 ? "s" : "").</span>
+                    }
+                </p>
+            </div>
+            <a asp-action="Create" class="btn-add-dog">
+                <span class="btn-add-icon">+</span> Añadir perro
             </a>
         </div>
+    </div>
+</div>
 
-        <div class="perro-card" 
-             onclick="abrirDetalle(event, @Model.ToList().IndexOf(item), @item.Id)">
+<div class="perros-container">
 
-            @if (!string.IsNullOrEmpty(item.ImagenUrl))
+    @if (!perros.Any())
+    {
+        <!-- Empty state -->
+        <div class="empty-wrap">
+            <div class="empty-card">
+                <div class="empty-illustration">
+                    <div class="empty-circle">🐾</div>
+                    <div class="empty-huella h1">🐾</div>
+                    <div class="empty-huella h2">🐾</div>
+                    <div class="empty-huella h3">🐾</div>
+                </div>
+                <h2 class="empty-title">¡Tu manada te espera!</h2>
+                <p class="empty-sub">
+                    Registra a tu primer perro para poder solicitar paseos,
+                    ver su historial y compartir su perfil con paseadores.
+                </p>
+                <a asp-action="Create" class="btn-primary-doggo">
+                    🐶 Registrar mi primer perro
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="perros-grid">
+            @foreach (var perro in perros)
             {
-                <img src="@item.ImagenUrl" class="perro-img" />
+                <div class="perro-card">
+
+                    <!-- Foto / avatar -->
+                    <a asp-action="Details" asp-route-id="@perro.Id" class="perro-foto-link">
+                        <div class="perro-foto-wrap">
+                            @if (!string.IsNullOrWhiteSpace(perro.ImagenUrl))
+                            {
+                                <img src="@perro.ImagenUrl" alt="@perro.Nombre" class="perro-foto-img" />
+                            }
+                            else
+                            {
+                                <div class="perro-foto-placeholder">🐶</div>
+                            }
+                            <!-- Tamaño badge sobre la foto -->
+                            @if (!string.IsNullOrWhiteSpace(perro.Tamaño))
+                            {
+                                <span class="tamaño-badge">@perro.Tamaño</span>
+                            }
+                        </div>
+                    </a>
+
+                    <!-- Info -->
+                    <div class="perro-body">
+                        <div class="perro-nombre-row">
+                            <h3 class="perro-nombre">@perro.Nombre</h3>
+                            <span class="perro-edad">@perro.Edad año@(perro.Edad != 1 ? "s" : "")</span>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(perro.Raza))
+                        {
+                            <div class="perro-raza">@perro.Raza</div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(perro.Notas))
+                        {
+                            <div class="perro-notas">
+                                <span class="notas-icon">📝</span>
+                                <span>@perro.Notas</span>
+                            </div>
+                        }
+
+                        <!-- Acciones -->
+                        <div class="perro-actions">
+                            <a asp-action="Details" asp-route-id="@perro.Id" class="perro-btn btn-details">
+                                Ver perfil
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@perro.Id" class="perro-btn btn-edit">
+                                ✏️
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@perro.Id" class="perro-btn btn-delete">
+                                🗑
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
             }
 
-            <h3>@item.Nombre</h3>
-            <p>@item.Raza</p>
-            <p>@item.Edad años</p>
-            <p>@item.Tamaño</p>
-
-            <div class="ver-detalles">
-                Click para ver detalles
-            </div>
-
+            <!-- Card añadir nuevo -->
+            <a asp-action="Create" class="perro-card-add">
+                <div class="add-icon">+</div>
+                <div class="add-text">Añadir otro perro</div>
+            </a>
         </div>
-
-    </div>
-}
-
-    </div>
-
-    <button class="flecha derecha" onclick="mover(1)">❯</button>
+    }
 
 </div>
 
-<a asp-action="Create" class="btn-float">
-    <i class="fa-solid fa-plus"></i>
-</a>
-
-
 <style>
-  
-    .perros-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 30px;
-        justify-content: center;
-        padding: 40px;
+    /* ── Header ── */
+    .page-header-wrap  { background: var(--warm); border-bottom: 1.5px solid var(--border); padding: 2rem 2rem 1.5rem; }
+    .page-header-inner { max-width: 1100px; margin: 0 auto; }
+    .page-eyebrow { font-size: .74rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--teal); margin-bottom: .4rem; }
+    .header-row   { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .page-title   { font-weight: 900; font-size: clamp(1.7rem,3vw,2.2rem); letter-spacing: -.3px; color: var(--text); margin-bottom: .25rem; }
+    .page-sub     { color: var(--muted); font-size: .9rem; font-weight: 600; margin: 0; }
+    .page-sub strong { color: var(--text); }
+
+    .btn-add-dog {
+        display: inline-flex; align-items: center; gap: .5rem;
+        padding: .65rem 1.4rem; border-radius: 999px;
+        font-size: .9rem; font-weight: 800;
+        background: var(--teal); color: #fff;
+        box-shadow: 0 4px 14px rgba(15,155,142,.25);
+        transition: background .18s, transform .15s; text-decoration: none;
+        white-space: nowrap;
+    }
+    .btn-add-dog:hover { background: var(--teal-d); transform: translateY(-1px); color: #fff; }
+    .btn-add-icon { font-size: 1.1rem; font-weight: 900; line-height: 1; }
+
+    /* ── Container ── */
+    .perros-container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    /* ── Empty state ── */
+    .empty-wrap { display: flex; justify-content: center; padding: 1rem 0; }
+    .empty-card {
+        background: var(--card); border: 1.5px solid var(--border);
+        border-radius: 28px; padding: 3rem 2.5rem;
+        text-align: center; max-width: 480px; width: 100%;
+        box-shadow: 0 4px 20px rgba(45,49,66,.07);
+    }
+    .empty-illustration {
+        position: relative; width: 120px; height: 120px;
+        margin: 0 auto 1.5rem;
+    }
+    .empty-circle {
+        width: 120px; height: 120px; border-radius: 50%;
+        background: var(--teal-l); display: flex;
+        align-items: center; justify-content: center;
+        font-size: 3.5rem;
+    }
+    .empty-huella {
+        position: absolute; font-size: .85rem; opacity: .4;
+        animation: floatPaw 2.5s ease-in-out infinite;
+    }
+    .h1 { top: -8px;  right: -8px;  animation-delay: 0s; }
+    .h2 { bottom: 0;  right: -16px; animation-delay: .6s; }
+    .h3 { bottom: -8px; left: -4px; animation-delay: 1.2s; }
+    @@keyframes floatPaw {
+        0%,100% { transform: translateY(0) rotate(-10deg); }
+        50%      { transform: translateY(-6px) rotate(10deg); }
+    }
+    .empty-title { font-weight: 900; font-size: 1.35rem; color: var(--text); margin-bottom: .6rem; letter-spacing: -.2px; }
+    .empty-sub   { color: var(--muted); font-size: .9rem; font-weight: 600; line-height: 1.65; margin-bottom: 1.5rem; }
+
+    /* ── Grid de perros ── */
+    .perros-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.25rem;
     }
 
+    /* ── Card perro ── */
     .perro-card {
-    width: 345px;
-    padding: 20px;
-    border-radius: 25px;
-
-    background: rgba(255,255,255,0.4); 
-    backdrop-filter: blur(15px);
-
-    border: 1px solid rgba(255,255,255,0.3);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-
-    text-align: center;
-    transition: 0.3s;
-
-    cursor: pointer;
-    position: relative;
-    z-index: 1;
-
-    display: block;           
-    text-decoration: none;    
-    color: inherit;           
-}
-
-    .activo .perro-card {
-    box-shadow: 0 30px 60px rgba(0,0,0,0.35);
-}
-     .perro-card h3 {
-       font-size: 24px;
-       color: #222;
-       font-weight: bold;
-       margin: 10px 0;
-     }
-     .perro-card p {
-       color: #666;
-        font-size: 14px;
-     }
-
-
+        background: var(--card); border: 1.5px solid var(--border);
+        border-radius: 22px; overflow: hidden;
+        transition: border-color .2s, transform .2s, box-shadow .2s;
+        display: flex; flex-direction: column;
+    }
     .perro-card:hover {
-      transform: translateY(-10px) scale(1.06);
-      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        border-color: var(--teal-m);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(45,49,66,.1);
     }
 
-    .perro-img {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-        border-radius: 15px;
-        margin-bottom: 10px;
+    /* Foto */
+    .perro-foto-link { display: block; text-decoration: none; }
+    .perro-foto-wrap {
+        width: 100%; aspect-ratio: 1;
+        background: var(--teal-l); overflow: hidden;
+        position: relative; display: flex;
+        align-items: center; justify-content: center;
+    }
+    .perro-foto-img {
+        width: 100%; height: 100%; object-fit: cover;
+        transition: transform .35s ease;
+    }
+    .perro-card:hover .perro-foto-img { transform: scale(1.04); }
+    .perro-foto-placeholder {
+        font-size: 5rem; display: flex;
+        align-items: center; justify-content: center;
+        width: 100%; height: 100%;
+    }
+    .tamaño-badge {
+        position: absolute; top: .65rem; left: .65rem;
+        padding: .22rem .65rem; border-radius: 999px;
+        font-size: .7rem; font-weight: 800;
+        background: rgba(255,255,255,.9);
+        color: var(--teal); backdrop-filter: blur(4px);
+        border: 1px solid rgba(15,155,142,.2);
     }
 
-    .perro-wrapper {
-       position: absolute;
-       left: 50%;
-       transform: translateX(-50%);
-       animation: fadeUp 0.5s ease;
+    /* Body */
+    .perro-body { padding: 1.1rem; display: flex; flex-direction: column; gap: .6rem; flex: 1; }
+
+    .perro-nombre-row { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+    .perro-nombre { font-weight: 900; font-size: 1.1rem; color: var(--text); margin: 0; }
+    .perro-edad   { font-size: .78rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+    .perro-raza {
+        font-size: .83rem; font-weight: 700; color: var(--teal);
+        background: var(--teal-l); padding: .2rem .65rem;
+        border-radius: 999px; display: inline-block; width: fit-content;
     }
 
-        @@keyframes fadeUp {
-          from {
-           opacity: 0;
-             transform: translateY(20px);
-           }
-            to {
-              opacity: 1;
-               transform: translateY(0);
-        }
+    .perro-notas {
+        display: flex; gap: .4rem; align-items: flex-start;
+        font-size: .8rem; font-weight: 600; color: var(--muted);
+        background: var(--amber-l); border-radius: 10px;
+        padding: .45rem .65rem; line-height: 1.45;
     }
+    .notas-icon { flex-shrink: 0; font-size: .85rem; }
 
-    .acciones-externas {
-     position: absolute;
-     top: -12px;
-     right: -12px;
-
-     z-index: 1000; /* Tabla de sobreposicion */
-
-     display: flex;
-     gap: 12px;
-
-     background: rgba(255,255,255,0.8);
-     padding: 8px 12px;
-     border-radius: 12px;
-
-     box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    /* Acciones */
+    .perro-actions {
+        display: flex; gap: .5rem; margin-top: auto;
+        padding-top: .5rem; border-top: 1.5px solid var(--border);
     }
-    /* Boton editar y eliminar */
-    .acciones-externas a {
-     color: #444;
-     font-size: 18px;
-     transition: 0.2s;
-     position: relative;
-     z-index: 2000;
+    .perro-btn {
+        padding: .42rem .75rem; border-radius: 999px;
+        font-size: .8rem; font-weight: 800; cursor: pointer;
+        transition: all .18s; text-decoration: none;
+        text-align: center; display: inline-block;
     }
-    
-    .acciones-externas a:hover {
-      transform: scale(1.2);
+    .btn-details {
+        flex: 1; background: var(--teal-l); color: var(--teal);
+        border: 1.5px solid var(--teal-m);
     }
-     .acciones-externas a:nth-child(1):hover {
-      color: #3b82f6;
+    .btn-details:hover { background: var(--teal); color: #fff; }
+    .btn-edit {
+        background: var(--warm); color: var(--muted);
+        border: 1.5px solid var(--border);
     }
-
-     .acciones-externas a:nth-child(2):hover {
-      color: #ef4444;
+    .btn-edit:hover { background: var(--amber-l); border-color: #fcd34d; color: var(--amber-d); }
+    .btn-delete {
+        background: var(--warm); color: var(--muted);
+        border: 1.5px solid var(--border);
     }
-   
-    /* Boton agregar */
-    .btn-float {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
+    .btn-delete:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
 
-      width: 60px;
-      height: 60px;
-
-      background: #4f46e5;
-      color: white;
-
-      border-radius: 50%;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      font-size: 24px;
-
-      text-decoration: none;
-
-      box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-      z-index: 9999;
-
-      transition: 0.3s;
+    /* Card añadir -->*/
+    .perro-card-add {
+        background: var(--warm); border: 2px dashed var(--border);
+        border-radius: 22px; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: .6rem; cursor: pointer; text-decoration: none;
+        transition: border-color .2s, background .2s;
+        min-height: 240px; padding: 2rem;
     }
+    .perro-card-add:hover { border-color: var(--teal); background: var(--teal-l); }
+    .add-icon { font-size: 2rem; font-weight: 900; color: var(--border); transition: color .2s; line-height: 1; }
+    .add-text { font-size: .88rem; font-weight: 800; color: var(--muted); transition: color .2s; }
+    .perro-card-add:hover .add-icon,
+    .perro-card-add:hover .add-text { color: var(--teal); }
 
-   .btn-float:hover {
-     transform: scale(1.1) rotate(90deg);
-     background: #4338ca;
-   }
- 
-   .btn-float::after {
-     content: "";
-     position: absolute;
-     width: 100%;
-     height: 100%;
-     border-radius: 50%;
-     background: rgba(79,70,229,0.4);
-     animation: pulse 2s infinite;
-   }
-
-   @@keyframes pulse {
-     0% {
-        transform: scale(1);
-        opacity: 0.6;
-     }
-     100% {
-        transform: scale(1.8);
-        opacity: 0;
-     }
-   }
-
-
-
-    /* Detalles de la mascota */
-    .ver-detalles {
-        opacity: 0;
-        margin-top: 12px;
-        font-weight: bold;
-        color: #4f46e5;
-        font-size: 14px;
-        transition: 0.3s;
+    @@media (max-width: 600px) {
+        .header-row { flex-direction: column; align-items: flex-start; }
+        .perros-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
     }
-
-     .perro-card:hover .ver-detalles {
-         opacity: 1;
-         transform: translateY(5px);
-    }
-
-    /* Titulo de la mascota */
-
-    .titulo-perros {
-      text-align: center;
-      margin-top: 30px;
-      font-size: 36px;
-      font-weight: bold;
-      color: #222;
-    }
-
-    /* Efecto carrusel*/
-
-    .carrusel-container {
-    position: relative;
-    width: 100%;
-    margin-top: 80px;
-    height: 420px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: visible;
-    .carrusel-container {
-    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(0,0,0,0.05) 100%);
-}
-}
-
-.carrusel {
-    display: flex;
-    gap: 30px;
-    transition: transform 0.5s ease;
-    padding: 40px;
-    position: relative;
-    height: 100%;
-    width: 100%;
-}
-
-/* Efecto y tamaño*/
-
-.perro-wrapper {
-    min-width: 280px;
-    transition: 0.5s;
-    transform: translateX(-50%);
-    left: 50%;
-    position: absolute;
-    filter: blur(0px);
-}
-
-/* centro */
-.activo {
-    transform: scale(1.1);
-    opacity: 1;
-    z-index: 10;
-}
-
-/* laterales */
-.lado {
-    transform: scale(0.9);
-    opacity: 0.5;
-    filter: blur(1px);
-    z-index: 5;
-}
-
-
-/* atras*/
-.fondo {
-    z-index: 1;
-    filter: blur(2px);
-}
-
-.flecha {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: white;
-    border: none;
-    font-size: 30px;
-    cursor: pointer;
-    padding: 10px 15px;
-    border-radius: 50%;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    z-index: 999;
-}
-
-.izquierda { left: 10px; }
-.derecha { right: 10px; }
-
 </style>
-
-    <script>
-let index = 0;
-
-function actualizarCarrusel() {
-    const items = document.querySelectorAll(".perro-wrapper");
-    const total = items.length;
-
-    items.forEach((item, i) => {
-
-        let posicion = i - index;
-
-       
-        if (posicion > total / 2) posicion -= total;
-        if (posicion < -total / 2) posicion += total;
-
-        item.classList.remove("activo", "lado", "fondo");
-
-        if (posicion === 0) {
-         
-            item.style.transform = `
-                translateX(calc(-50% + 0px))
-                scale(1.2)
-            `;
-            item.style.opacity = "1";
-            item.classList.add("activo");
-
-        } else if (Math.abs(posicion) === 1) {
-          
-            item.style.transform = `
-                translateX(calc(-50% + ${posicion * 320}px))
-                scale(0.95)
-            `;
-            item.style.opacity = "0.75";
-            item.classList.add("lado");
-
-        } else {
-            
-            item.style.transform = `
-                translateX(calc(-50% + ${posicion * 160}px))
-                scale(0.8)
-                translateY(40px)
-            `;
-            item.style.opacity = "0.25";
-            item.classList.add("fondo");
-        }
-    });
-}
-
-function mover(direccion) {
-    const items = document.querySelectorAll(".perro-wrapper");
-    const total = items.length;
-
-    index += direccion;
-
-    if (index < 0) index = total - 1;
-    if (index >= total) index = 0;
-
-    actualizarCarrusel();
-}
-
-function irA(posicion) {
-    index = posicion;
-    actualizarCarrusel();
-}
-
-function abrirDetalle(e, posicion, id) {
-    e.stopPropagation();
-
-    if (index === posicion) {
-        window.location.href = "/Perro/Details/" + id;
-    } else {
-        index = posicion;
-        actualizarCarrusel();
-    }
-}
-
-
-document.addEventListener("DOMContentLoaded", () => {
-    actualizarCarrusel();
-});
-</script>

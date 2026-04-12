@@ -3,338 +3,289 @@
     ViewData["Title"] = "Perfil del paseador";
     var esPropietario = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                         == Model.Paseador.UsuarioId.ToString();
-
     var zonas = string.IsNullOrWhiteSpace(Model.Paseador.ZonaServicio)
         ? new List<string>()
-        : Model.Paseador.ZonaServicio.Split(',').Select(z => z.Trim()).Where(z => !string.IsNullOrWhiteSpace(z)).ToList();
+        : Model.Paseador.ZonaServicio.Split(',')
+            .Select(z => z.Trim())
+            .Where(z => !string.IsNullOrWhiteSpace(z))
+            .ToList();
 }
 
 <div class="perfil-container">
 
-    <div class="perfil-header">
-        <div class="perfil-avatar">
+    <!-- ── Hero card ── -->
+    <div class="perfil-hero-card">
+
+        <!-- Avatar -->
+        <div class="perfil-avatar-wrap">
             @if (!string.IsNullOrWhiteSpace(Model.Paseador.FotoUrl))
             {
-                <img src="@Model.Paseador.FotoUrl" alt="Foto del paseador" class="perfil-foto" />
+                <img src="@Model.Paseador.FotoUrl" alt="Foto de @Model.Paseador.Usuario.Nombre" class="perfil-foto" />
             }
             else
             {
                 <div class="perfil-foto-placeholder">🐾</div>
             }
+            <div class="perfil-disp @(Model.Paseador.Disponible ? "disp-si" : "disp-no")">
+                ● @(Model.Paseador.Disponible ? "Disponible" : "No disponible")
+            </div>
         </div>
 
+        <!-- Info principal -->
         <div class="perfil-info">
-            <h3>@Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</h3>
+            <div class="perfil-top-row">
+                <h2 class="perfil-name">@Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</h2>
+                @if (esPropietario)
+                {
+                    <a asp-action="Editar" class="btn-editar">✏️ Editar perfil</a>
+                }
+            </div>
 
-            <p class="perfil-descripcion">
+            <!-- Chips -->
+            <div class="perfil-chips">
+                @if (zonas.Any())
+                {
+                    @foreach (var zona in zonas)
+                    {
+                        <span class="chip chip-teal">@zona</span>
+                    }
+                }
+                @if (Model.Paseador.ExperienciaAnios != null)
+                {
+                    <span class="chip chip-amber">@Model.Paseador.ExperienciaAnios año(s) de experiencia</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Paseador.Usuario.Telefono))
+                {
+                    <span class="chip chip-muted">📞 @Model.Paseador.Usuario.Telefono</span>
+                }
+            </div>
+
+            <!-- Descripción -->
+            <p class="perfil-desc">
                 @(string.IsNullOrWhiteSpace(Model.Paseador.Descripcion)
                     ? "Este paseador aún no ha agregado una descripción."
                     : Model.Paseador.Descripcion)
             </p>
 
-            @if (zonas.Any() || Model.Paseador.ExperienciaAnios != null)
-            {
-                <div class="perfil-extra mt-2">
-                    @if (zonas.Any())
-                    {
-                        <div class="perfil-extra-item">
-                            <strong>Zonas:</strong> @string.Join(", ", zonas)
-                        </div>
-                    }
-
-                    @if (Model.Paseador.ExperienciaAnios != null)
-                    {
-                        <div class="perfil-extra-item">
-                            <strong>Experiencia:</strong> @Model.Paseador.ExperienciaAnios año(s)
-                        </div>
-                    }
-
-                    @if (!string.IsNullOrWhiteSpace(Model.Paseador.Usuario.Telefono))
-                    {
-                        <div class="perfil-extra-item">
-                            <strong>Teléfono:</strong> @Model.Paseador.Usuario.Telefono
-                        </div>
-                    }
-                </div>
-            }
-
+            <!-- Stats -->
             <div class="perfil-stats">
-                <div class="stat">
-                    <span class="stat-valor">@Model.TotalPaseos</span>
-                    <span class="stat-label">Paseos finalizados</span>
+                <div class="pstat">
+                    <div class="pstat-val">@Model.TotalPaseos</div>
+                    <div class="pstat-lbl">Paseos</div>
                 </div>
-
-                <div class="stat">
-                    <span class="stat-valor">@Model.Promedio.ToString("0.0") ⭐</span>
-                    <span class="stat-label">Promedio</span>
+                <div class="pstat">
+                    <div class="pstat-val">@Model.Promedio.ToString("0.0") ⭐</div>
+                    <div class="pstat-lbl">Promedio</div>
                 </div>
-
-                <div class="stat">
-                    <span class="stat-valor">@Model.Calificaciones.Count</span>
-                    <span class="stat-label">Reseñas</span>
+                <div class="pstat">
+                    <div class="pstat-val">@Model.Calificaciones.Count</div>
+                    <div class="pstat-lbl">Reseñas</div>
                 </div>
-
-                <div class="stat">
-                    <span class="stat-valor">$@Model.Paseador.TarifaPorHora.ToString("0.##")</span>
-                    <span class="stat-label">Por hora</span>
-                </div>
-
-                <div class="stat">
-                    <span class="stat-valor @(Model.Paseador.Disponible ? "text-success" : "text-danger")">
-                        @(Model.Paseador.Disponible ? "Disponible" : "No disponible")
-                    </span>
-                    <span class="stat-label">Estado</span>
+                <div class="pstat">
+                    <div class="pstat-val">$@Model.Paseador.TarifaPorHora.ToString("0.##")</div>
+                    <div class="pstat-lbl">Por hora</div>
                 </div>
             </div>
         </div>
-
-        @if (esPropietario)
-        {
-            <a asp-action="Editar" class="btn btn-outline-primary btn-sm">✏️ Editar perfil</a>
-        }
     </div>
 
-    <div class="perfil-resumen">
-        <div class="perfil-estrellas">
+    <!-- ── Banner resumen estrellas ── -->
+    <div class="perfil-stars-banner">
+        <div class="psb-stars">
             @for (int i = 1; i <= 5; i++)
             {
-                <span class="@(i <= Math.Round(Model.Promedio) ? "estrella-llena" : "estrella-vacia")">★</span>
+                <span class="@(i <= Math.Round(Model.Promedio) ? "star-on" : "star-off")">★</span>
             }
-            <span class="perfil-resumen-texto">
-                @Model.Promedio.ToString("0.0") de 5 · @Model.Calificaciones.Count reseña(s)
-            </span>
         </div>
+        <span class="psb-texto">
+            @Model.Promedio.ToString("0.0") de 5 &mdash; @Model.Calificaciones.Count reseña(s)
+        </span>
     </div>
 
-    <div class="perfil-resenas">
-        <div class="resenas-header">
-            <h5>Reseñas recientes</h5>
-        </div>
+    <!-- ── Reseñas ── -->
+    <div class="resenas-card">
+        <h3 class="resenas-title">Reseñas recientes</h3>
 
         @if (!Model.Calificaciones.Any())
         {
-            <div class="resena-vacia">
-                Aún no hay reseñas para este paseador.
+            <div class="resenas-empty">
+                <span>🐾</span> Aún no hay reseñas para este paseador.
             </div>
         }
         else
         {
-            @foreach (var c in Model.Calificaciones)
-            {
-                <div class="resena-card">
-                    <div class="resena-header">
-                        <div>
-                            <strong>@c.Dueño.Nombre @c.Dueño.Apellido</strong>
-                            <div class="resena-fecha">@c.Fecha.ToString("dd/MM/yyyy")</div>
+            <div class="resenas-list">
+                @foreach (var c in Model.Calificaciones)
+                {
+                    <div class="resena-item">
+                        <div class="resena-top">
+                            <div class="resena-autor-wrap">
+                                <div class="resena-avatar">
+                                    @c.Dueño.Nombre.Substring(0,1)@c.Dueño.Apellido.Substring(0,1)
+                                </div>
+                                <div>
+                                    <div class="resena-autor">@c.Dueño.Nombre @c.Dueño.Apellido</div>
+                                    <div class="resena-fecha">@c.Fecha.ToString("dd/MM/yyyy")</div>
+                                </div>
+                            </div>
+                            <div class="resena-stars">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    <span class="@(i <= c.Puntaje ? "star-on" : "star-off")">★</span>
+                                }
+                            </div>
                         </div>
-
-                        <div class="resena-estrellas">
-                            @for (int i = 1; i <= 5; i++)
-                            {
-                                <span class="@(i <= c.Puntaje ? "estrella-llena" : "estrella-vacia")">★</span>
-                            }
-                        </div>
+                        <p class="resena-comentario">
+                            @(string.IsNullOrWhiteSpace(c.Comentario)
+                                ? "Sin comentario adicional."
+                                : c.Comentario)
+                        </p>
                     </div>
-
-                    @if (!string.IsNullOrWhiteSpace(c.Comentario))
-                    {
-                        <p class="resena-comentario">@c.Comentario</p>
-                    }
-                    else
-                    {
-                        <p class="resena-comentario text-muted">Sin comentario adicional.</p>
-                    }
-                </div>
-            }
+                }
+            </div>
         }
     </div>
+
 </div>
 
 <style>
     .perfil-container {
         max-width: 860px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-    }
-
-    .perfil-header {
-        display: flex;
-        gap: 1.5rem;
-        align-items: flex-start;
-        background: white;
-        border: 1px solid #ddd;
-        border-radius: 14px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.04);
-    }
-
-    .perfil-avatar {
-        flex-shrink: 0;
-    }
-
-    .perfil-foto {
-        width: 110px;
-        height: 110px;
-        object-fit: cover;
-        border-radius: 50%;
-        border: 3px solid #f1f3f5;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
-
-    .perfil-foto-placeholder {
-        width: 110px;
-        height: 110px;
-        border-radius: 50%;
-        background: #f8f9fa;
-        border: 3px solid #f1f3f5;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 3rem;
-    }
-
-    .perfil-info {
-        flex: 1;
-    }
-
-        .perfil-info h3 {
-            margin: 0 0 6px;
-        }
-
-    .perfil-descripcion {
-        margin: 0;
-        color: #6c757d;
-    }
-
-    .perfil-extra {
+        margin: 0 auto;
+        padding: 2rem;
         display: flex;
         flex-direction: column;
-        gap: 4px;
-        color: #495057;
-        font-size: 0.95rem;
+        gap: 1.25rem;
     }
 
-    .perfil-extra-item strong {
-        color: #212529;
+    /* Hero card */
+    .perfil-hero-card {
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: 24px;
+        padding: 2rem;
+        display: flex;
+        gap: 1.75rem;
+        align-items: flex-start;
+        box-shadow: 0 4px 16px rgba(45,49,66,.07);
+    }
+
+    .perfil-avatar-wrap { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: .6rem; }
+
+    .perfil-foto {
+        width: 110px; height: 110px; object-fit: cover;
+        border-radius: 50%; border: 3px solid var(--teal-l);
+        box-shadow: 0 4px 12px rgba(15,155,142,.15);
+    }
+    .perfil-foto-placeholder {
+        width: 110px; height: 110px; border-radius: 50%;
+        background: var(--teal-l); border: 3px solid var(--teal-l);
+        display: flex; align-items: center; justify-content: center; font-size: 3rem;
+    }
+    .perfil-disp {
+        padding: .22rem .7rem; border-radius: 999px;
+        font-size: .72rem; font-weight: 800; white-space: nowrap;
+    }
+    .disp-si { background: #dcfce7; color: #16a34a; }
+    .disp-no { background: #fee2e2; color: #dc2626; }
+
+    .perfil-info  { flex: 1; }
+    .perfil-top-row {
+        display: flex; align-items: flex-start;
+        justify-content: space-between; gap: 1rem; margin-bottom: .6rem;
+    }
+    .perfil-name  { font-weight: 900; font-size: 1.5rem; letter-spacing: -.3px; color: var(--text); }
+
+    .btn-editar {
+        padding: .4rem 1rem; border-radius: 999px;
+        font-size: .82rem; font-weight: 800;
+        background: var(--teal-l); color: var(--teal);
+        border: 1.5px solid var(--teal-m); white-space: nowrap;
+        text-decoration: none; transition: all .18s; flex-shrink: 0;
+    }
+    .btn-editar:hover { background: var(--teal); color: #fff; }
+
+    .perfil-chips { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .9rem; }
+    .chip { padding: .25rem .7rem; border-radius: 999px; font-size: .75rem; font-weight: 800; }
+    .chip-teal  { background: var(--teal-l);  color: var(--teal); }
+    .chip-amber { background: var(--amber-l); color: var(--amber-d); }
+    .chip-muted { background: var(--warm);    color: var(--muted); border: 1.5px solid var(--border); }
+
+    .perfil-desc {
+        font-size: .9rem; color: var(--muted); font-weight: 600;
+        line-height: 1.65; margin-bottom: 1.1rem;
     }
 
     .perfil-stats {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1rem;
-        flex-wrap: wrap;
+        display: grid; grid-template-columns: repeat(4,1fr); gap: .75rem;
     }
-
-    .stat {
-        min-width: 120px;
-        background: #f8f9fa;
-        border-radius: 10px;
-        padding: 0.75rem 0.9rem;
-        display: flex;
-        flex-direction: column;
+    .pstat {
+        background: var(--warm); border-radius: 12px;
+        padding: .7rem .9rem; text-align: center;
     }
+    .pstat-val { font-weight: 900; font-size: 1.05rem; color: var(--text); margin-bottom: .1rem; }
+    .pstat-lbl { font-size: .7rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 
-    .stat-valor {
-        font-size: 1.1rem;
-        font-weight: 600;
+    /* Stars banner */
+    .perfil-stars-banner {
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem 1.5rem;
+        display: flex; align-items: center; gap: .75rem;
     }
+    .psb-stars { font-size: 1.5rem; letter-spacing: .05em; }
+    .star-on   { color: var(--amber); }
+    .star-off  { color: var(--border); }
+    .psb-texto { font-size: .92rem; color: var(--muted); font-weight: 600; }
 
-    .stat-label {
-        font-size: 0.78rem;
-        color: #6c757d;
-        margin-top: 2px;
+    /* Reseñas */
+    .resenas-card {
+        background: var(--card);
+        border: 1.5px solid var(--border);
+        border-radius: 24px;
+        padding: 1.75rem;
+        box-shadow: 0 4px 16px rgba(45,49,66,.07);
     }
-
-    .perfil-resumen {
-        background: white;
-        border: 1px solid #eee;
-        border-radius: 14px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 1.2rem;
+    .resenas-title { font-weight: 900; font-size: 1.1rem; color: var(--text); margin-bottom: 1.25rem; }
+    .resenas-empty {
+        background: var(--warm); border: 1.5px dashed var(--border);
+        border-radius: 14px; padding: 1.25rem;
+        color: var(--muted); font-weight: 600; font-size: .9rem;
     }
+    .resenas-list { display: flex; flex-direction: column; gap: .9rem; }
 
-    .perfil-estrellas {
-        font-size: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        flex-wrap: wrap;
+    .resena-item {
+        border: 1.5px solid var(--border); border-radius: 16px;
+        padding: 1.1rem; transition: border-color .2s;
     }
+    .resena-item:hover { border-color: var(--teal-m); }
 
-    .perfil-resumen-texto {
-        font-size: 0.95rem;
-        color: #6c757d;
-        margin-left: 10px;
+    .resena-top {
+        display: flex; justify-content: space-between;
+        align-items: flex-start; margin-bottom: .6rem; gap: .75rem;
     }
-
-    .estrella-llena {
-        color: #ffc107;
+    .resena-autor-wrap { display: flex; align-items: center; gap: .65rem; }
+    .resena-avatar {
+        width: 36px; height: 36px; border-radius: 50%;
+        background: var(--teal-l); color: var(--teal);
+        font-size: .78rem; font-weight: 900;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
     }
-
-    .estrella-vacia {
-        color: #dee2e6;
-    }
-
-    .perfil-resenas {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .resenas-header h5 {
-        margin: 0;
-    }
-
-    .resena-vacia {
-        background: white;
-        border: 1px dashed #ced4da;
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        color: #6c757d;
-    }
-
-    .resena-card {
-        background: white;
-        border: 1px solid #eee;
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.03);
-    }
-
-    .resena-header {
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        align-items: flex-start;
-        margin-bottom: 0.5rem;
-    }
-
-    .resena-fecha {
-        font-size: 0.82rem;
-        color: #6c757d;
-        margin-top: 2px;
-    }
-
-    .resena-estrellas {
-        font-size: 1rem;
-        white-space: nowrap;
-    }
-
+    .resena-autor { font-weight: 800; font-size: .9rem; color: var(--text); }
+    .resena-fecha { font-size: .76rem; color: var(--muted); font-weight: 600; margin-top: .1rem; }
+    .resena-stars { font-size: .95rem; white-space: nowrap; }
     .resena-comentario {
-        margin: 0;
-        color: #444;
-        font-size: 0.94rem;
-        line-height: 1.45;
+        font-size: .87rem; color: var(--muted); font-weight: 600;
+        line-height: 1.55; font-style: italic; margin: 0;
     }
 
-    @@media (max-width: 768px) {
-        .perfil-header {
-            flex-direction: column;
-        }
-
-        .resena-header {
-            flex-direction: column;
-        }
+    @@media (max-width: 680px) {
+        .perfil-hero-card { flex-direction: column; align-items: center; text-align: center; }
+        .perfil-top-row   { flex-direction: column; align-items: center; }
+        .perfil-chips     { justify-content: center; }
+        .perfil-stats     { grid-template-columns: repeat(2,1fr); }
+        .resena-top       { flex-direction: column; }
     }
 </style>
