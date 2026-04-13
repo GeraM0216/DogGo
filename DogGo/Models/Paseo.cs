@@ -34,5 +34,6 @@
         public ICollection<Ubicacion> Ubicaciones { get; set; } = new List<Ubicacion>();
 
         public string? FotoInicioUrl { get; set; }
+        public string? FotoFinUrl { get; set; }
     }
 }

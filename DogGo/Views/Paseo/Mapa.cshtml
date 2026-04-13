@@ -68,29 +68,73 @@
 
     <div id="map"></div>
 
+    <div class="evidencias-box">
+        <h6 class="evidencias-titulo">📸 Evidencia del paseo</h6>
+        <p class="evidencias-sub">Aquí puedes revisar las fotos registradas al inicio y al final del paseo.</p>
+
+        <div class="evidencias-grid">
+            <div class="evidencia-card">
+                <div class="evidencia-header">Foto de inicio</div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
+                {
+                    <img src="@Model.FotoInicioUrl"
+                         alt="Foto de inicio del paseo"
+                         class="evidencia-img" />
+                }
+                else
+                {
+                    <div class="evidencia-empty">
+                        Aún no se ha subido evidencia de inicio.
+                    </div>
+                }
+            </div>
+
+            <div class="evidencia-card">
+                <div class="evidencia-header">Foto final</div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.FotoFinUrl))
+                {
+                    <img src="@Model.FotoFinUrl"
+                         alt="Foto final del paseo"
+                         class="evidencia-img" />
+                }
+                else
+                {
+                    <div class="evidencia-empty">
+                        Aún no se ha subido evidencia de finalización.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
     @if (esPaseador)
     {
         <div class="mapa-controles">
+
             @if (Model.Estado == "Pendiente")
             {
-                <div class="foto-inicio-box">
-                    <h6 class="mb-2">Evidencia de inicio</h6>
+                <div class="accion-box">
+                    <h6 class="mb-2">Para iniciar el paseo</h6>
                     <p class="text-muted small mb-3">
-                        Antes de iniciar el paseo, sube una foto del perro como comprobante.
+                        Presiona <strong>Iniciar paseo</strong>. Si aún no hay evidencia, se te pedirá subir la foto de inicio.
                     </p>
 
-                    @if (!string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
-                    {
-                        <div class="mb-3">
-                            <img src="@Model.FotoInicioUrl"
-                                 alt="Foto de inicio del paseo"
-                                 class="foto-inicio-preview" />
-                        </div>
+                    <button id="btnIniciar"
+                            class="btn btn-success w-100"
+                            onclick="cambiarEstado('EnCurso')">
+                        ▶ Iniciar paseo
+                    </button>
+                </div>
 
-                        <div class="alert alert-success py-2 mb-3">
-                            Ya subiste la foto de inicio. Ya puedes comenzar el paseo.
-                        </div>
-                    }
+                <div id="panelFotoInicio"
+                     class="foto-box mt-3"
+                     style="display:@(string.IsNullOrWhiteSpace(Model.FotoInicioUrl) ? "none" : "block")">
+                    <h6 class="mb-2">Evidencia de inicio</h6>
+                    <p class="text-muted small mb-3">
+                        Sube una foto del perro para poder comenzar el paseo.
+                    </p>
 
                     <form asp-controller="Paseo"
                           asp-action="SubirFotoInicio"
@@ -105,59 +149,85 @@
                                    name="fotoInicio"
                                    class="form-control"
                                    accept=".jpg,.jpeg,.png,.webp"
-                                   required="@string.IsNullOrWhiteSpace(Model.FotoInicioUrl)" />
+                                   required />
                         </div>
 
                         <button type="submit" class="btn btn-outline-primary w-100">
                             @(string.IsNullOrWhiteSpace(Model.FotoInicioUrl) ? "Subir foto de inicio" : "Reemplazar foto de inicio")
                         </button>
                     </form>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
+                    {
+                        <div class="alert alert-success py-2 mb-0">
+                            Foto de inicio lista. Ya puedes presionar <strong>Iniciar paseo</strong>.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning py-2 mb-0">
+                            Primero sube la foto de inicio y después vuelve a presionar <strong>Iniciar paseo</strong>.
+                        </div>
+                    }
                 </div>
-
-                <button id="btnIniciar"
-                        class="btn btn-success w-100"
-                        onclick="cambiarEstado('EnCurso')"
-                        disabled="@(string.IsNullOrWhiteSpace(Model.FotoInicioUrl) ? "disabled" : null)">
-                    ▶ Iniciar paseo
-                </button>
-
-                @if (string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
-                {
-                    <small class="text-danger d-block mt-2">
-                        Debes subir una foto del perro antes de iniciar el paseo.
-                    </small>
-                }
             }
 
             @if (Model.Estado == "EnCurso")
             {
-                @if (!string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
-                {
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Foto de inicio</label>
-                        <div>
-                            <img src="@Model.FotoInicioUrl"
-                                 alt="Foto de inicio del paseo"
-                                 class="foto-inicio-preview" />
-                        </div>
-                    </div>
-                }
+                <div class="foto-box">
+                    <h6 class="mb-2">Evidencia de finalización</h6>
+                    <p class="text-muted small mb-3">
+                        Antes de finalizar el paseo, sube una foto final como comprobante.
+                    </p>
 
-                <button id="btnFinalizar" class="btn btn-danger w-100"
-                        onclick="cambiarEstado('Finalizado')">
+                    <form asp-controller="Paseo"
+                          asp-action="SubirFotoFin"
+                          method="post"
+                          enctype="multipart/form-data"
+                          class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="paseoId" value="@Model.Id" />
+
+                        <div class="mb-2">
+                            <input type="file"
+                                   name="fotoFin"
+                                   class="form-control"
+                                   accept=".jpg,.jpeg,.png,.webp"
+                                   required="@string.IsNullOrWhiteSpace(Model.FotoFinUrl)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            @(string.IsNullOrWhiteSpace(Model.FotoFinUrl) ? "Subir foto final" : "Reemplazar foto final")
+                        </button>
+                    </form>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.FotoFinUrl))
+                    {
+                        <div class="alert alert-success py-2 mb-0">
+                            Ya subiste la foto final. Ya puedes terminar el paseo.
+                        </div>
+                    }
+                </div>
+
+                <button id="btnFinalizar"
+                        class="btn btn-danger w-100"
+                        onclick="cambiarEstado('Finalizado')"
+                        disabled="@(string.IsNullOrWhiteSpace(Model.FotoFinUrl) ? "disabled" : null)">
                     ⏹ Finalizar paseo
                 </button>
+
+                @if (string.IsNullOrWhiteSpace(Model.FotoFinUrl))
+                {
+                    <small class="text-danger d-block mt-2">
+                        Debes subir una foto final antes de finalizar el paseo.
+                    </small>
+                }
             }
 
-            @if (Model.Estado == "Finalizado" && !string.IsNullOrWhiteSpace(Model.FotoInicioUrl))
+            @if (Model.Estado == "Finalizado")
             {
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Foto de inicio</label>
-                    <div>
-                        <img src="@Model.FotoInicioUrl"
-                             alt="Foto de inicio del paseo"
-                             class="foto-inicio-preview" />
-                    </div>
+                <div class="alert alert-secondary mb-0">
+                    El paseo ya fue finalizado.
                 </div>
             }
         </div>
@@ -187,6 +257,7 @@
         const paseoId = @Model.Id;
         const esPaseador = @(esPaseador ? "true" : "false");
         const tieneFotoInicio = @(!string.IsNullOrWhiteSpace(Model.FotoInicioUrl) ? "true" : "false");
+        const tieneFotoFin = @(!string.IsNullOrWhiteSpace(Model.FotoFinUrl) ? "true" : "false");
         const latInicial = @lat.ToString(CultureInfo.InvariantCulture);
         const lngInicial = @lng.ToString(CultureInfo.InvariantCulture);
 
@@ -286,28 +357,17 @@
         badge.classList.add("bg-secondary");
         }
 
-        const contenedor = document.querySelector(".mapa-controles");
-
         if (estado === "EnCurso" && esPaseador) {
         iniciarGPS();
-
-        if (contenedor) {
-        contenedor.innerHTML = `
-        <button id="btnFinalizar" class="btn btn-danger w-100"
-        onclick="cambiarEstado('Finalizado')">
-        ⏹ Finalizar paseo
-        </button>
-        `;
-        }
         }
 
         if (estado === "Finalizado") {
         detenerGPS();
+        }
 
-        if (contenedor) {
-        contenedor.innerHTML = "";
-        }
-        }
+        setTimeout(() => {
+        location.reload();
+        }, 600);
         });
 
         connection.start()
@@ -344,10 +404,19 @@
         }
         }
 
+        function mostrarPanelFotoInicio() {
+        const panel = document.getElementById("panelFotoInicio");
+        if (panel) {
+        panel.style.display = "block";
+        panel.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        }
+
         async function cambiarEstado(nuevoEstado) {
         if (nuevoEstado === "EnCurso") {
         if (!tieneFotoInicio) {
-        alert("Debes subir una foto del perro antes de iniciar el paseo.");
+        mostrarPanelFotoInicio();
+        alert("Para iniciar el paseo, primero sube la foto de inicio.");
         return;
         }
 
@@ -388,6 +457,13 @@
         }
         }
 
+        if (nuevoEstado === "Finalizado") {
+        if (!tieneFotoFin) {
+        alert("Debes subir una foto final antes de finalizar el paseo.");
+        return;
+        }
+        }
+
         connection.invoke("CambiarEstado", paseoId, nuevoEstado)
         .catch(err => console.error("Error al cambiar estado:", err));
         }
@@ -401,11 +477,13 @@
 
 <style>
     .mapa-container {
-    max-width: 760px;
+    max-width: 900px;
     margin: 1.5rem auto;
     border: 1px solid #ddd;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,.05);
     }
 
     .mapa-header {
@@ -441,30 +519,91 @@
     width: 100%;
     }
 
+    .evidencias-box {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid #eee;
+    background: #fff;
+    }
+
+    .evidencias-titulo {
+    font-weight: 700;
+    margin-bottom: .2rem;
+    }
+
+    .evidencias-sub {
+    color: #6c757d;
+    font-size: .9rem;
+    margin-bottom: 1rem;
+    }
+
+    .evidencias-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    }
+
+    .evidencia-card {
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    padding: .9rem;
+    background: #fafafa;
+    }
+
+    .evidencia-header {
+    font-weight: 700;
+    margin-bottom: .65rem;
+    }
+
+    .evidencia-img {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    }
+
+    .evidencia-empty {
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: .9rem;
+    color: #6c757d;
+    background: #f3f4f6;
+    border: 1px dashed #ced4da;
+    border-radius: 10px;
+    padding: 1rem;
+    }
+
     .mapa-controles {
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
     border-top: 1px solid #ddd;
+    background: #fcfcfc;
     }
 
     .mapa-footer {
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
     border-top: 1px solid #eee;
     background: #fafafa;
     }
 
-    .foto-inicio-box {
+    .accion-box,
+    .foto-box {
     margin-bottom: 1rem;
     padding: 1rem;
     border: 1px solid #dee2e6;
-    border-radius: 10px;
-    background: #fafafa;
+    border-radius: 12px;
+    background: #fff;
     }
 
-    .foto-inicio-preview {
-    max-width: 220px;
-    width: 100%;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-    object-fit: cover;
+    @@media (max-width: 768px) {
+    .evidencias-grid {
+    grid-template-columns: 1fr;
+    }
+
+    #map {
+    height: 340px;
+    }
     }
 </style>

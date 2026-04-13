@@ -225,7 +225,8 @@ namespace DogGo.Controllers
                 DuracionMinutos = duracionMinutos,
                 EsProgramado = esProgramado,
                 FechaProgramada = esProgramado ? fechaProgramada!.Value.ToUniversalTime() : null,
-                FotoInicioUrl = null
+                FotoInicioUrl = null,
+                FotoFinUrl = null
             };
 
             _context.Paseos.Add(paseo);
@@ -303,6 +304,74 @@ namespace DogGo.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Exito"] = "Foto de inicio subida correctamente.";
+            return RedirectToAction("Mapa", new { id = paseoId });
+        }
+
+        // POST: /Paseo/SubirFotoFin
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Paseador")]
+        public async Task<IActionResult> SubirFotoFin(int paseoId, IFormFile? fotoFin)
+        {
+            var redireccionPerfil = await RedirigirSiPerfilPaseadorIncompleto();
+            if (redireccionPerfil != null)
+                return redireccionPerfil;
+
+            var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var paseo = await _context.Paseos
+                .Include(p => p.Paseador)
+                .FirstOrDefaultAsync(p => p.Id == paseoId);
+
+            if (paseo == null || paseo.Paseador == null)
+                return NotFound();
+
+            if (paseo.Paseador.UsuarioId != usuarioId)
+                return Forbid();
+
+            if (paseo.Estado != "EnCurso")
+            {
+                TempData["Error"] = "Solo puedes subir la foto final durante un paseo en curso.";
+                return RedirectToAction("Mapa", new { id = paseoId });
+            }
+
+            if (fotoFin == null || fotoFin.Length == 0)
+            {
+                TempData["Error"] = "Debes subir una foto final antes de terminar el paseo.";
+                return RedirectToAction("Mapa", new { id = paseoId });
+            }
+
+            var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            var extension = Path.GetExtension(fotoFin.FileName).ToLowerInvariant();
+
+            if (!extensionesPermitidas.Contains(extension))
+            {
+                TempData["Error"] = "Solo se permiten imágenes JPG, JPEG, PNG o WEBP.";
+                return RedirectToAction("Mapa", new { id = paseoId });
+            }
+
+            if (fotoFin.Length > 5 * 1024 * 1024)
+            {
+                TempData["Error"] = "La imagen no debe superar los 5 MB.";
+                return RedirectToAction("Mapa", new { id = paseoId });
+            }
+
+            var carpeta = Path.Combine(_environment.WebRootPath, "uploads", "paseos");
+            Directory.CreateDirectory(carpeta);
+
+            var nombreArchivo = Guid.NewGuid().ToString() + extension;
+            var rutaCompleta = Path.Combine(carpeta, nombreArchivo);
+
+            using (var stream = new FileStream(rutaCompleta, FileMode.Create))
+            {
+                await fotoFin.CopyToAsync(stream);
+            }
+
+            paseo.FotoFinUrl = "/uploads/paseos/" + nombreArchivo;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Exito"] = "Foto final subida correctamente.";
             return RedirectToAction("Mapa", new { id = paseoId });
         }
 
