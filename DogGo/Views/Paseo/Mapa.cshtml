@@ -266,11 +266,28 @@
         let ruta = [];
         let polyline = null;
         let map = null;
+        let ultimaPosicionEnviada = null;
+        const DISTANCIA_MINIMA_METROS = 3;
 
         const connection = new signalR.HubConnectionBuilder()
         .withUrl("/paseohub")
         .withAutomaticReconnect()
         .build();
+
+        function calcularDistanciaMetros(lat1, lng1, lat2, lng2) {
+        const R = 6371000;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+
+        const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+        }
 
         try {
         map = L.map("map").setView([latInicial, lngInicial], 15);
@@ -324,22 +341,20 @@
         marker.setLatLng(pos);
         }
 
-        if (map) {
-        map.panTo(pos);
-        }
+        const ultimoPunto = ruta.length > 0 ? ruta[ruta.length - 1] : null;
 
+        if (!ultimoPunto || calcularDistanciaMetros(ultimoPunto[0], ultimoPunto[1], lat, lng) >= DISTANCIA_MINIMA_METROS) {
         ruta.push(pos);
 
-        if (polyline && map) {
-        map.removeLayer(polyline);
-        }
-
-        if (ruta.length > 1 && map) {
+        if (!polyline && map && ruta.length > 1) {
         polyline = L.polyline(ruta, {
         color: "#0d6efd",
         weight: 3,
         opacity: 0.7
         }).addTo(map);
+        } else if (polyline) {
+        polyline.setLatLngs(ruta);
+        }
         }
         });
 
@@ -387,13 +402,32 @@
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
+        if (ultimaPosicionEnviada) {
+        const distancia = calcularDistanciaMetros(
+        ultimaPosicionEnviada.lat,
+        ultimaPosicionEnviada.lng,
+        lat,
+        lng
+        );
+
+        if (distancia < DISTANCIA_MINIMA_METROS) {
+        return;
+        }
+        }
+
+        ultimaPosicionEnviada = { lat, lng };
+
         connection.invoke("EnviarUbicacion", paseoId, lat, lng)
         .catch(err => console.error("Error GPS:", err));
         },
         (err) => {
         console.error("Error geolocalización:", err);
         },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 8000
+        }
         );
         }
 
@@ -402,6 +436,8 @@
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
         }
+
+        ultimaPosicionEnviada = null;
         }
 
         function mostrarPanelFotoInicio() {
@@ -443,8 +479,37 @@
         await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
         (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        ultimaPosicionEnviada = { lat, lng };
+
+        if (marker) {
+        marker.setLatLng([lat, lng]);
+        }
+
+        const ultimoPunto = ruta.length > 0 ? ruta[ruta.length - 1] : null;
+
+        if (!ultimoPunto || calcularDistanciaMetros(ultimoPunto[0], ultimoPunto[1], lat, lng) >= DISTANCIA_MINIMA_METROS) {
+        ruta.push([lat, lng]);
+
+        if (!polyline && map && ruta.length > 1) {
+        polyline = L.polyline(ruta, {
+        color: "#0d6efd",
+        weight: 3,
+        opacity: 0.7
+        }).addTo(map);
+        } else if (polyline) {
+        polyline.setLatLngs(ruta);
+        }
+        }
+
+        connection.invoke("EnviarUbicacion", paseoId, lat, lng)
+        .then(() => {
         iniciarGPS();
         resolve(pos);
+        })
+        .catch(err => reject(err));
         },
         (err) => reject(err),
         { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }

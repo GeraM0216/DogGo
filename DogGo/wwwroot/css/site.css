@@ -1221,3 +1221,386 @@ body > * {
     position: relative;
     z-index: 1;
 }
+
+/* ═══════════════════════════════════════════════
+   HOME EXTRA SECTIONS (resumen, artículos, etc.)
+   ═══════════════════════════════════════════════ */
+
+/* ── Contenedor base ─────────────────────────── */
+.home-section {
+    padding: 3rem 2rem;
+}
+
+    .home-section.alt-bg {
+        background: var(--warm);
+        border-top: 1.5px solid var(--border);
+        border-bottom: 1.5px solid var(--border);
+    }
+
+.section-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* ── Resumen ─────────────────────────────────── */
+.resumen-band {
+    padding: 1.5rem 2rem;
+}
+
+.resumen-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-m);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    align-items: center;
+    overflow: hidden;
+}
+
+.rstat {
+    text-align: center;
+    padding: 1.2rem .8rem;
+}
+
+.rstat-val {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--text);
+}
+
+.rstat-small {
+    font-size: .95rem;
+}
+
+.rstat-green {
+    color: #2e7d32;
+}
+
+.rstat-lbl {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.rstat-sep {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+}
+
+/* ── Artículos ───────────────────────────────── */
+
+.home-section .sec-label {
+    text-align: center;
+}
+
+.home-section .sec-title {
+    text-align: center;
+}
+
+.home-section .sec-sub {
+    text-align: center;
+}
+
+.articulos-grid {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.articulo-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 1.3rem;
+    transition: all .2s;
+    cursor: pointer;
+}
+
+    .articulo-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--teal-m);
+        box-shadow: var(--shadow-m);
+    }
+
+.art-featured {
+    grid-column: span 2;
+}
+
+.art-emoji {
+    font-size: 1.8rem;
+    margin-bottom: .4rem;
+}
+
+.art-tag {
+    display: inline-block;
+    background: var(--teal-l);
+    color: var(--teal);
+    font-size: .7rem;
+    font-weight: 800;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    margin-bottom: .5rem;
+}
+
+.art-title {
+    font-weight: 900;
+    font-size: .95rem;
+    margin-bottom: .3rem;
+}
+
+.art-desc {
+    font-size: .83rem;
+    color: var(--muted);
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: .6rem;
+}
+
+.art-meta {
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--teal);
+}
+
+/* ── Productos ───────────────────────────────── */
+.productos-grid {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.producto-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    transition: all .2s;
+}
+
+    .producto-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-m);
+    }
+
+.prod-emoji {
+    font-size: 1.6rem;
+}
+
+.prod-nombre {
+    font-weight: 800;
+    font-size: .9rem;
+}
+
+.prod-desc {
+    font-size: .8rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.prod-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+}
+
+.prod-tag {
+    font-size: .65rem;
+    background: var(--warm);
+    border-radius: 999px;
+    padding: .15rem .5rem;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.prod-btn {
+    margin-top: auto;
+    font-size: .75rem;
+    font-weight: 800;
+    color: var(--teal);
+}
+
+/* ── Lugares ─────────────────────────────────── */
+.lugares-grid {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.lugar-card {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: .9rem;
+    transition: all .2s;
+}
+
+    .lugar-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-s);
+    }
+
+.lugar-icon {
+    font-size: 1.5rem;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lc-teal {
+    background: var(--teal-l);
+}
+
+.lc-green {
+    background: #e8f5e9;
+}
+
+.lc-amber {
+    background: var(--amber-l);
+}
+
+.lc-coral {
+    background: var(--coral-l);
+}
+
+.lugar-info {
+    flex: 1;
+}
+
+.lugar-nombre {
+    font-weight: 800;
+    font-size: .88rem;
+}
+
+.lugar-dir {
+    font-size: .75rem;
+    color: var(--muted);
+}
+
+.lugar-tags {
+    display: flex;
+    gap: .3rem;
+    flex-wrap: wrap;
+}
+
+.lugar-tag {
+    font-size: .65rem;
+    background: var(--warm);
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+.lugar-btn {
+    font-size: .75rem;
+    font-weight: 800;
+    color: var(--teal);
+}
+
+/* ── Razas ───────────────────────────────────── */
+.razas-grid {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.raza-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all .2s;
+}
+
+    .raza-card:hover {
+        border-color: var(--teal-m);
+    }
+
+.raza-top {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.raza-emoji {
+    font-size: 1.5rem;
+}
+
+.raza-nombre {
+    font-weight: 800;
+    font-size: .9rem;
+}
+
+.raza-sub {
+    font-size: .75rem;
+    color: var(--muted);
+}
+
+.raza-toggle {
+    margin-left: auto;
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: var(--teal);
+}
+
+.raza-detalle {
+    margin-top: .7rem;
+    font-size: .8rem;
+    color: var(--muted);
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width: 960px) {
+    .articulos-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .art-featured {
+        grid-column: span 1;
+    }
+
+    .productos-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .lugares-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .razas-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .resumen-inner {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .rstat-sep {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .productos-grid {
+        grid-template-columns: 1fr;
+    }
+}
