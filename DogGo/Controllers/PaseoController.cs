@@ -31,6 +31,8 @@ namespace DogGo.Controllers
             var paseo = await _context.Paseos
                 .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
                 .Include(p => p.Perro).ThenInclude(pe => pe.Dueño)
+                .Include(p => p.PaseoPerros)
+                    .ThenInclude(pp => pp.Perro)
                 .Include(p => p.Ubicaciones.OrderBy(u => u.Timestamp))
                 .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -73,6 +75,8 @@ namespace DogGo.Controllers
                 paseos = await _context.Paseos
                     .Where(p => p.PaseadorId == paseador.Id)
                     .Include(p => p.Perro).ThenInclude(pe => pe.Dueño)
+                    .Include(p => p.PaseoPerros)
+                        .ThenInclude(pp => pp.Perro)
                     .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
                     .Include(p => p.Calificacion)
                     .OrderByDescending(p => p.EsProgramado && p.FechaProgramada != null
@@ -86,6 +90,8 @@ namespace DogGo.Controllers
                     .Where(p => p.Perro.DueñoId == usuarioId)
                     .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
                     .Include(p => p.Perro)
+                    .Include(p => p.PaseoPerros)
+                        .ThenInclude(pp => pp.Perro)
                     .Include(p => p.Calificacion)
                     .OrderByDescending(p => p.EsProgramado && p.FechaProgramada != null
                         ? p.FechaProgramada
@@ -102,7 +108,7 @@ namespace DogGo.Controllers
         [Authorize(Roles = "Duenio")]
         public async Task<IActionResult> Crear(
             int paseadorId,
-            int perroId,
+            List<int> perroIds,
             decimal precio,
             int duracionMinutos,
             bool esProgramado,
@@ -110,13 +116,25 @@ namespace DogGo.Controllers
         {
             var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            var perro = await _context.Perros
-                .FirstOrDefaultAsync(p => p.Id == perroId);
+            if (perroIds == null || !perroIds.Any())
+            {
+                TempData["Error"] = "Debes seleccionar al menos un perro para el paseo.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
 
-            if (perro == null)
-                return NotFound();
+            perroIds = perroIds.Distinct().ToList();
 
-            if (perro.DueñoId != usuarioId)
+            var perros = await _context.Perros
+                .Where(p => perroIds.Contains(p.Id))
+                .ToListAsync();
+
+            if (perros.Count != perroIds.Count)
+            {
+                TempData["Error"] = "Uno o más perros seleccionados no existen.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
+
+            if (perros.Any(p => p.DueñoId != usuarioId))
                 return Forbid();
 
             var paseador = await _context.Paseadores
@@ -154,13 +172,21 @@ namespace DogGo.Controllers
                 return RedirectToAction("Directorio", "Paseador");
             }
 
-            var paseoExistentePerro = await _context.Paseos
-                .AnyAsync(p => p.PerroId == perroId &&
-                              (p.Estado == "Pendiente" || p.Estado == "EnCurso"));
+            var perrosConPaseoActivo = await _context.Paseos
+                .Where(p =>
+                    (p.Estado == "Pendiente" || p.Estado == "EnCurso") &&
+                    (
+                        perroIds.Contains(p.PerroId) ||
+                        p.PaseoPerros.Any(pp => perroIds.Contains(pp.PerroId))
+                    ))
+                .Select(p => p.Perro.Nombre)
+                .Distinct()
+                .ToListAsync();
 
-            if (paseoExistentePerro)
+            if (perrosConPaseoActivo.Any())
             {
-                TempData["Error"] = "Este perro ya tiene un paseo pendiente o en curso.";
+                TempData["Error"] = "Uno o más perros ya tienen un paseo pendiente o en curso: " +
+                                    string.Join(", ", perrosConPaseoActivo);
                 return RedirectToAction("Index", "Perro");
             }
 
@@ -214,10 +240,12 @@ namespace DogGo.Controllers
                 }
             }
 
+            var primerPerroId = perroIds.First();
+
             var paseo = new Paseo
             {
                 PaseadorId = paseadorId,
-                PerroId = perroId,
+                PerroId = primerPerroId, // compatibilidad temporal con vistas actuales
                 FechaInicio = null,
                 FechaFin = null,
                 Estado = "Pendiente",
@@ -230,6 +258,17 @@ namespace DogGo.Controllers
             };
 
             _context.Paseos.Add(paseo);
+            await _context.SaveChangesAsync();
+
+            foreach (var idPerro in perroIds)
+            {
+                _context.PaseoPerros.Add(new PaseoPerro
+                {
+                    PaseoId = paseo.Id,
+                    PerroId = idPerro
+                });
+            }
+
             await _context.SaveChangesAsync();
 
             TempData["Exito"] = esProgramado

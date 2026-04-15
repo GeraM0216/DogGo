@@ -8,11 +8,11 @@ namespace DogGo.Data
         public DogGoDbContext(DbContextOptions<DogGoDbContext> options)
             : base(options) { }
 
-        // ── DbSets ───────────────────────────────────────────────
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Perro> Perros { get; set; }
         public DbSet<Paseador> Paseadores { get; set; }
         public DbSet<Paseo> Paseos { get; set; }
+        public DbSet<PaseoPerro> PaseoPerros { get; set; }
         public DbSet<Calificacion> Calificaciones { get; set; }
         public DbSet<Mensaje> Mensajes { get; set; }
         public DbSet<Ubicacion> Ubicaciones { get; set; }
@@ -21,80 +21,99 @@ namespace DogGo.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // ── Usuario ──────────────────────────────────────────
+            // Usuario
             modelBuilder.Entity<Usuario>(e =>
             {
                 e.HasIndex(u => u.Email).IsUnique();
                 e.Property(u => u.Rol)
-                 .HasConversion<string>()
-                 .HasMaxLength(20);
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
             });
 
-            // ── Perro → Dueño ────────────────────────────────────
+            // Perro -> Dueño
             modelBuilder.Entity<Perro>()
                 .HasOne(p => p.Dueño)
                 .WithMany(u => u.Perros)
                 .HasForeignKey(p => p.DueñoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ── Paseador → Usuario (1-a-1) ───────────────────────
+            // Paseador -> Usuario (1 a 1)
             modelBuilder.Entity<Paseador>()
                 .HasOne(p => p.Usuario)
                 .WithOne(u => u.Paseador)
                 .HasForeignKey<Paseador>(p => p.UsuarioId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ── Paseo → Paseador ─────────────────────────────────
+            // Paseo -> Paseador
             modelBuilder.Entity<Paseo>()
                 .HasOne(p => p.Paseador)
                 .WithMany(pa => pa.Paseos)
                 .HasForeignKey(p => p.PaseadorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ── Paseo → Perro ─────────────────────────────────────
+            // Relación actual: Paseo -> Perro
+            // Se mantiene temporalmente por compatibilidad
             modelBuilder.Entity<Paseo>()
                 .HasOne(p => p.Perro)
                 .WithMany(pe => pe.Paseos)
                 .HasForeignKey(p => p.PerroId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ── Calificacion → Paseo (1-a-1) ─────────────────────
+            // Nueva relación: PaseoPerro -> Paseo
+            modelBuilder.Entity<PaseoPerro>()
+                .HasOne(pp => pp.Paseo)
+                .WithMany(p => p.PaseoPerros)
+                .HasForeignKey(pp => pp.PaseoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Nueva relación: PaseoPerro -> Perro
+            modelBuilder.Entity<PaseoPerro>()
+                .HasOne(pp => pp.Perro)
+                .WithMany(p => p.PaseoPerros)
+                .HasForeignKey(pp => pp.PerroId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Evita duplicados del mismo perro en el mismo paseo
+            modelBuilder.Entity<PaseoPerro>()
+                .HasIndex(pp => new { pp.PaseoId, pp.PerroId })
+                .IsUnique();
+
+            // Calificacion -> Paseo (1 a 1)
             modelBuilder.Entity<Calificacion>()
                 .HasOne(c => c.Paseo)
                 .WithOne(p => p.Calificacion)
                 .HasForeignKey<Calificacion>(c => c.PaseoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ── Mensaje → Emisor / Receptor ───────────────────────
-            // Dos FK al mismo modelo requieren deshabilitar
-            // la eliminación en cascada para evitar ciclos
+            // Mensaje -> Emisor
             modelBuilder.Entity<Mensaje>()
                 .HasOne(m => m.Emisor)
                 .WithMany(u => u.Enviados)
                 .HasForeignKey(m => m.EmisorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Mensaje -> Receptor
             modelBuilder.Entity<Mensaje>()
                 .HasOne(m => m.Receptor)
                 .WithMany(u => u.Recibidos)
                 .HasForeignKey(m => m.ReceptorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ── Mensaje → Paseo ───────────────────────────────────
+            // Mensaje -> Paseo
             modelBuilder.Entity<Mensaje>()
                 .HasOne(m => m.Paseo)
                 .WithMany(p => p.Mensajes)
                 .HasForeignKey(m => m.PaseoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ── Ubicacion → Paseo ─────────────────────────────────
+            // Ubicacion -> Paseo
             modelBuilder.Entity<Ubicacion>()
                 .HasOne(u => u.Paseo)
                 .WithMany(p => p.Ubicaciones)
                 .HasForeignKey(u => u.PaseoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ── Precisión decimales (precio, coordenadas) ─────────
+            // Precisión decimales
             modelBuilder.Entity<Paseador>()
                 .Property(p => p.TarifaPorHora)
                 .HasPrecision(10, 2);

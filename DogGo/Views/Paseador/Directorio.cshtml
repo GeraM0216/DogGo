@@ -96,7 +96,7 @@
                             {
                                 <button class="btn-solicitar"
                                         onclick="abrirModal(@p.Id, '@p.Usuario.Nombre @p.Usuario.Apellido', @p.TarifaPorHora)"
-                                        @(p.Disponible ? "" : "disabled")>
+                                    @(p.Disponible ? "" : "disabled")>
                                     Solicitar paseo
                                 </button>
                             }
@@ -128,7 +128,7 @@
                         <div class="modal-title">Solicitar paseo 🦮</div>
                         <div class="modal-sub" id="modal-sub">Cargando...</div>
                     </div>
-                    <button class="modal-close" onclick="cerrarModal()">✕</button>
+                    <button type="button" class="modal-close" onclick="cerrarModal()">✕</button>
                 </div>
 
                 <form asp-controller="Paseo" asp-action="Crear" method="post" id="modal-form">
@@ -136,20 +136,54 @@
                     <input type="hidden" name="paseadorId" id="modal-paseador-id" />
 
                     <div class="form-group">
-                        <label class="form-lbl">Tu perro</label>
-                        <select name="perroId" class="form-ctrl form-sel" required>
-                            <option value="">Selecciona uno de tus perros</option>
+                        <label class="form-lbl">Tus perros</label>
+                        <div class="form-help">Selecciona uno o varios perros para este paseo.</div>
+
+                        <div class="perros-select-grid">
                             @foreach (var perro in perros)
                             {
-                                <option value="@perro.Id">@perro.Nombre</option>
+                                <label class="perro-option">
+                                    <input type="checkbox" name="perroIds" value="@perro.Id" class="perro-check" />
+                                    <div class="perro-option-body">
+                                        <div class="perro-option-avatar">
+                                            @if (!string.IsNullOrWhiteSpace(perro.ImagenUrl))
+                                            {
+                                                <img src="@perro.ImagenUrl" alt="@perro.Nombre" />
+                                            }
+                                            else
+                                            {
+                                                <span>🐶</span>
+                                            }
+                                        </div>
+                                        <div class="perro-option-info">
+                                            <div class="perro-option-name">@perro.Nombre</div>
+                                            <div class="perro-option-meta">
+                                                @(string.IsNullOrWhiteSpace(perro.Raza) ? "Sin raza registrada" : perro.Raza)
+                                                @if (!string.IsNullOrWhiteSpace(perro.Tamaño))
+                                                {
+                                                    <span>· @perro.Tamaño</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
                             }
-                        </select>
+                        </div>
+
+                        <div id="perros-seleccionados" class="perros-seleccionados">
+                            Ningún perro seleccionado.
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-lbl">Precio ($)</label>
-                        <input type="number" name="precio" id="modal-precio"
-                               class="form-ctrl" step="0.01" min="0" required />
+                        <input type="number"
+                               name="precio"
+                               id="modal-precio"
+                               class="form-ctrl"
+                               step="0.01"
+                               min="0"
+                               required />
                     </div>
 
                     <div class="form-group">
@@ -200,29 +234,68 @@
         border-bottom: 1.5px solid var(--border);
         padding: 2rem 2rem 1.5rem;
     }
-    .page-header-inner { max-width: 1100px; margin: 0 auto; }
+
+    .page-header-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
     .page-eyebrow {
-        font-size: .74rem; font-weight: 800; letter-spacing: .1em;
-        text-transform: uppercase; color: var(--teal); margin-bottom: .4rem;
+        font-size: .74rem;
+        font-weight: 800;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--teal);
+        margin-bottom: .4rem;
     }
+
     .page-title {
-        font-weight: 900; font-size: clamp(1.7rem,3vw,2.2rem);
-        letter-spacing: -.3px; color: var(--text); margin-bottom: .3rem;
+        font-weight: 900;
+        font-size: clamp(1.7rem,3vw,2.2rem);
+        letter-spacing: -.3px;
+        color: var(--text);
+        margin-bottom: .3rem;
     }
-    .page-sub { color: var(--muted); font-size: .92rem; font-weight: 600; }
+
+    .page-sub {
+        color: var(--muted);
+        font-size: .92rem;
+        font-weight: 600;
+    }
 
     /* ── Container ── */
-    .dir-container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+    .dir-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
 
     /* ── Empty state ── */
     .empty-state {
-        text-align: center; padding: 4rem 2rem;
-        background: var(--card); border: 1.5px dashed var(--border);
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--card);
+        border: 1.5px dashed var(--border);
         border-radius: 22px;
     }
-    .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
-    .empty-state h3 { font-weight: 900; font-size: 1.2rem; margin-bottom: .5rem; color: var(--text); }
-    .empty-state p  { color: var(--muted); font-weight: 600; font-size: .9rem; }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        font-weight: 900;
+        font-size: 1.2rem;
+        margin-bottom: .5rem;
+        color: var(--text);
+    }
+
+    .empty-state p {
+        color: var(--muted);
+        font-weight: 600;
+        font-size: .9rem;
+    }
 
     /* ── Grid ── */
     .dir-grid {
@@ -242,119 +315,291 @@
         flex-direction: column;
         gap: .85rem;
     }
-    .paseador-card:hover {
-        border-color: var(--teal-m);
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(45,49,66,.08);
-    }
 
-    .pc-top { display: flex; align-items: center; gap: .9rem; }
+        .paseador-card:hover {
+            border-color: var(--teal-m);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(45,49,66,.08);
+        }
+
+    .pc-top {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+    }
 
     .pc-avatar {
-        width: 54px; height: 54px; border-radius: 50%;
-        background: var(--teal-l); display: flex;
-        align-items: center; justify-content: center;
-        font-size: 1.5rem; flex-shrink: 0; overflow: hidden;
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: var(--teal-l);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        overflow: hidden;
     }
-    .pc-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
-    .pc-info    { flex: 1; }
-    .pc-name    { font-weight: 900; font-size: 1rem; color: var(--text); margin-bottom: .15rem; }
-    .pc-tarifa  { font-size: .8rem; font-weight: 700; color: var(--muted); }
+        .pc-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
 
-    .pc-stars-wrap { text-align: right; }
-    .pc-stars   { font-size: .95rem; letter-spacing: .03em; }
-    .star-on    { color: var(--amber); }
-    .star-off   { color: var(--border); }
-    .pc-stars-num { font-size: .76rem; font-weight: 700; color: var(--muted); margin-top: .1rem; }
+    .pc-info {
+        flex: 1;
+    }
+
+    .pc-name {
+        font-weight: 900;
+        font-size: 1rem;
+        color: var(--text);
+        margin-bottom: .15rem;
+    }
+
+    .pc-tarifa {
+        font-size: .8rem;
+        font-weight: 700;
+        color: var(--muted);
+    }
+
+    .pc-stars-wrap {
+        text-align: right;
+    }
+
+    .pc-stars {
+        font-size: .95rem;
+        letter-spacing: .03em;
+    }
+
+    .star-on {
+        color: var(--amber);
+    }
+
+    .star-off {
+        color: var(--border);
+    }
+
+    .pc-stars-num {
+        font-size: .76rem;
+        font-weight: 700;
+        color: var(--muted);
+        margin-top: .1rem;
+    }
 
     .pc-desc {
-        font-size: .85rem; color: var(--muted); font-weight: 600;
-        line-height: 1.55; margin: 0;
+        font-size: .85rem;
+        color: var(--muted);
+        font-weight: 600;
+        line-height: 1.55;
+        margin: 0;
     }
 
-    .pc-tags { display: flex; gap: .4rem; flex-wrap: wrap; }
+    .pc-tags {
+        display: flex;
+        gap: .4rem;
+        flex-wrap: wrap;
+    }
 
     .pc-tag {
-        padding: .22rem .65rem; border-radius: 999px;
-        font-size: .72rem; font-weight: 800;
-        background: var(--teal-l); color: var(--teal);
+        padding: .22rem .65rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 800;
+        background: var(--teal-l);
+        color: var(--teal);
     }
-    .pc-tag-amber {
-        padding: .22rem .65rem; border-radius: 999px;
-        font-size: .72rem; font-weight: 800;
-        background: var(--amber-l); color: var(--amber-d);
-    }
-    .pc-disp {
-        padding: .22rem .65rem; border-radius: 999px;
-        font-size: .72rem; font-weight: 800;
-    }
-    .disp-si { background: #dcfce7; color: #16a34a; }
-    .disp-no { background: #fee2e2; color: #dc2626; }
 
-    .pc-actions { display: flex; gap: .6rem; margin-top: auto; }
+    .pc-tag-amber {
+        padding: .22rem .65rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 800;
+        background: var(--amber-l);
+        color: var(--amber-d);
+    }
+
+    .pc-disp {
+        padding: .22rem .65rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+    .disp-si {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .disp-no {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .pc-actions {
+        display: flex;
+        gap: .6rem;
+        margin-top: auto;
+    }
 
     .btn-ver-perfil {
-        flex: 1; padding: .5rem; border-radius: 999px;
-        font-size: .83rem; font-weight: 800;
-        background: var(--teal-l); color: var(--teal);
-        border: 1.5px solid var(--teal-m); cursor: pointer;
-        transition: all .18s; text-align: center; text-decoration: none;
+        flex: 1;
+        padding: .5rem;
+        border-radius: 999px;
+        font-size: .83rem;
+        font-weight: 800;
+        background: var(--teal-l);
+        color: var(--teal);
+        border: 1.5px solid var(--teal-m);
+        cursor: pointer;
+        transition: all .18s;
+        text-align: center;
+        text-decoration: none;
         display: inline-block;
     }
-    .btn-ver-perfil:hover { background: var(--teal); color: #fff; }
+
+        .btn-ver-perfil:hover {
+            background: var(--teal);
+            color: #fff;
+        }
 
     .btn-solicitar {
-        flex: 2; padding: .5rem; border-radius: 999px;
-        font-size: .83rem; font-weight: 800;
-        background: var(--teal); color: #fff; border: none;
-        cursor: pointer; transition: background .18s;
+        flex: 2;
+        padding: .5rem;
+        border-radius: 999px;
+        font-size: .83rem;
+        font-weight: 800;
+        background: var(--teal);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        transition: background .18s;
         box-shadow: 0 3px 10px rgba(15,155,142,.2);
-        text-align: center; text-decoration: none; display: inline-block;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
     }
-    .btn-solicitar:hover:not(:disabled) { background: var(--teal-d); }
-    .btn-solicitar:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
-    .btn-solicitar-warn { background: var(--amber) !important; }
+
+        .btn-solicitar:hover:not(:disabled) {
+            background: var(--teal-d);
+        }
+
+        .btn-solicitar:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+    .btn-solicitar-warn {
+        background: var(--amber) !important;
+    }
 
     /* ── Modal ── */
     .modal-overlay {
-        position: fixed; inset: 0;
+        position: fixed;
+        inset: 0;
         background: rgba(45,49,66,.45);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 500; padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 500;
+        padding: 1rem;
     }
+
     .modal-box {
-        background: var(--card); border-radius: 24px;
-        padding: 2rem; width: 100%; max-width: 440px;
+        background: var(--card);
+        border-radius: 24px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 520px;
         box-shadow: 0 16px 48px rgba(45,49,66,.18);
         animation: fadeUp .25s ease;
+        max-height: 92vh;
+        overflow-y: auto;
     }
+
     .modal-header {
-        display: flex; justify-content: space-between;
-        align-items: flex-start; margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
     }
-    .modal-title { font-weight: 900; font-size: 1.15rem; color: var(--text); margin-bottom: .2rem; }
-    .modal-sub   { font-size: .85rem; color: var(--muted); font-weight: 600; }
+
+    .modal-title {
+        font-weight: 900;
+        font-size: 1.15rem;
+        color: var(--text);
+        margin-bottom: .2rem;
+    }
+
+    .modal-sub {
+        font-size: .85rem;
+        color: var(--muted);
+        font-weight: 600;
+    }
+
     .modal-close {
-        background: var(--warm); border: 1.5px solid var(--border);
-        border-radius: 50%; width: 32px; height: 32px;
-        cursor: pointer; font-size: .85rem; font-weight: 700;
-        color: var(--muted); display: flex; align-items: center;
-        justify-content: center; flex-shrink: 0;
+        background: var(--warm);
+        border: 1.5px solid var(--border);
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        font-size: .85rem;
+        font-weight: 700;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
         transition: background .18s;
     }
-    .modal-close:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
 
-    .form-group  { margin-bottom: 1rem; }
-    .form-lbl    { font-size: .82rem; font-weight: 800; color: var(--text); display: block; margin-bottom: .35rem; }
-    .form-ctrl {
-        width: 100%; padding: .5rem .85rem;
-        border-radius: 12px; border: 1.5px solid var(--border);
-        font-family: 'Nunito', sans-serif; font-size: .88rem;
-        font-weight: 600; outline: none; background: #fff;
-        transition: border-color .18s; color: var(--text);
+        .modal-close:hover {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+
+    .form-group {
+        margin-bottom: 1rem;
     }
-    .form-ctrl:focus { border-color: var(--teal); }
+
+    .form-lbl {
+        font-size: .82rem;
+        font-weight: 800;
+        color: var(--text);
+        display: block;
+        margin-bottom: .35rem;
+    }
+
+    .form-help {
+        font-size: .78rem;
+        color: var(--muted);
+        font-weight: 600;
+        margin-bottom: .55rem;
+    }
+
+    .form-ctrl {
+        width: 100%;
+        padding: .5rem .85rem;
+        border-radius: 12px;
+        border: 1.5px solid var(--border);
+        font-family: 'Nunito', sans-serif;
+        font-size: .88rem;
+        font-weight: 600;
+        outline: none;
+        background: #fff;
+        transition: border-color .18s;
+        color: var(--text);
+    }
+
+        .form-ctrl:focus {
+            border-color: var(--teal);
+        }
+
     .form-sel {
         appearance: none;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237B8194' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
@@ -363,43 +608,181 @@
         padding-right: 2.2rem;
     }
 
-    .tipo-row { display: flex; gap: .6rem; }
-    .tipo-pill {
-        flex: 1; padding: .45rem; border-radius: 999px;
-        font-size: .82rem; font-weight: 800;
-        border: 1.5px solid var(--border); background: #fff;
-        color: var(--muted); cursor: pointer; text-align: center;
-        transition: all .18s; display: flex; align-items: center;
-        justify-content: center; gap: .4rem;
-    }
-    .tipo-pill input { display: none; }
-    .tipo-pill:has(input:checked) {
-        background: var(--teal-l); border-color: var(--teal); color: var(--teal);
+    .perros-select-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: .65rem;
     }
 
-    .modal-actions { display: flex; gap: .6rem; margin-top: 1.25rem; }
+    .perro-option {
+        display: block;
+        border: 1.5px solid var(--border);
+        border-radius: 16px;
+        padding: .75rem;
+        cursor: pointer;
+        transition: border-color .18s, background .18s, transform .18s;
+        background: #fff;
+    }
+
+        .perro-option:hover {
+            border-color: var(--teal-m);
+            transform: translateY(-1px);
+        }
+
+        .perro-option:has(.perro-check:checked) {
+            border-color: var(--teal);
+            background: var(--teal-l);
+        }
+
+    .perro-check {
+        display: none;
+    }
+
+    .perro-option-body {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+    }
+
+    .perro-option-avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        overflow: hidden;
+        background: var(--warm);
+        border: 1.5px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.4rem;
+    }
+
+        .perro-option-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .perro-option-info {
+        min-width: 0;
+    }
+
+    .perro-option-name {
+        font-size: .92rem;
+        font-weight: 900;
+        color: var(--text);
+        margin-bottom: .12rem;
+    }
+
+    .perro-option-meta {
+        font-size: .78rem;
+        color: var(--muted);
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .perros-seleccionados {
+        margin-top: .55rem;
+        font-size: .78rem;
+        font-weight: 700;
+        color: var(--teal);
+    }
+
+    .tipo-row {
+        display: flex;
+        gap: .6rem;
+    }
+
+    .tipo-pill {
+        flex: 1;
+        padding: .45rem;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 800;
+        border: 1.5px solid var(--border);
+        background: #fff;
+        color: var(--muted);
+        cursor: pointer;
+        text-align: center;
+        transition: all .18s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .4rem;
+    }
+
+        .tipo-pill input {
+            display: none;
+        }
+
+        .tipo-pill:has(input:checked) {
+            background: var(--teal-l);
+            border-color: var(--teal);
+            color: var(--teal);
+        }
+
+    .modal-actions {
+        display: flex;
+        gap: .6rem;
+        margin-top: 1.25rem;
+    }
+
     .btn-modal-cancel {
-        flex: 1; padding: .6rem; border-radius: 999px;
-        font-size: .88rem; font-weight: 800;
-        background: #fff; color: var(--muted);
-        border: 1.5px solid var(--border); cursor: pointer;
+        flex: 1;
+        padding: .6rem;
+        border-radius: 999px;
+        font-size: .88rem;
+        font-weight: 800;
+        background: #fff;
+        color: var(--muted);
+        border: 1.5px solid var(--border);
+        cursor: pointer;
         transition: background .18s;
     }
-    .btn-modal-cancel:hover { background: var(--warm); }
+
+        .btn-modal-cancel:hover {
+            background: var(--warm);
+        }
+
     .btn-modal-confirm {
-        flex: 2; padding: .6rem; border-radius: 999px;
-        font-size: .88rem; font-weight: 800;
-        background: var(--teal); color: #fff; border: none;
-        cursor: pointer; box-shadow: 0 4px 14px rgba(15,155,142,.25);
+        flex: 2;
+        padding: .6rem;
+        border-radius: 999px;
+        font-size: .88rem;
+        font-weight: 800;
+        background: var(--teal);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(15,155,142,.25);
         transition: background .18s;
     }
-    .btn-modal-confirm:hover { background: var(--teal-d); }
+
+        .btn-modal-confirm:hover {
+            background: var(--teal-d);
+        }
 
     /* ── Responsive ── */
     @@media (max-width: 768px) {
-        .dir-grid { grid-template-columns: 1fr; }
-        .pc-actions { flex-direction: column; }
-        .btn-ver-perfil, .btn-solicitar { flex: unset; width: 100%; }
+        .dir-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pc-actions {
+            flex-direction: column;
+        }
+
+        .btn-ver-perfil,
+        .btn-solicitar {
+            flex: unset;
+            width: 100%;
+        }
+
+        .tipo-row,
+        .modal-actions {
+            flex-direction: column;
+        }
     }
 </style>
 
@@ -407,26 +790,65 @@
     <script>
         function abrirModal(paseadorId, nombre, tarifa) {
             document.getElementById('modal-paseador-id').value = paseadorId;
-            document.getElementById('modal-sub').textContent   = 'Con ' + nombre + ' · $' + tarifa + '/hora';
-            document.getElementById('modal-precio').value      = tarifa;
+            document.getElementById('modal-sub').textContent = 'Con ' + nombre + ' · $' + tarifa + '/hora';
+            document.getElementById('modal-precio').value = tarifa;
             document.getElementById('modal-overlay').style.display = 'flex';
             document.body.style.overflow = 'hidden';
+            actualizarResumenPerros();
         }
 
         function cerrarModal() {
             document.getElementById('modal-overlay').style.display = 'none';
             document.body.style.overflow = '';
+            document.getElementById('modal-form').reset();
+            const fechaWrap = document.getElementById('fecha-wrap');
+            const inputFecha = document.getElementById('input-fecha');
+            if (fechaWrap) fechaWrap.style.display = 'none';
+            if (inputFecha) {
+                inputFecha.required = false;
+                inputFecha.value = '';
+            }
+            actualizarResumenPerros();
         }
 
         function cerrarModalFuera(e) {
             if (e.target === document.getElementById('modal-overlay')) cerrarModal();
         }
 
+        function actualizarResumenPerros() {
+            const checks = document.querySelectorAll('.perro-check');
+            const seleccionados = Array.from(checks).filter(c => c.checked);
+            const resumen = document.getElementById('perros-seleccionados');
+
+            if (!resumen) return;
+
+            if (seleccionados.length === 0) {
+                resumen.textContent = 'Ningún perro seleccionado.';
+                return;
+            }
+
+            if (seleccionados.length === 1) {
+                resumen.textContent = '1 perro seleccionado.';
+                return;
+            }
+
+            resumen.textContent = seleccionados.length + ' perros seleccionados.';
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const radios = document.querySelectorAll('.tipo-radio');
             const fechaWrap = document.getElementById('fecha-wrap');
             const inputFecha = document.getElementById('input-fecha');
+            const checks = document.querySelectorAll('.perro-check');
+
+            if (checks.length) {
+                checks.forEach(c => {
+                    c.addEventListener('change', actualizarResumenPerros);
+                });
+            }
+
             if (!radios.length) return;
+
             radios.forEach(r => {
                 r.addEventListener('change', function () {
                     const prog = document.querySelector('.tipo-radio[value="true"]');
@@ -435,7 +857,10 @@
                         if (inputFecha) inputFecha.required = true;
                     } else {
                         fechaWrap.style.display = 'none';
-                        if (inputFecha) { inputFecha.required = false; inputFecha.value = ''; }
+                        if (inputFecha) {
+                            inputFecha.required = false;
+                            inputFecha.value = '';
+                        }
                     }
                 });
             });

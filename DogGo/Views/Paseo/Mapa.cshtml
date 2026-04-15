@@ -6,18 +6,46 @@
     var esPaseador = (bool)ViewBag.EsPaseador;
     var lat = Model.LatitudActual != 0 ? Model.LatitudActual : 25.6866m;
     var lng = Model.LongitudActual != 0 ? Model.LongitudActual : -100.3161m;
+
+    var nombresPerros = (Model.PaseoPerros != null && Model.PaseoPerros.Any(pp => pp.Perro != null))
+        ? string.Join(", ",
+            Model.PaseoPerros
+                .Where(pp => pp.Perro != null && !string.IsNullOrWhiteSpace(pp.Perro.Nombre))
+                .Select(pp => pp.Perro!.Nombre)
+                .Distinct())
+        : (Model.Perro?.Nombre ?? "Perro");
+
+    var cantidadPerros = (Model.PaseoPerros != null && Model.PaseoPerros.Any(pp => pp.Perro != null))
+        ? Model.PaseoPerros
+            .Where(pp => pp.Perro != null)
+            .Select(pp => pp.PerroId)
+            .Distinct()
+            .Count()
+        : (Model.Perro != null ? 1 : 0);
+
+    var variosPerros = cantidadPerros > 1;
+    var etiquetaPerros = variosPerros ? "Perros" : "Perro";
+    var textoFotoInicio = variosPerros ? "Sube una foto de los perros para poder comenzar el paseo." : "Sube una foto del perro para poder comenzar el paseo.";
+    var textoFotoInicioError = variosPerros ? "Debes subir una foto de inicio de los perros para iniciar el paseo." : "Debes subir una foto del perro para iniciar el paseo.";
+    var textoFotoFin = variosPerros ? "Antes de finalizar el paseo, sube una foto final de los perros como comprobante." : "Antes de finalizar el paseo, sube una foto final como comprobante.";
+    var textoFotoFinError = variosPerros ? "Debes subir una foto final de los perros antes de terminar el paseo." : "Debes subir una foto final antes de terminar el paseo.";
 }
 
 <div class="mapa-container">
 
     <div class="mapa-header">
         <h5>
-            Paseo de: @Model.Perro.Nombre —
+            Paseo de: @nombresPerros —
             <span id="estadoBadge" class="badge
                 @(Model.Estado == "EnCurso" ? "bg-success" :
                                                      Model.Estado == "Finalizado" ? "bg-secondary" : "bg-warning text-dark")">
                 @Model.Estado
             </span>
+
+            @if (variosPerros)
+            {
+                <span class="badge bg-primary ms-2">@cantidadPerros perros</span>
+            }
 
             @if (Model.EsProgramado)
             {
@@ -26,7 +54,7 @@
         </h5>
 
         <div class="mapa-info">
-            <span>🐶 @Model.Perro.Nombre</span>
+            <span>🐶 @etiquetaPerros: @nombresPerros</span>
             <span>👤 @Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</span>
             <span>⏱ Duración solicitada: @Model.DuracionMinutos min</span>
 
@@ -133,7 +161,7 @@
                      style="display:@(string.IsNullOrWhiteSpace(Model.FotoInicioUrl) ? "none" : "block")">
                     <h6 class="mb-2">Evidencia de inicio</h6>
                     <p class="text-muted small mb-3">
-                        Sube una foto del perro para poder comenzar el paseo.
+                        @textoFotoInicio
                     </p>
 
                     <form asp-controller="Paseo"
@@ -177,7 +205,7 @@
                 <div class="foto-box">
                     <h6 class="mb-2">Evidencia de finalización</h6>
                     <p class="text-muted small mb-3">
-                        Antes de finalizar el paseo, sube una foto final como comprobante.
+                        @textoFotoFin
                     </p>
 
                     <form asp-controller="Paseo"

@@ -7,6 +7,51 @@
     var cancelados = Model.Where(p => p.Estado == "Cancelado").ToList();
     var esDuenio = User.IsInRole("Duenio");
     var esPaseador = User.IsInRole("Paseador");
+
+    string ObtenerNombresPerros(DogGo.Models.Paseo paseo)
+    {
+        if (paseo.PaseoPerros != null && paseo.PaseoPerros.Any(pp => pp.Perro != null))
+        {
+            var nombres = paseo.PaseoPerros
+                .Where(pp => pp.Perro != null)
+                .Select(pp => pp.Perro.Nombre)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct()
+                .ToList();
+
+            if (nombres.Any())
+                return string.Join(", ", nombres);
+        }
+
+        return paseo.Perro?.Nombre ?? "Perro";
+    }
+
+    string? ObtenerImagenPerro(DogGo.Models.Paseo paseo)
+    {
+        if (paseo.PaseoPerros != null && paseo.PaseoPerros.Any(pp => pp.Perro != null && !string.IsNullOrWhiteSpace(pp.Perro.ImagenUrl)))
+        {
+            return paseo.PaseoPerros
+                .Where(pp => pp.Perro != null && !string.IsNullOrWhiteSpace(pp.Perro.ImagenUrl))
+                .Select(pp => pp.Perro!.ImagenUrl)
+                .FirstOrDefault();
+        }
+
+        return paseo.Perro?.ImagenUrl;
+    }
+
+    int ObtenerCantidadPerros(DogGo.Models.Paseo paseo)
+    {
+        if (paseo.PaseoPerros != null && paseo.PaseoPerros.Any(pp => pp.Perro != null))
+        {
+            return paseo.PaseoPerros
+                .Where(pp => pp.Perro != null)
+                .Select(pp => pp.PerroId)
+                .Distinct()
+                .Count();
+        }
+
+        return paseo.Perro != null ? 1 : 0;
+    }
 }
 
 <div class="page-header-wrap">
@@ -74,14 +119,18 @@
                 <div class="paseos-list">
                     @foreach (var p in enCurso)
                     {
+                        var nombresPerros = ObtenerNombresPerros(p);
+                        var imagenPerro = ObtenerImagenPerro(p);
+                        var cantidadPerros = ObtenerCantidadPerros(p);
+
                         <div class="paseo-card card-green">
                             <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link">
                                 <div class="paseo-card-inner">
                                     <div class="card-left">
                                         <div class="dog-photo-wrap">
-                                            @if (!string.IsNullOrWhiteSpace(p.Perro?.ImagenUrl))
+                                            @if (!string.IsNullOrWhiteSpace(imagenPerro))
                                             {
-                                                <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="dog-photo-img" />
+                                                <img src="@imagenPerro" alt="Foto de @nombresPerros" class="dog-photo-img" />
                                             }
                                             else
                                             {
@@ -93,7 +142,11 @@
                                     <div class="card-center">
                                         <div class="paseo-top-row">
                                             <span class="paseo-id">Paseo #@p.Id</span>
-                                            <span class="paseo-perro">🐶 @p.Perro.Nombre</span>
+                                            <span class="paseo-perro">🐶 @nombresPerros</span>
+                                            @if (cantidadPerros > 1)
+                                            {
+                                                <span class="paseo-badge badge-teal">@cantidadPerros perros</span>
+                                            }
                                             @if (p.EsProgramado)
                                             {
                                                 <span class="paseo-badge badge-blue">Programado</span>
@@ -143,14 +196,18 @@
                 <div class="paseos-list">
                     @foreach (var p in pendientes)
                     {
+                        var nombresPerros = ObtenerNombresPerros(p);
+                        var imagenPerro = ObtenerImagenPerro(p);
+                        var cantidadPerros = ObtenerCantidadPerros(p);
+
                         <div class="paseo-card card-amber">
                             <div class="paseo-card-inner">
                                 <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link paseo-link-full">
                                     <div class="card-left">
                                         <div class="dog-photo-wrap">
-                                            @if (!string.IsNullOrWhiteSpace(p.Perro?.ImagenUrl))
+                                            @if (!string.IsNullOrWhiteSpace(imagenPerro))
                                             {
-                                                <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="dog-photo-img" />
+                                                <img src="@imagenPerro" alt="Foto de @nombresPerros" class="dog-photo-img" />
                                             }
                                             else
                                             {
@@ -162,7 +219,11 @@
                                     <div class="card-center">
                                         <div class="paseo-top-row">
                                             <span class="paseo-id">Paseo #@p.Id</span>
-                                            <span class="paseo-perro">🐶 @p.Perro.Nombre</span>
+                                            <span class="paseo-perro">🐶 @nombresPerros</span>
+                                            @if (cantidadPerros > 1)
+                                            {
+                                                <span class="paseo-badge badge-teal">@cantidadPerros perros</span>
+                                            }
                                             @if (p.EsProgramado)
                                             {
                                                 <span class="paseo-badge badge-blue">Programado</span>
@@ -232,14 +293,18 @@
                 <div class="paseos-list">
                     @foreach (var p in finalizados)
                     {
+                        var nombresPerros = ObtenerNombresPerros(p);
+                        var imagenPerro = ObtenerImagenPerro(p);
+                        var cantidadPerros = ObtenerCantidadPerros(p);
+
                         <div class="paseo-card card-muted">
                             <div class="paseo-card-inner">
                                 <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link paseo-link-full">
                                     <div class="card-left">
                                         <div class="dog-photo-wrap">
-                                            @if (!string.IsNullOrWhiteSpace(p.Perro?.ImagenUrl))
+                                            @if (!string.IsNullOrWhiteSpace(imagenPerro))
                                             {
-                                                <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="dog-photo-img" />
+                                                <img src="@imagenPerro" alt="Foto de @nombresPerros" class="dog-photo-img" />
                                             }
                                             else
                                             {
@@ -251,7 +316,11 @@
                                     <div class="card-center">
                                         <div class="paseo-top-row">
                                             <span class="paseo-id">Paseo #@p.Id</span>
-                                            <span class="paseo-perro">🐶 @p.Perro.Nombre</span>
+                                            <span class="paseo-perro">🐶 @nombresPerros</span>
+                                            @if (cantidadPerros > 1)
+                                            {
+                                                <span class="paseo-badge badge-teal">@cantidadPerros perros</span>
+                                            }
                                             @if (p.EsProgramado)
                                             {
                                                 <span class="paseo-badge badge-blue">Programado</span>
@@ -331,6 +400,9 @@
                 <div class="paseos-list">
                     @foreach (var p in cancelados)
                     {
+                        var nombresPerros = ObtenerNombresPerros(p);
+                        var imagenPerro = ObtenerImagenPerro(p);
+                        var cantidadPerros = ObtenerCantidadPerros(p);
                         var fotoCancelador = p.CanceladoPor == "Paseador" ? p.Paseador?.FotoUrl : null;
 
                         <div class="paseo-card card-red">
@@ -338,9 +410,9 @@
                                 <div class="paseo-card-inner">
                                     <div class="card-left">
                                         <div class="dog-photo-wrap">
-                                            @if (!string.IsNullOrWhiteSpace(p.Perro?.ImagenUrl))
+                                            @if (!string.IsNullOrWhiteSpace(imagenPerro))
                                             {
-                                                <img src="@p.Perro.ImagenUrl" alt="Foto de @p.Perro.Nombre" class="dog-photo-img" />
+                                                <img src="@imagenPerro" alt="Foto de @nombresPerros" class="dog-photo-img" />
                                             }
                                             else
                                             {
@@ -352,7 +424,11 @@
                                     <div class="card-center">
                                         <div class="paseo-top-row">
                                             <span class="paseo-id">Paseo #@p.Id</span>
-                                            <span class="paseo-perro">🐶 @p.Perro.Nombre</span>
+                                            <span class="paseo-perro">🐶 @nombresPerros</span>
+                                            @if (cantidadPerros > 1)
+                                            {
+                                                <span class="paseo-badge badge-teal">@cantidadPerros perros</span>
+                                            }
                                         </div>
 
                                         <div class="paseo-meta">
@@ -555,6 +631,7 @@
         font-weight: 800;
     }
     .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-teal { background: var(--teal-l); color: var(--teal); }
 
     .paseo-meta {
         display: flex;
