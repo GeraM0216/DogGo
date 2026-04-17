@@ -1,4 +1,4 @@
-# 🐕 DogGo - Paseo de Perros Inteligente
+#  DogGo - Paseo de Perros Inteligente
 
 > **Colas felices, dueños tranquilos**
 
@@ -6,7 +6,7 @@ Una aplicación web que conecta dueños de perros con paseadores verificados en 
 
 ---
 
-## 📋 Tabla de Contenidos
+##  Tabla de Contenidos
 
 - [Visión General](#visión-general)
 - [Características Principales](#características-principales)
@@ -19,7 +19,7 @@ Una aplicación web que conecta dueños de perros con paseadores verificados en 
 
 ---
 
-## 🎯 Visión General
+##  Visión General
 
 DogGo es una solución innovadora para un problema real: **muchas personas en la ciudad no tienen tiempo para pasear a sus mascotas como quisieran**. 
 
@@ -33,25 +33,25 @@ Nuestro objetivo es:
 
 ---
 
-## ⭐ Características Principales
+##  Características Principales
 
 ### Para Dueños
-- 📱 Interfaz intuitiva y fácil de usar
-- 🔐 Búsqueda de paseadores verificados
-- 📍 GPS en tiempo real durante el paseo
-- 📸 Fotos y videos del paseo
-- ⭐ Sistema de calificaciones
-- 💬 Chat en vivo con paseador
-- 🚨 Protocolos automáticos de emergencia
+- Interfaz intuitiva y fácil de usar
+- Búsqueda de paseadores verificados
+- GPS en tiempo real durante el paseo
+- Fotos y videos del paseo
+- Sistema de calificaciones
+- Chat en vivo con paseador
+- Protocolos automáticos de emergencia
 
 ### Para Paseadores
-- 📋 Gestión flexible de horarios
-- 🔔 Notificaciones en tiempo real
-- 📈 Reputación y perfil verificado
+-  Gestión flexible de horarios
+-  Notificaciones en tiempo real
+-  Reputación y perfil verificado
 
 ---
 
-## 🛠️ Tecnología
+##  Tecnología
 
 ### Backend
 - **C#**
@@ -82,7 +82,7 @@ Nuestro objetivo es:
 
 ---
 
-## 📁 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 DogGo/
@@ -102,12 +102,12 @@ DogGo/
 
 ---
 
-## 🚀 Instalación
+##  Instalación
 
 ### Requisitos Previos
-.NET 8 SDK
+.NET 9 SDK
 MySQL 8
-Visual Studio 2022 o VS Code
+Visual Studio 2026 o VS Code
 Git
 
 ### Local Setup
@@ -129,7 +129,7 @@ dotnet ef database update
 dotnet run
 ```
 
-## 💻 Uso
+##  Uso
 
 ### Flujo de Dueño
 
@@ -156,7 +156,7 @@ dotnet run
 
 ---
 
-## 🔐 Seguridad
+##  Seguridad
 
 - Autenticación mediante cookies en ASP.NET Core
 - Confirmación de correo con código de verificación
@@ -166,7 +166,7 @@ dotnet run
 - Almacenamiento seguro de contraseñas mediante hash
 - Acceso a datos mediante Entity Framework Core
 
-## 🌐 Pruebas remotas y despliegue
+##  Pruebas remotas y despliegue
 
 - Pruebas remotas mediante Cloudflare Tunnel
 - Ejecución en entorno Ubuntu para validación del sistema
