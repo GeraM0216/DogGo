@@ -7,6 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="Views\Paseador\Directorio.cshtml" />
+    <None Include="Views\Paseador\Editar.cshtml" />
+    <None Include="Views\Paseador\Perfil.cshtml" />
     <None Include="Views\Paseo\MisPaseos.cshtml" />
   </ItemGroup>
 

@@ -67,64 +67,6 @@
     </div>
 </div>
 
-<style>
-    .delete-wrap {
-        max-width: 480px; margin: 3rem auto; padding: 0 1.5rem 3rem;
-    }
-    .delete-card {
-        background: var(--card); border: 1.5px solid #fca5a5;
-        border-radius: 24px; padding: 2.25rem 2rem;
-        box-shadow: 0 4px 20px rgba(220,38,38,.08);
-        text-align: center; display: flex; flex-direction: column; gap: 1.1rem;
-    }
-
-    .delete-icon-wrap { display: flex; justify-content: center; }
-    .delete-icon {
-        width: 64px; height: 64px; border-radius: 50%;
-        background: #fee2e2; display: flex;
-        align-items: center; justify-content: center;
-        font-size: 1.75rem;
-    }
-
-    .delete-title { font-weight: 900; font-size: 1.3rem; letter-spacing: -.2px; color: var(--text); }
-    .delete-sub   { font-size: .9rem; font-weight: 600; color: var(--muted); line-height: 1.6; margin: 0; }
-    .delete-sub strong { color: var(--text); }
-
-    /* Resumen perro */
-    .delete-perro-card {
-        display: flex; align-items: center; gap: .9rem;
-        background: var(--warm); border: 1.5px solid var(--border);
-        border-radius: 16px; padding: 1rem 1.1rem; text-align: left;
-    }
-    .dpc-foto {
-        width: 52px; height: 52px; border-radius: 50%;
-        background: var(--teal-l); overflow: hidden;
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
-    }
-    .dpc-img   { width: 100%; height: 100%; object-fit: cover; }
-    .dpc-emoji { font-size: 1.6rem; }
-    .dpc-nombre{ font-weight: 900; font-size: 1rem; color: var(--text); margin-bottom: .25rem; }
-    .dpc-meta  { display: flex; gap: .5rem; flex-wrap: wrap; font-size: .8rem; font-weight: 700; color: var(--muted); margin-bottom: .2rem; }
-    .dpc-meta span::after { content: '·'; margin-left: .5rem; }
-    .dpc-meta span:last-child::after { content: ''; }
-    .dpc-notas { font-size: .78rem; font-weight: 600; color: var(--amber-d); background: var(--amber-l); border-radius: 8px; padding: .22rem .6rem; display: inline-block; }
-
-    /* Acciones */
-    .delete-actions { display: flex; gap: .65rem; }
-    .btn-no-delete {
-        flex: 1; padding: .7rem; border-radius: 999px; text-align: center;
-        font-size: .9rem; font-weight: 800;
-        background: #fff; color: var(--muted);
-        border: 1.5px solid var(--border); text-decoration: none;
-        transition: background .18s; display: flex; align-items: center; justify-content: center;
-    }
-    .btn-no-delete:hover { background: var(--warm); color: var(--muted); }
-    .btn-si-delete {
-        width: 100%; padding: .7rem; border-radius: 999px;
-        font-size: .9rem; font-weight: 900; font-family: 'Nunito', sans-serif;
-        background: #dc2626; color: #fff; border: none; cursor: pointer;
-        box-shadow: 0 4px 14px rgba(220,38,38,.25); transition: background .18s;
-    }
-    .btn-si-delete:hover { background: #b91c1c; }
-</style>
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/css/perro.css")" />
+}

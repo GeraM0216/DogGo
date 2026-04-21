@@ -83,7 +83,9 @@
     </div>
 </div>
 
-@await Html.PartialAsync("_PerroFormStyles")
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/css/perro.css")" />
+}
 
 @section Scripts {
     @{

@@ -113,33 +113,6 @@
     </script>
 }
 
-<style>
-    .form-page-wrap { max-width: 580px; margin: 2rem auto; padding: 0 1.5rem 3rem; }
-    .form-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 24px; padding: 2rem; box-shadow: 0 4px 16px rgba(45,49,66,.07); }
-    .form-card-header { margin-bottom: 1.75rem; }
-    .page-eyebrow { font-size: .73rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--teal); margin-bottom: .4rem; }
-    .form-title   { font-weight: 900; font-size: 1.5rem; letter-spacing: -.3px; color: var(--text); margin-bottom: .25rem; }
-    .form-sub     { color: var(--muted); font-size: .88rem; font-weight: 600; }
-    .validation-summary { background: #fee2e2; border: 1.5px solid #fca5a5; border-radius: 12px; padding: .75rem 1rem; font-size: .85rem; font-weight: 700; color: #dc2626; margin-bottom: 1.25rem; }
-    .foto-section { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-    .foto-preview { width: 80px; height: 80px; border-radius: 50%; background: var(--teal-l); border: 3px solid var(--teal-l); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; overflow: hidden; flex-shrink: 0; }
-    .foto-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .file-upload-btn { display: inline-flex; align-items: center; gap: .4rem; padding: .4rem 1rem; border-radius: 999px; font-size: .82rem; font-weight: 800; cursor: pointer; background: var(--warm); color: var(--text); border: 1.5px solid var(--border); transition: all .18s; }
-    .file-upload-btn input { display: none; }
-    .file-upload-btn:hover { border-color: var(--teal); background: var(--teal-l); color: var(--teal); }
-    .file-hint { font-size: .76rem; font-weight: 600; color: var(--muted); }
-    .form-group { margin-bottom: 1.1rem; }
-    .form-row   { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .form-lbl   { font-size: .82rem; font-weight: 800; color: var(--text); display: block; margin-bottom: .38rem; }
-    .form-ctrl  { width: 100%; padding: .55rem .9rem; border-radius: 12px; border: 1.5px solid var(--border); font-family: 'Nunito', sans-serif; font-size: .9rem; font-weight: 600; outline: none; background: #fff; transition: border-color .18s; color: var(--text); }
-    .form-ctrl:focus { border-color: var(--teal); }
-    .form-sel   { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237B8194' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .85rem center; padding-right: 2.2rem; }
-    .form-ta    { resize: vertical; min-height: 90px; }
-    .val-error  { font-size: .78rem; font-weight: 700; color: #dc2626; margin-top: .25rem; display: block; }
-    .form-actions { display: flex; flex-direction: column; gap: .6rem; margin-top: 1.5rem; }
-    .btn-save   { width: 100%; padding: .75rem; border-radius: 999px; font-size: .95rem; font-weight: 900; font-family: 'Nunito', sans-serif; background: var(--teal); color: #fff; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(15,155,142,.25); transition: background .18s, transform .15s; }
-    .btn-save:hover { background: var(--teal-d); transform: translateY(-1px); }
-    .btn-cancel { width: 100%; padding: .7rem; border-radius: 999px; text-align: center; font-size: .9rem; font-weight: 800; background: #fff; color: var(--muted); border: 1.5px solid var(--border); text-decoration: none; transition: background .18s; display: block; }
-    .btn-cancel:hover { background: var(--warm); color: var(--muted); }
-    @@media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
-</style>
+@section Styles {
+    <link rel="stylesheet" href="@Url.Content("~/css/perro.css")" />
+}
