@@ -32,11 +32,12 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
                     </li>
+
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Paseador" asp-action="Directorio">Paseadores</a>
                     </li>
 
-                    @if (User.Identity.IsAuthenticated)
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Paseo" asp-action="MisPaseos">Mis paseos</a>
@@ -52,6 +53,10 @@
                         @if (User.IsInRole("Duenio"))
                         {
                             <li class="nav-item">
+                                <a class="nav-link" asp-controller="DuenioPerfil" asp-action="Editar">Mi perfil</a>
+                            </li>
+
+                            <li class="nav-item">
                                 <a class="nav-link" asp-controller="Perro" asp-action="Index">Mis perros</a>
                             </li>
                         }
@@ -59,7 +64,7 @@
                 </ul>
 
                 <ul class="navbar-nav gap-1 align-items-center">
-                    @if (User.Identity.IsAuthenticated)
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
                         var nombre = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
                         var rol = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
@@ -70,6 +75,7 @@
                             <span class="nav-user-name">👤 @nombre</span>
                             <span class="nav-badge-rol">@rolMostrado</span>
                         </li>
+
                         <li class="nav-item">
                             <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
                                 @Html.AntiForgeryToken()
@@ -82,6 +88,7 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Auth" asp-action="Login">Iniciar sesión</a>
                         </li>
+
                         <li class="nav-item">
                             <a class="nav-cta-btn" asp-controller="Auth" asp-action="Register">Registrarse</a>
                         </li>
@@ -99,6 +106,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible tempdata-alert" role="alert">
@@ -120,6 +128,7 @@
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
     <script>
         document.querySelectorAll(".tempdata-alert").forEach(a => {
         setTimeout(() => bootstrap.Alert.getOrCreateInstance(a).close(), 4000);

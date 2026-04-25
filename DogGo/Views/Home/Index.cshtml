@@ -58,6 +58,9 @@
                     <a asp-controller="Paseo" asp-action="MisPaseos" class="btn-secondary-doggo">
                         Mis paseos
                     </a>
+                    <a asp-controller="DuenioPerfil" asp-action="Editar" class="btn-secondary-doggo">
+                        Mi perfil
+                    </a>
                 </div>
             </div>
 
@@ -424,6 +427,11 @@
                     <div class="cta-card-title">Mis perros</div>
                     <div class="cta-card-desc">Administra perfiles, fotos y datos de tus mascotas.</div>
                 </a>
+                <a asp-controller="DuenioPerfil" asp-action="Editar" class="cta-card">
+                    <span class="cta-card-icon">👤</span>
+                    <div class="cta-card-title">Mi perfil</div>
+                    <div class="cta-card-desc">Configura tu foto, dirección y ubicación predeterminada.</div>
+                </a>
             </div>
         </div>
     </section>
@@ -605,7 +613,6 @@ else
     </section>
 }
 
-<!-- ── Estilos exclusivos de esta vista ── -->
 @section Styles {
     <link rel="stylesheet" href="@Url.Content("~/css/home.css")" />
 }

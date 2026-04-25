@@ -256,7 +256,11 @@ namespace DogGo.Controllers
                     .OrderBy(p => p.Nombre)
                     .ToListAsync();
 
+                var duenioPerfil = await _context.DuenioPerfiles
+                    .FirstOrDefaultAsync(dp => dp.UsuarioId == usuarioId);
+
                 ViewBag.Perros = perros;
+                ViewBag.DuenioPerfil = duenioPerfil;
             }
 
             return View(paseadores);

@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════
 // DogGo — paseador.js
-// Modal solicitar paseo, ubicación de recogida, zonas checkbox, preview foto
+// Modal solicitar paseo, ubicación de recolección, zonas checkbox, preview foto
 // ═══════════════════════════════════════════════
 
 let mapaRecogida = null;
@@ -13,10 +13,21 @@ const ubicacionDefault = {
 
 // ── Modal solicitar paseo ───────────────────────
 function abrirModal(paseadorId, nombre, tarifa) {
-    document.getElementById('modal-paseador-id').value = paseadorId;
-    document.getElementById('modal-sub').textContent = 'Con ' + nombre + ' · $' + tarifa + '/hora';
-    document.getElementById('modal-precio').value = tarifa;
-    document.getElementById('modal-overlay').style.display = 'flex';
+    const inputPaseador = document.getElementById('modal-paseador-id');
+    const modalSub = document.getElementById('modal-sub');
+    const inputPrecio = document.getElementById('modal-precio');
+    const overlay = document.getElementById('modal-overlay');
+
+    if (!inputPaseador || !modalSub || !inputPrecio || !overlay) {
+        console.error('No se encontraron elementos del modal.');
+        return;
+    }
+
+    inputPaseador.value = paseadorId;
+    modalSub.textContent = 'Con ' + nombre + ' · $' + tarifa + '/hora';
+    inputPrecio.value = tarifa;
+
+    overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
     setTimeout(function () {
@@ -25,7 +36,12 @@ function abrirModal(paseadorId, nombre, tarifa) {
 }
 
 function cerrarModal() {
-    document.getElementById('modal-overlay').style.display = 'none';
+    const overlay = document.getElementById('modal-overlay');
+
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+
     document.body.style.overflow = '';
 }
 
@@ -35,14 +51,14 @@ function cerrarModalFuera(e) {
     }
 }
 
-// ── Mapa de recogida ────────────────────────────
+// ── Mapa de recolección ─────────────────────────
 function inicializarMapaRecogida() {
     const mapaDiv = document.getElementById('mapa-recogida');
 
     if (!mapaDiv) return;
 
     if (typeof L === 'undefined') {
-        console.warn('Leaflet no está cargado. Revisa que agregaste los scripts de Leaflet en Directorio.cshtml.');
+        console.warn('Leaflet no está cargado. Revisa los scripts en Directorio.cshtml.');
         return;
     }
 
@@ -69,6 +85,14 @@ function establecerPuntoRecogida(lat, lng) {
     const lngInput = document.getElementById('longitud-recogida');
     const textoUbicacion = document.getElementById('texto-ubicacion-recogida');
 
+    lat = Number(lat);
+    lng = Number(lng);
+
+    if (isNaN(lat) || isNaN(lng)) {
+        console.error('Latitud o longitud no válida.');
+        return;
+    }
+
     if (latInput) latInput.value = lat.toFixed(8);
     if (lngInput) lngInput.value = lng.toFixed(8);
 
@@ -90,7 +114,7 @@ function establecerPuntoRecogida(lat, lng) {
     }
 
     if (textoUbicacion) {
-        textoUbicacion.textContent = 'Punto seleccionado: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+        textoUbicacion.textContent = 'Punto de recolección seleccionado. Puedes mover el marcador para ajustar la ubicación.';
     }
 }
 
@@ -116,6 +140,28 @@ function usarUbicacionActual() {
             maximumAge: 0
         }
     );
+}
+
+function usarUbicacionPredeterminada(btn) {
+    const direccion = btn.dataset.direccion || '';
+    const referencias = btn.dataset.referencias || '';
+    const zona = btn.dataset.zona || '';
+    const lat = parseFloat(btn.dataset.lat);
+    const lng = parseFloat(btn.dataset.lng);
+
+    const direccionInput = document.getElementById('direccion-recogida');
+    const referenciasInput = document.getElementById('referencias-recogida');
+    const zonaInput = document.getElementById('zona-recogida');
+
+    if (direccionInput) direccionInput.value = direccion;
+    if (referenciasInput) referenciasInput.value = referencias;
+    if (zonaInput) zonaInput.value = zona;
+
+    if (!isNaN(lat) && !isNaN(lng)) {
+        establecerPuntoRecogida(lat, lng);
+    } else {
+        alert('Tu ubicación predeterminada no tiene coordenadas válidas.');
+    }
 }
 
 // ── Tipo de paseo: mostrar/ocultar fecha ────────
@@ -173,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (latitud && longitud && (latitud.value.trim() === '' || longitud.value.trim() === '')) {
             e.preventDefault();
-            alert('Marca el punto de recolección en el mapa o usa tu ubicación actual.');
+            alert('Marca el punto de recolección en el mapa, usa tu ubicación actual o usa tu ubicación predeterminada.');
             return;
         }
     });

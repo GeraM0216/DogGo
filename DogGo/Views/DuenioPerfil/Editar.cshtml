@@ -1,0 +1,616 @@
+﻿@model DogGo.Models.DuenioPerfil
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Perfil de dueño";
+
+    var latInicial = Model.Latitud ?? 25.6866m;
+    var lngInicial = Model.Longitud ?? -100.3161m;
+
+    var latTexto = Model.Latitud?.ToString(CultureInfo.InvariantCulture) ?? "";
+    var lngTexto = Model.Longitud?.ToString(CultureInfo.InvariantCulture) ?? "";
+
+    var tieneUbicacion = Model.Latitud.HasValue && Model.Longitud.HasValue;
+}
+
+<div class="duenio-perfil-wrap">
+
+    <div class="duenio-perfil-card">
+
+        <div class="duenio-perfil-header">
+            <div>
+                <div class="page-eyebrow">Perfil de dueño</div>
+                <h1 class="duenio-title">Mi perfil</h1>
+                <p class="duenio-sub">
+                    Guarda tu información y una ubicación predeterminada para facilitar la recolección de tus perros.
+                </p>
+            </div>
+        </div>
+
+        @if (TempData["Exito"] != null)
+        {
+            <div class="alerta-exito">
+                @TempData["Exito"]
+            </div>
+        }
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alerta-error">
+                <strong>Revisa los campos:</strong>
+                <div asp-validation-summary="All"></div>
+            </div>
+        }
+
+        <form asp-controller="DuenioPerfil"
+              asp-action="Editar"
+              method="post"
+              enctype="multipart/form-data"
+              id="form-duenio-perfil">
+
+            @Html.AntiForgeryToken()
+
+            <div class="perfil-foto-section">
+                <div class="perfil-foto-preview">
+                    @if (!string.IsNullOrWhiteSpace(Model.FotoUrl))
+                    {
+                        <img src="@Model.FotoUrl" alt="Foto de perfil" id="foto-preview-img" />
+                    }
+                    else
+                    {
+                        <div id="foto-placeholder">🐶</div>
+                    }
+                </div>
+
+                <div class="perfil-foto-info">
+                    <label class="form-lbl">Foto de perfil</label>
+                    <p class="form-help">
+                        Sube una foto para personalizar tu perfil. Formatos permitidos: JPG, PNG o WEBP.
+                    </p>
+
+                    <label class="file-upload-btn">
+                        Cambiar foto
+                        <input type="file"
+                               name="fotoArchivo"
+                               accept=".jpg,.jpeg,.png,.webp"
+                               onchange="previewFotoDuenio(this)"
+                               hidden />
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Información de ubicación</h3>
+
+                <div class="form-group">
+                    <label class="form-lbl">Dirección predeterminada</label>
+                    <input type="text"
+                           name="direccion"
+                           id="direccion"
+                           class="form-ctrl"
+                           value="@Model.Direccion"
+                           placeholder="Ej. Av. Leones 123, Cumbres"
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-lbl">Referencias</label>
+                    <input type="text"
+                           name="referenciasDireccion"
+                           id="referenciasDireccion"
+                           class="form-ctrl"
+                           value="@Model.ReferenciasDireccion"
+                           placeholder="Ej. Portón negro, casa de dos pisos, cerca del Oxxo" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-lbl">Zona</label>
+                    <select name="zona" id="zona" class="form-ctrl form-sel" required>
+                        <option value="">Selecciona zona</option>
+                        <option value="Centro" selected="@(Model.Zona == "Centro")">Centro</option>
+                        <option value="Cumbres" selected="@(Model.Zona == "Cumbres")">Cumbres</option>
+                        <option value="San Pedro" selected="@(Model.Zona == "San Pedro")">San Pedro</option>
+                        <option value="San Nicolás" selected="@(Model.Zona == "San Nicolás")">San Nicolás</option>
+                        <option value="Guadalupe" selected="@(Model.Zona == "Guadalupe")">Guadalupe</option>
+                        <option value="Apodaca" selected="@(Model.Zona == "Apodaca")">Apodaca</option>
+                        <option value="Santa Catarina" selected="@(Model.Zona == "Santa Catarina")">Santa Catarina</option>
+                        <option value="Escobedo" selected="@(Model.Zona == "Escobedo")">Escobedo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-lbl">Ubicación predeterminada en el mapa</label>
+                    <p class="form-help">
+                        Marca el punto donde normalmente se realizará la recolección de tus perros.
+                    </p>
+
+                    <button type="button" class="btn-ubicacion-actual" onclick="usarUbicacionActualDuenio()">
+                        Usar mi ubicación actual
+                    </button>
+
+                    <div id="mapa-duenio" class="mapa-duenio"></div>
+
+                    <div id="texto-ubicacion-duenio" class="texto-ubicacion-duenio">
+                        @(tieneUbicacion
+                            ? "Ubicación predeterminada guardada. Puedes mover el marcador si deseas cambiarla."
+                            : "Todavía no has marcado tu ubicación predeterminada.")
+                    </div>
+
+                    <input type="hidden" name="latitud" id="latitud" value="@latTexto" />
+                    <input type="hidden" name="longitud" id="longitud" value="@lngTexto" />
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="form-section-title">Información adicional</h3>
+
+                <div class="form-group">
+                    <label class="form-lbl">Descripción</label>
+                    <textarea name="descripcion"
+                              id="descripcion"
+                              class="form-ctrl form-ta"
+                              placeholder="Ej. Tengo dos perros pequeños y prefiero paseos tranquilos.">@Model.Descripcion</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-lbl">Preferencias de paseo</label>
+                    <textarea name="preferenciasPaseo"
+                              id="preferenciasPaseo"
+                              class="form-ctrl form-ta"
+                              placeholder="Ej. Evitar avenidas grandes, llevar agua, paseos de 30 minutos.">@Model.PreferenciasPaseo</textarea>
+                </div>
+            </div>
+
+            <div class="duenio-actions">
+                <button type="submit" class="btn-save">
+                    Guardar perfil
+                </button>
+
+                <a asp-controller="Home" asp-action="Index" class="btn-cancel">
+                    Volver al inicio
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        .duenio-perfil-wrap {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 3rem;
+        }
+
+        .duenio-perfil-card {
+            background: var(--card);
+            border: 1.5px solid var(--border);
+            border-radius: 26px;
+            padding: 2rem;
+            box-shadow: 0 8px 28px rgba(45,49,66,.08);
+        }
+
+        .duenio-perfil-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .duenio-title {
+            font-weight: 900;
+            font-size: 1.7rem;
+            color: var(--text);
+            margin-bottom: .25rem;
+            letter-spacing: -.3px;
+        }
+
+        .duenio-sub {
+            color: var(--muted);
+            font-size: .9rem;
+            font-weight: 600;
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        .alerta-exito {
+            background: #dcfce7;
+            border: 1.5px solid #86efac;
+            color: #15803d;
+            border-radius: 16px;
+            padding: .85rem 1rem;
+            font-size: .88rem;
+            font-weight: 800;
+            margin-bottom: 1.25rem;
+        }
+
+        .alerta-error {
+            background: #fee2e2;
+            border: 1.5px solid #fca5a5;
+            color: #b91c1c;
+            border-radius: 16px;
+            padding: .85rem 1rem;
+            font-size: .88rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+
+        .perfil-foto-section {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: var(--warm);
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .perfil-foto-preview {
+            width: 94px;
+            height: 94px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: var(--teal-l);
+            border: 3px solid var(--teal-l);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(15,155,142,.14);
+        }
+
+            .perfil-foto-preview img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 50%;
+            }
+
+        #foto-placeholder {
+            font-size: 2.6rem;
+        }
+
+        .perfil-foto-info {
+            flex: 1;
+        }
+
+        .file-upload-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: .5rem 1.05rem;
+            border-radius: 999px;
+            border: 1.5px solid var(--teal-m);
+            background: var(--teal-l);
+            color: var(--teal);
+            font-size: .84rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all .18s;
+        }
+
+            .file-upload-btn:hover {
+                background: var(--teal);
+                color: #fff;
+            }
+
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section-title {
+            font-size: .95rem;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: .85rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-lbl {
+            display: block;
+            font-size: .82rem;
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: .35rem;
+        }
+
+        .form-help {
+            font-size: .78rem;
+            color: var(--muted);
+            font-weight: 600;
+            margin-bottom: .65rem;
+            line-height: 1.45;
+        }
+
+        .form-ctrl {
+            width: 100%;
+            padding: .6rem .9rem;
+            border-radius: 14px;
+            border: 1.5px solid var(--border);
+            background: #fff;
+            font-family: 'Nunito', sans-serif;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--text);
+            outline: none;
+            transition: border-color .18s, box-shadow .18s;
+        }
+
+            .form-ctrl:focus {
+                border-color: var(--teal);
+                box-shadow: 0 0 0 3px rgba(15,155,142,.12);
+            }
+
+        .form-sel {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%232D3142' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right .9rem center;
+            background-size: 12px 8px;
+            padding-right: 2.4rem;
+        }
+
+        .form-ta {
+            resize: vertical;
+            min-height: 90px;
+        }
+
+        .mapa-duenio {
+            width: 100%;
+            height: 310px;
+            border-radius: 18px;
+            border: 1.5px solid var(--border);
+            overflow: hidden;
+            background: var(--warm);
+            margin-top: .8rem;
+        }
+
+        .btn-ubicacion-actual {
+            width: 100%;
+            padding: .65rem 1rem;
+            border-radius: 999px;
+            border: 1.5px solid var(--teal-m);
+            background: var(--teal-l);
+            color: var(--teal);
+            font-size: .86rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all .18s;
+        }
+
+            .btn-ubicacion-actual:hover {
+                background: var(--teal);
+                color: #fff;
+            }
+
+        .texto-ubicacion-duenio {
+            margin-top: .55rem;
+            font-size: .78rem;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .duenio-actions {
+            display: flex;
+            flex-direction: column;
+            gap: .65rem;
+            margin-top: 1.75rem;
+        }
+
+        .btn-save {
+            width: 100%;
+            padding: .8rem;
+            border-radius: 999px;
+            border: none;
+            background: var(--teal);
+            color: #fff;
+            font-family: 'Nunito', sans-serif;
+            font-size: .95rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(15,155,142,.25);
+            transition: background .18s, transform .15s;
+        }
+
+            .btn-save:hover {
+                background: var(--teal-d);
+                transform: translateY(-1px);
+            }
+
+        .btn-cancel {
+            width: 100%;
+            padding: .75rem;
+            border-radius: 999px;
+            background: #fff;
+            color: var(--muted);
+            border: 1.5px solid var(--border);
+            text-align: center;
+            text-decoration: none;
+            font-size: .9rem;
+            font-weight: 900;
+            transition: background .18s;
+        }
+
+            .btn-cancel:hover {
+                background: var(--warm);
+                color: var(--muted);
+            }
+
+        @@media (max-width: 650px) {
+            .duenio-perfil-card {
+                padding: 1.3rem;
+            }
+
+            .perfil-foto-section {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .mapa-duenio {
+                height: 260px;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        let mapaDuenio = null;
+        let marcadorDuenio = null;
+
+        const latInicialDuenio = @latInicial.ToString(CultureInfo.InvariantCulture);
+        const lngInicialDuenio = @lngInicial.ToString(CultureInfo.InvariantCulture);
+        const tieneUbicacionDuenio = @(tieneUbicacion ? "true" : "false");
+
+        document.addEventListener('DOMContentLoaded', function () {
+        inicializarMapaDuenio();
+
+        const form = document.getElementById('form-duenio-perfil');
+
+        if (form) {
+        form.addEventListener('submit', function (e) {
+        const direccion = document.getElementById('direccion');
+        const zona = document.getElementById('zona');
+        const latitud = document.getElementById('latitud');
+        const longitud = document.getElementById('longitud');
+
+        if (direccion && direccion.value.trim() === '') {
+        e.preventDefault();
+        alert('Escribe tu dirección predeterminada.');
+        direccion.focus();
+        return;
+        }
+
+        if (zona && zona.value.trim() === '') {
+        e.preventDefault();
+        alert('Selecciona tu zona.');
+        zona.focus();
+        return;
+        }
+
+        if (!latitud.value || !longitud.value) {
+        e.preventDefault();
+        alert('Marca tu ubicación predeterminada en el mapa.');
+        return;
+        }
+        });
+        }
+        });
+
+        function inicializarMapaDuenio() {
+        const mapaDiv = document.getElementById('mapa-duenio');
+
+        if (!mapaDiv || typeof L === 'undefined') return;
+
+        mapaDuenio = L.map('mapa-duenio').setView([latInicialDuenio, lngInicialDuenio], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+        }).addTo(mapaDuenio);
+
+        mapaDuenio.on('click', function (e) {
+        establecerUbicacionDuenio(e.latlng.lat, e.latlng.lng);
+        });
+
+        if (tieneUbicacionDuenio) {
+        establecerUbicacionDuenio(latInicialDuenio, lngInicialDuenio);
+        }
+        }
+
+        function establecerUbicacionDuenio(lat, lng) {
+        const latInput = document.getElementById('latitud');
+        const lngInput = document.getElementById('longitud');
+        const texto = document.getElementById('texto-ubicacion-duenio');
+
+        if (latInput) latInput.value = Number(lat).toFixed(8);
+        if (lngInput) lngInput.value = Number(lng).toFixed(8);
+
+        if (mapaDuenio) {
+        if (!marcadorDuenio) {
+        marcadorDuenio = L.marker([lat, lng], {
+        draggable: true
+        }).addTo(mapaDuenio);
+
+        marcadorDuenio.on('dragend', function () {
+        const pos = marcadorDuenio.getLatLng();
+        establecerUbicacionDuenio(pos.lat, pos.lng);
+        });
+        } else {
+        marcadorDuenio.setLatLng([lat, lng]);
+        }
+
+        mapaDuenio.setView([lat, lng], 16);
+        }
+
+        if (texto) {
+        texto.textContent = 'Ubicación predeterminada seleccionada. Puedes mover el marcador para ajustar el punto.';
+        }
+        }
+
+        function usarUbicacionActualDuenio() {
+        if (!navigator.geolocation) {
+        alert('Tu navegador no permite obtener la ubicación actual.');
+        return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+        function (position) {
+        establecerUbicacionDuenio(position.coords.latitude, position.coords.longitude);
+        },
+        function () {
+        alert('No se pudo obtener tu ubicación. Puedes marcar el punto manualmente en el mapa.');
+        },
+        {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+        }
+        );
+        }
+
+        function previewFotoDuenio(input) {
+        if (input.files && input.files[0]) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+        const preview = document.querySelector('.perfil-foto-preview');
+        let img = document.getElementById('foto-preview-img');
+        const placeholder = document.getElementById('foto-placeholder');
+
+        if (!img) {
+        img = document.createElement('img');
+        img.id = 'foto-preview-img';
+        img.alt = 'Foto de perfil';
+
+        if (placeholder) {
+        placeholder.replaceWith(img);
+        } else if (preview) {
+        preview.innerHTML = '';
+        preview.appendChild(img);
+        }
+        }
+
+        img.src = e.target.result;
+        };
+
+        reader.readAsDataURL(input.files[0]);
+        }
+        }
+    </script>
+}

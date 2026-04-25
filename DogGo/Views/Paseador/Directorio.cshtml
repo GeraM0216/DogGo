@@ -1,5 +1,6 @@
 ﻿@model List<DogGo.Models.Paseador>
 @using DogGo.Models
+@using System.Globalization
 
 @{
     ViewData["Title"] = "Paseadores disponibles";
@@ -105,6 +106,10 @@
         <div class="dir-grid">
             @foreach (var p in Model)
             {
+                var nombrePaseador = $"{p.Usuario.Nombre} {p.Usuario.Apellido}";
+                var nombrePaseadorJs = nombrePaseador.Replace("\\", "\\\\").Replace("'", "\\'");
+                var tarifaJs = p.TarifaPorHora.ToString(CultureInfo.InvariantCulture);
+
                 <div class="paseador-card">
 
                     <!-- Top: avatar + nombre + estrellas -->
@@ -174,8 +179,9 @@
 
                             if (perros != null && perros.Any())
                             {
-                                <button class="btn-solicitar"
-                                        onclick="abrirModal(@p.Id, '@p.Usuario.Nombre @p.Usuario.Apellido', @p.TarifaPorHora)"
+                                <button type="button"
+                                        class="btn-solicitar"
+                                        onclick="abrirModal(@p.Id, '@nombrePaseadorJs', '@tarifaJs')"
                                     @(p.Disponible ? "" : "disabled")>
                                     Solicitar paseo
                                 </button>
@@ -199,6 +205,7 @@
 @if (User.IsInRole("Duenio"))
 {
     var perros = ViewBag.Perros as List<Perro>;
+    var duenioPerfil = ViewBag.DuenioPerfil as DuenioPerfil;
 
     if (perros != null && perros.Any())
     {
@@ -305,7 +312,7 @@
                                class="form-ctrl" />
                     </div>
 
-                    <!-- ── Ubicación de recoleccion ── -->
+                    <!-- ── Ubicación de recolección ── -->
                     <div class="form-group">
                         <label class="form-lbl">Dirección de recolección</label>
                         <input type="text"
@@ -343,8 +350,34 @@
                     <div class="form-group">
                         <label class="form-lbl">Punto de recolección en el mapa</label>
                         <div class="form-help">
-                            Marca el punto exacto donde el paseador debe recoger al perro.
+                            Marca el punto exacto donde el paseador debe realizar la recolección del perro.
                         </div>
+
+                        @if (duenioPerfil != null &&
+                             !string.IsNullOrWhiteSpace(duenioPerfil.Direccion) &&
+                             !string.IsNullOrWhiteSpace(duenioPerfil.Zona) &&
+                             duenioPerfil.Latitud.HasValue &&
+                             duenioPerfil.Longitud.HasValue)
+                        {
+                            <button type="button"
+                                    class="btn-ubicacion-predeterminada"
+                                    data-direccion="@duenioPerfil.Direccion"
+                                    data-referencias="@duenioPerfil.ReferenciasDireccion"
+                                    data-zona="@duenioPerfil.Zona"
+                                    data-lat="@duenioPerfil.Latitud.Value.ToString(CultureInfo.InvariantCulture)"
+                                    data-lng="@duenioPerfil.Longitud.Value.ToString(CultureInfo.InvariantCulture)"
+                                    onclick="usarUbicacionPredeterminada(this)">
+                                Usar mi ubicación predeterminada
+                            </button>
+                        }
+                        else
+                        {
+                            <a asp-controller="DuenioPerfil"
+                                   asp-action="Editar"
+                                   class="btn-ubicacion-predeterminada btn-ubicacion-warn">
+                                Completar ubicación predeterminada
+                            </a>
+                        }
 
                         <button type="button" class="btn-ubicacion-actual" onclick="usarUbicacionActual()">
                             Usar mi ubicación actual
@@ -353,7 +386,7 @@
                         <div id="mapa-recogida" class="mapa-recogida"></div>
 
                         <div id="texto-ubicacion-recogida" class="texto-ubicacion-recogida">
-                            Todavía no has marcado el punto de ubicación.
+                            Todavía no has marcado el punto de recolección.
                         </div>
 
                         <input type="hidden" name="latitudRecogida" id="latitud-recogida" />

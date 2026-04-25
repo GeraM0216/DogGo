@@ -11,6 +11,7 @@ namespace DogGo.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Perro> Perros { get; set; }
         public DbSet<Paseador> Paseadores { get; set; }
+        public DbSet<DuenioPerfil> DuenioPerfiles { get; set; }
         public DbSet<Paseo> Paseos { get; set; }
         public DbSet<PaseoPerro> PaseoPerros { get; set; }
         public DbSet<Calificacion> Calificaciones { get; set; }
@@ -42,6 +43,13 @@ namespace DogGo.Data
                 .HasOne(p => p.Usuario)
                 .WithOne(u => u.Paseador)
                 .HasForeignKey<Paseador>(p => p.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // DuenioPerfil -> Usuario (1 a 1)
+            modelBuilder.Entity<DuenioPerfil>()
+                .HasOne(dp => dp.Usuario)
+                .WithOne(u => u.DuenioPerfil)
+                .HasForeignKey<DuenioPerfil>(dp => dp.UsuarioId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // Paseo -> Paseador
@@ -134,6 +142,22 @@ namespace DogGo.Data
                 .Property(p => p.LongitudActual)
                 .HasPrecision(10, 7);
 
+            modelBuilder.Entity<Paseo>()
+                .Property(p => p.LatitudRecogida)
+                .HasPrecision(10, 7);
+
+            modelBuilder.Entity<Paseo>()
+                .Property(p => p.LongitudRecogida)
+                .HasPrecision(10, 7);
+
+            modelBuilder.Entity<DuenioPerfil>()
+                .Property(dp => dp.Latitud)
+                .HasPrecision(10, 7);
+
+            modelBuilder.Entity<DuenioPerfil>()
+                .Property(dp => dp.Longitud)
+                .HasPrecision(10, 7);
+
             modelBuilder.Entity<Ubicacion>()
                 .Property(u => u.Latitud)
                 .HasPrecision(10, 7);
@@ -143,4 +167,4 @@ namespace DogGo.Data
                 .HasPrecision(10, 7);
         }
     }
-}
+} 
