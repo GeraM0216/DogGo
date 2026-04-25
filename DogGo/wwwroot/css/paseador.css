@@ -1211,3 +1211,87 @@
         flex-direction: column;
     }
 }
+
+/* ── Filtros Directorio ─────────────────────────── */
+.filtros-card {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1.5px solid var(--border);
+    border-radius: 24px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 20px rgba(45,49,66,.08);
+}
+
+.filtros-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr .9fr .9fr 1fr auto;
+    gap: .85rem;
+    align-items: end;
+}
+
+.filtro-group label {
+    display: block;
+    font-size: .78rem;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: .35rem;
+}
+
+.filtros-card .form-ctrl {
+    height: 44px;
+    padding: .5rem .85rem;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-size: .86rem;
+    font-weight: 700;
+}
+
+    .filtros-card .form-ctrl:focus {
+        border-color: var(--teal);
+    }
+
+.filtros-actions {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+    .filtros-actions .btn-solicitar,
+    .filtros-actions .btn-ver-perfil {
+        height: 44px;
+        min-width: 86px;
+        padding: 0 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: unset;
+        white-space: nowrap;
+    }
+
+@media (max-width: 1050px) {
+    .filtros-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .filtros-actions {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 650px) {
+    .filtros-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filtros-actions {
+        grid-column: span 1;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+        .filtros-actions .btn-solicitar,
+        .filtros-actions .btn-ver-perfil {
+            width: 100%;
+        }
+}

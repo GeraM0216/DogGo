@@ -640,3 +640,118 @@
         height: 320px;
     }
 }
+
+/* ── Filtros Mis Paseos ─────────────────────────── */
+.filtros-card {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1.5px solid var(--border);
+    border-radius: 24px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 20px rgba(45,49,66,.08);
+}
+
+.filtros-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr auto;
+    gap: .85rem;
+    align-items: end;
+}
+
+.filtro-group label {
+    display: block;
+    font-size: .78rem;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: .35rem;
+}
+
+.filtros-card .form-ctrl {
+    width: 100%;
+    height: 46px;
+    padding: .5rem .85rem;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-size: .86rem;
+    font-weight: 700;
+    color: var(--text);
+    outline: none;
+}
+
+    .filtros-card .form-ctrl:focus {
+        border-color: var(--teal);
+    }
+
+.filtros-card select.form-sel {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%232D3142' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .9rem center;
+    background-size: 12px 8px;
+    padding-right: 2.4rem;
+}
+
+.filtros-actions {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+    .filtros-actions .btn-solicitar,
+    .filtros-actions .btn-ver-perfil {
+        height: 46px;
+        min-width: 86px;
+        padding: 0 1rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .86rem;
+        font-weight: 900;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .filtros-actions .btn-solicitar {
+        background: var(--teal);
+        color: #fff;
+        border: none;
+        box-shadow: 0 3px 10px rgba(15,155,142,.2);
+    }
+
+    .filtros-actions .btn-ver-perfil {
+        background: var(--teal-l);
+        color: var(--teal);
+        border: 1.5px solid var(--teal-m);
+    }
+
+@media (max-width: 1050px) {
+    .filtros-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .filtros-actions {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 650px) {
+    .filtros-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filtros-actions {
+        grid-column: span 1;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+        .filtros-actions .btn-solicitar,
+        .filtros-actions .btn-ver-perfil {
+            width: 100%;
+        }
+}

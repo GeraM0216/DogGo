@@ -56,7 +56,7 @@
 
 <div class="page-header-wrap">
     <div class="page-header-inner">
-        <div class="page-eyebrow">🦮 Tu historial</div>
+        <div class="page-eyebrow">Tu historial</div>
         <h1 class="page-title">Mis paseos</h1>
         <p class="page-sub">Revisa el estado de todos tus paseos, activos e históricos.</p>
 
@@ -95,12 +95,62 @@
 
 <div class="paseos-container">
 
+    <form asp-action="MisPaseos" method="get" class="filtros-card">
+        <div class="filtros-grid">
+
+            <div class="filtro-group">
+                <label>Buscar</label>
+                <input type="text"
+                       name="busqueda"
+                       value="@ViewBag.Busqueda"
+                       placeholder="Perro o paseador"
+                       class="form-ctrl" />
+            </div>
+
+            <div class="filtro-group">
+                <label>Estado</label>
+                <select name="estado" class="form-ctrl form-sel">
+                    <option value="">Todos</option>
+                    <option value="Pendiente" selected="@(ViewBag.Estado == "Pendiente")">Pendiente</option>
+                    <option value="EnCurso" selected="@(ViewBag.Estado == "EnCurso")">En curso</option>
+                    <option value="Finalizado" selected="@(ViewBag.Estado == "Finalizado")">Finalizado</option>
+                    <option value="Cancelado" selected="@(ViewBag.Estado == "Cancelado")">Cancelado</option>
+                </select>
+            </div>
+
+            <div class="filtro-group">
+                <label>Tipo</label>
+                <select name="tipo" class="form-ctrl form-sel">
+                    <option value="">Todos</option>
+                    <option value="Ahora" selected="@(ViewBag.Tipo == "Ahora")">Ahora</option>
+                    <option value="Programado" selected="@(ViewBag.Tipo == "Programado")">Programado</option>
+                </select>
+            </div>
+
+            <div class="filtro-group">
+                <label>Ordenar</label>
+                <select name="orden" class="form-ctrl form-sel">
+                    <option value="fecha_desc" selected="@(ViewBag.Orden == "fecha_desc")">Más recientes</option>
+                    <option value="fecha_asc" selected="@(ViewBag.Orden == "fecha_asc")">Más antiguos</option>
+                    <option value="precio_desc" selected="@(ViewBag.Orden == "precio_desc")">Mayor precio</option>
+                    <option value="precio_asc" selected="@(ViewBag.Orden == "precio_asc")">Menor precio</option>
+                </select>
+            </div>
+
+            <div class="filtros-actions">
+                <button type="submit" class="btn-solicitar">Filtrar</button>
+                <a asp-action="MisPaseos" class="btn-ver-perfil">Limpiar</a>
+            </div>
+
+        </div>
+    </form>
+
     @if (!Model.Any())
     {
         <div class="empty-state">
             <div class="empty-icon">🦮</div>
-            <h3>No tienes paseos registrados</h3>
-            <p>Cuando solicites o realices un paseo, aparecerá aquí.</p>
+            <h3>No se encontraron paseos</h3>
+            <p>Intenta cambiar los filtros o limpiar la búsqueda.</p>
             <a asp-controller="Paseador" asp-action="Directorio" class="btn-primary-doggo" style="margin-top:.75rem;display:inline-block">
                 Buscar paseador
             </a>
@@ -259,7 +309,9 @@
                                     <span class="estado-badge estado-amber">● Pendiente</span>
                                     <button class="btn-cancelar-toggle"
                                             onclick="toggleCancelar(@p.Id)"
-                                            title="Cancelar paseo">✕</button>
+                                            title="Cancelar paseo">
+                                        ✕
+                                    </button>
                                 </div>
                             </div>
 
@@ -371,9 +423,9 @@
                                     @if (p.Calificacion == null && User.IsInRole("Duenio"))
                                     {
                                         <a asp-controller="Calificacion"
-                                           asp-action="Crear"
-                                           asp-route-paseoId="@p.Id"
-                                           class="btn-calificar">
+                                               asp-action="Crear"
+                                               asp-route-paseoId="@p.Id"
+                                               class="btn-calificar">
                                             ⭐ Calificar
                                         </a>
                                     }

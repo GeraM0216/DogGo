@@ -53,7 +53,12 @@ namespace DogGo.Controllers
         }
 
         // GET: /Paseo/MisPaseos
-        public async Task<IActionResult> MisPaseos()
+        // GET: /Paseo/MisPaseos
+        public async Task<IActionResult> MisPaseos(
+            string? estado,
+            string? busqueda,
+            string? tipo,
+            string? orden)
         {
             var redireccionPerfil = await RedirigirSiPerfilPaseadorIncompleto();
             if (redireccionPerfil != null)
@@ -62,7 +67,11 @@ namespace DogGo.Controllers
             var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var rol = User.FindFirstValue(ClaimTypes.Role);
 
-            List<Paseo> paseos;
+            IQueryable<Paseo> query = _context.Paseos
+                .Include(p => p.Perro).ThenInclude(pe => pe.Dueño)
+                .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
+                .Include(p => p.PaseoPerros).ThenInclude(pp => pp.Perro)
+                .Include(p => p.Calificacion);
 
             if (rol == "Paseador")
             {
@@ -72,32 +81,55 @@ namespace DogGo.Controllers
                 if (paseador == null)
                     return View(new List<Paseo>());
 
-                paseos = await _context.Paseos
-                    .Where(p => p.PaseadorId == paseador.Id)
-                    .Include(p => p.Perro).ThenInclude(pe => pe.Dueño)
-                    .Include(p => p.PaseoPerros)
-                        .ThenInclude(pp => pp.Perro)
-                    .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
-                    .Include(p => p.Calificacion)
-                    .OrderByDescending(p => p.EsProgramado && p.FechaProgramada != null
-                        ? p.FechaProgramada
-                        : p.FechaInicio)
-                    .ToListAsync();
+                query = query.Where(p => p.PaseadorId == paseador.Id);
             }
             else
             {
-                paseos = await _context.Paseos
-                    .Where(p => p.Perro.DueñoId == usuarioId)
-                    .Include(p => p.Paseador).ThenInclude(pa => pa.Usuario)
-                    .Include(p => p.Perro)
-                    .Include(p => p.PaseoPerros)
-                        .ThenInclude(pp => pp.Perro)
-                    .Include(p => p.Calificacion)
-                    .OrderByDescending(p => p.EsProgramado && p.FechaProgramada != null
-                        ? p.FechaProgramada
-                        : p.FechaInicio)
-                    .ToListAsync();
+                query = query.Where(p =>
+                    p.Perro.DueñoId == usuarioId ||
+                    p.PaseoPerros.Any(pp => pp.Perro.DueñoId == usuarioId));
             }
+
+            if (!string.IsNullOrWhiteSpace(estado))
+            {
+                estado = estado.Trim();
+                query = query.Where(p => p.Estado == estado);
+            }
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                busqueda = busqueda.Trim();
+
+                query = query.Where(p =>
+                    p.Perro.Nombre.Contains(busqueda) ||
+                    p.PaseoPerros.Any(pp => pp.Perro.Nombre.Contains(busqueda)) ||
+                    p.Paseador.Usuario.Nombre.Contains(busqueda) ||
+                    p.Paseador.Usuario.Apellido.Contains(busqueda));
+            }
+
+            if (!string.IsNullOrWhiteSpace(tipo))
+            {
+                if (tipo == "Programado")
+                    query = query.Where(p => p.EsProgramado);
+
+                if (tipo == "Ahora")
+                    query = query.Where(p => !p.EsProgramado);
+            }
+
+            query = orden switch
+            {
+                "fecha_asc" => query.OrderBy(p => p.EsProgramado && p.FechaProgramada != null ? p.FechaProgramada : p.FechaInicio),
+                "precio_desc" => query.OrderByDescending(p => p.Precio),
+                "precio_asc" => query.OrderBy(p => p.Precio),
+                _ => query.OrderByDescending(p => p.EsProgramado && p.FechaProgramada != null ? p.FechaProgramada : p.FechaInicio)
+            };
+
+            var paseos = await query.ToListAsync();
+
+            ViewBag.Estado = estado;
+            ViewBag.Busqueda = busqueda;
+            ViewBag.Tipo = tipo;
+            ViewBag.Orden = orden ?? "fecha_desc";
 
             return View(paseos);
         }

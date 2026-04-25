@@ -187,13 +187,65 @@ namespace DogGo.Controllers
         }
 
         // GET: /Paseador/Directorio
-        public async Task<IActionResult> Directorio()
+        public async Task<IActionResult> Directorio(
+            string? busqueda,
+            string? zona,
+            int? experienciaMinima,
+            decimal? tarifaMaxima,
+            string? orden)
         {
-            var paseadores = await _context.Paseadores
+            var query = _context.Paseadores
                 .Where(p => p.Disponible)
                 .Include(p => p.Usuario)
-                .OrderByDescending(p => p.CalificacionPromedio)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                busqueda = busqueda.Trim();
+
+                query = query.Where(p =>
+                    p.Usuario.Nombre.Contains(busqueda) ||
+                    p.Usuario.Apellido.Contains(busqueda) ||
+                    p.Descripcion.Contains(busqueda));
+            }
+
+            if (!string.IsNullOrWhiteSpace(zona))
+            {
+                zona = zona.Trim();
+
+                query = query.Where(p =>
+                    p.ZonaServicio != null &&
+                    p.ZonaServicio.Contains(zona));
+            }
+
+            if (experienciaMinima.HasValue)
+            {
+                query = query.Where(p =>
+                    p.ExperienciaAnios.HasValue &&
+                    p.ExperienciaAnios.Value >= experienciaMinima.Value);
+            }
+
+            if (tarifaMaxima.HasValue)
+            {
+                query = query.Where(p => p.TarifaPorHora <= tarifaMaxima.Value);
+            }
+
+            query = orden switch
+            {
+                "tarifa_asc" => query.OrderBy(p => p.TarifaPorHora),
+                "tarifa_desc" => query.OrderByDescending(p => p.TarifaPorHora),
+                "experiencia_desc" => query.OrderByDescending(p => p.ExperienciaAnios),
+                "calificacion_desc" => query.OrderByDescending(p => p.CalificacionPromedio),
+                _ => query.OrderByDescending(p => p.CalificacionPromedio)
+            };
+
+            var paseadores = await query.ToListAsync();
+
+            ViewBag.Busqueda = busqueda;
+            ViewBag.Zona = zona;
+            ViewBag.ExperienciaMinima = experienciaMinima;
+            ViewBag.TarifaMaxima = tarifaMaxima;
+            ViewBag.Orden = orden ?? "calificacion_desc";
 
             if (User.IsInRole("Duenio"))
             {

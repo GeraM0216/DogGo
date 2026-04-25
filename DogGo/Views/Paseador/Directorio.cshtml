@@ -8,7 +8,7 @@
 <!-- ── Page Header ── -->
 <div class="page-header-wrap">
     <div class="page-header-inner">
-        <div class="page-eyebrow">🐾 Encuentra tu paseador</div>
+        <div class="page-eyebrow">Encuentra tu paseador</div>
         <h1 class="page-title">Paseadores disponibles</h1>
         <p class="page-sub">Elige al paseador ideal para tu mascota — todos verificados y calificados.</p>
     </div>
@@ -17,12 +17,87 @@
 <!-- ── Contenido ── -->
 <div class="dir-container">
 
+    <!-- ── Filtros y búsqueda ── -->
+    <form asp-action="Directorio" method="get" class="filtros-card">
+        <div class="filtros-grid">
+
+            <div class="filtro-group">
+                <label>Buscar</label>
+                <input type="text"
+                       name="busqueda"
+                       value="@ViewBag.Busqueda"
+                       placeholder="Nombre o descripción"
+                       class="form-ctrl" />
+            </div>
+
+            <div class="filtro-group">
+                <label>Zona</label>
+                <select name="zona" class="form-ctrl form-sel">
+                    <option value="">Todas las zonas</option>
+                    <option value="Centro" selected="@(ViewBag.Zona == "Centro")">Centro</option>
+                    <option value="Cumbres" selected="@(ViewBag.Zona == "Cumbres")">Cumbres</option>
+                    <option value="San Pedro" selected="@(ViewBag.Zona == "San Pedro")">San Pedro</option>
+                    <option value="San Nicolás" selected="@(ViewBag.Zona == "San Nicolás")">San Nicolás</option>
+                    <option value="Guadalupe" selected="@(ViewBag.Zona == "Guadalupe")">Guadalupe</option>
+                    <option value="Apodaca" selected="@(ViewBag.Zona == "Apodaca")">Apodaca</option>
+                    <option value="Santa Catarina" selected="@(ViewBag.Zona == "Santa Catarina")">Santa Catarina</option>
+                    <option value="Escobedo" selected="@(ViewBag.Zona == "Escobedo")">Escobedo</option>
+                </select>
+            </div>
+
+            <div class="filtro-group">
+                <label>Experiencia mínima</label>
+                <input type="number"
+                       name="experienciaMinima"
+                       value="@ViewBag.ExperienciaMinima"
+                       min="0"
+                       placeholder="Años"
+                       class="form-ctrl" />
+            </div>
+
+            <div class="filtro-group">
+                <label>Tarifa máxima</label>
+                <input type="number"
+                       name="tarifaMaxima"
+                       value="@ViewBag.TarifaMaxima"
+                       min="0"
+                       step="0.01"
+                       placeholder="Precio máximo"
+                       class="form-ctrl" />
+            </div>
+
+            <div class="filtro-group">
+                <label>Ordenar por</label>
+                <select name="orden" class="form-ctrl">
+                    <option value="calificacion_desc" selected="@(ViewBag.Orden == "calificacion_desc")">
+                        Mejor calificación
+                    </option>
+                    <option value="tarifa_asc" selected="@(ViewBag.Orden == "tarifa_asc")">
+                        Menor tarifa
+                    </option>
+                    <option value="tarifa_desc" selected="@(ViewBag.Orden == "tarifa_desc")">
+                        Mayor tarifa
+                    </option>
+                    <option value="experiencia_desc" selected="@(ViewBag.Orden == "experiencia_desc")">
+                        Más experiencia
+                    </option>
+                </select>
+            </div>
+
+            <div class="filtros-actions">
+                <button type="submit" class="btn-solicitar">Buscar</button>
+                <a asp-action="Directorio" class="btn-ver-perfil">Limpiar</a>
+            </div>
+
+        </div>
+    </form>
+
     @if (!Model.Any())
     {
         <div class="empty-state">
             <div class="empty-icon">🐾</div>
-            <h3>No hay paseadores disponibles</h3>
-            <p>Vuelve a intentarlo más tarde o regresa pronto.</p>
+            <h3>No se encontraron paseadores</h3>
+            <p>Intenta cambiar los filtros o limpiar la búsqueda.</p>
         </div>
     }
     else
@@ -44,10 +119,12 @@
                                 <span>🐾</span>
                             }
                         </div>
+
                         <div class="pc-info">
                             <div class="pc-name">@p.Usuario.Nombre @p.Usuario.Apellido</div>
                             <div class="pc-tarifa">$@p.TarifaPorHora / hora</div>
                         </div>
+
                         <div class="pc-stars-wrap">
                             <div class="pc-stars">
                                 @for (int i = 1; i <= 5; i++)
@@ -69,15 +146,17 @@
                     <div class="pc-tags">
                         @if (!string.IsNullOrWhiteSpace(p.ZonaServicio))
                         {
-                            @foreach (var zona in p.ZonaServicio.Split(',').Take(2))
+                            @foreach (var zonaItem in p.ZonaServicio.Split(',').Take(2))
                             {
-                                <span class="pc-tag">@zona.Trim()</span>
+                                <span class="pc-tag">@zonaItem.Trim()</span>
                             }
                         }
+
                         @if (p.ExperienciaAnios != null)
                         {
                             <span class="pc-tag-amber">@p.ExperienciaAnios año(s) exp.</span>
                         }
+
                         <span class="pc-disp @(p.Disponible ? "disp-si" : "disp-no")">
                             ● @(p.Disponible ? "Disponible" : "No disponible")
                         </span>
@@ -92,6 +171,7 @@
                         @if (User.IsInRole("Duenio"))
                         {
                             var perros = ViewBag.Perros as List<Perro>;
+
                             if (perros != null && perros.Any())
                             {
                                 <button class="btn-solicitar"
@@ -119,6 +199,7 @@
 @if (User.IsInRole("Duenio"))
 {
     var perros = ViewBag.Perros as List<Perro>;
+
     if (perros != null && perros.Any())
     {
         <div id="modal-overlay" class="modal-overlay" style="display:none" onclick="cerrarModalFuera(event)">
@@ -144,6 +225,7 @@
                             {
                                 <label class="perro-option">
                                     <input type="checkbox" name="perroIds" value="@perro.Id" class="perro-check" />
+
                                     <div class="perro-option-body">
                                         <div class="perro-option-avatar">
                                             @if (!string.IsNullOrWhiteSpace(perro.ImagenUrl))
@@ -155,10 +237,12 @@
                                                 <span>🐶</span>
                                             }
                                         </div>
+
                                         <div class="perro-option-info">
                                             <div class="perro-option-name">@perro.Nombre</div>
                                             <div class="perro-option-meta">
                                                 @(string.IsNullOrWhiteSpace(perro.Raza) ? "Sin raza registrada" : perro.Raza)
+
                                                 @if (!string.IsNullOrWhiteSpace(perro.Tamaño))
                                                 {
                                                     <span>· @perro.Tamaño</span>
@@ -199,11 +283,13 @@
 
                     <div class="form-group">
                         <label class="form-lbl">Tipo de paseo</label>
+
                         <div class="tipo-row">
                             <label class="tipo-pill">
                                 <input type="radio" name="esProgramado" value="false" checked class="tipo-radio" />
                                 <span>Paseo ahora</span>
                             </label>
+
                             <label class="tipo-pill">
                                 <input type="radio" name="esProgramado" value="true" class="tipo-radio" />
                                 <span>Programar paseo</span>
@@ -213,8 +299,10 @@
 
                     <div class="form-group" id="fecha-wrap" style="display:none">
                         <label class="form-lbl">Fecha y hora</label>
-                        <input type="datetime-local" name="fechaProgramada"
-                               id="input-fecha" class="form-ctrl" />
+                        <input type="datetime-local"
+                               name="fechaProgramada"
+                               id="input-fecha"
+                               class="form-ctrl" />
                     </div>
 
                     <div class="modal-actions">
