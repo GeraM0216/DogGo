@@ -755,3 +755,81 @@
             width: 100%;
         }
 }
+
+/* ── Recolección en tarjetas de Mis Paseos ─────── */
+.recoleccion-mini {
+    margin-top: .55rem;
+    padding: .55rem .7rem;
+    border-radius: 12px;
+    background: var(--warm);
+    border: 1.5px solid var(--border);
+    max-width: 100%;
+}
+
+.recoleccion-mini-title {
+    font-size: .76rem;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: .25rem;
+}
+
+.recoleccion-mini-lines {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    font-size: .76rem;
+    font-weight: 700;
+    color: var(--muted);
+    line-height: 1.35;
+}
+
+    .recoleccion-mini-lines strong {
+        color: var(--text);
+        font-weight: 900;
+    }
+
+.btn-maps-mini {
+    padding: .28rem .75rem;
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 900;
+    background: var(--teal-l);
+    color: var(--teal);
+    border: 1.5px solid var(--teal-m);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all .18s;
+}
+
+    .btn-maps-mini:hover {
+        background: var(--teal);
+        color: #fff;
+    }
+
+.card-right-actions-wrap {
+    width: 210px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+    .paseo-card-inner {
+        align-items: flex-start;
+    }
+
+    .card-right-stack,
+    .card-right-actions,
+    .card-right-actions-wrap,
+    .card-right-inline {
+        width: 100%;
+        min-width: 0;
+        align-items: flex-start;
+        justify-content: flex-start;
+        margin-left: 0;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .btn-maps-mini {
+        width: auto;
+    }
+}

@@ -1,4 +1,6 @@
 ﻿@model List<DogGo.Models.Paseo>
+@using System.Globalization
+
 @{
     ViewData["Title"] = "Mis paseos";
     var enCurso = Model.Where(p => p.Estado == "EnCurso").ToList();
@@ -52,6 +54,25 @@
 
         return paseo.Perro != null ? 1 : 0;
     }
+
+    bool TieneDatosRecoleccion(DogGo.Models.Paseo paseo)
+    {
+        return !string.IsNullOrWhiteSpace(paseo.DireccionRecogida)
+            || !string.IsNullOrWhiteSpace(paseo.ZonaRecogida)
+            || !string.IsNullOrWhiteSpace(paseo.ReferenciasRecogida)
+            || (paseo.LatitudRecogida.HasValue && paseo.LongitudRecogida.HasValue);
+    }
+
+    string? ObtenerUrlMaps(DogGo.Models.Paseo paseo)
+    {
+        if (!paseo.LatitudRecogida.HasValue || !paseo.LongitudRecogida.HasValue)
+            return null;
+
+        var lat = paseo.LatitudRecogida.Value.ToString(CultureInfo.InvariantCulture);
+        var lng = paseo.LongitudRecogida.Value.ToString(CultureInfo.InvariantCulture);
+
+        return $"https://www.google.com/maps?q={lat},{lng}";
+    }
 }
 
 <div class="page-header-wrap">
@@ -70,6 +91,7 @@
                         <span class="hstat-lbl">En curso</span>
                     </div>
                 }
+
                 @if (pendientes.Any())
                 {
                     <div class="hstat hstat-amber">
@@ -77,10 +99,12 @@
                         <span class="hstat-lbl">Pendiente@(pendientes.Count > 1 ? "s" : "")</span>
                     </div>
                 }
+
                 <div class="hstat hstat-muted">
                     <span class="hstat-num">@finalizados.Count</span>
                     <span class="hstat-lbl">Finalizado@(finalizados.Count != 1 ? "s" : "")</span>
                 </div>
+
                 @if (cancelados.Any())
                 {
                     <div class="hstat hstat-red">
@@ -166,16 +190,18 @@
                     <h2 class="seccion-titulo">En curso</h2>
                     <span class="seccion-count count-green">@enCurso.Count</span>
                 </div>
+
                 <div class="paseos-list">
                     @foreach (var p in enCurso)
                     {
                         var nombresPerros = ObtenerNombresPerros(p);
                         var imagenPerro = ObtenerImagenPerro(p);
                         var cantidadPerros = ObtenerCantidadPerros(p);
+                        var mapsUrl = ObtenerUrlMaps(p);
 
                         <div class="paseo-card card-green">
-                            <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link">
-                                <div class="paseo-card-inner">
+                            <div class="paseo-card-inner">
+                                <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link paseo-link-full">
                                     <div class="card-left">
                                         <div class="dog-photo-wrap">
                                             @if (!string.IsNullOrWhiteSpace(imagenPerro))
@@ -193,10 +219,12 @@
                                         <div class="paseo-top-row">
                                             <span class="paseo-id">Paseo #@p.Id</span>
                                             <span class="paseo-perro">🐶 @nombresPerros</span>
+
                                             @if (cantidadPerros > 1)
                                             {
                                                 <span class="paseo-badge badge-teal">@cantidadPerros perros</span>
                                             }
+
                                             @if (p.EsProgramado)
                                             {
                                                 <span class="paseo-badge badge-blue">Programado</span>
@@ -206,6 +234,7 @@
                                         <div class="paseo-meta">
                                             <span>📅 @(p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Sin inicio")</span>
                                             <span>⏱ @p.DuracionMinutos min</span>
+
                                             @if (p.EsProgramado && p.FechaProgramada != null)
                                             {
                                                 <span>🗓 @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
@@ -217,18 +246,53 @@
                                             {
                                                 <span>👤 Paseador: @p.Paseador.Usuario.Nombre @p.Paseador.Usuario.Apellido</span>
                                             }
+
                                             @if (esPaseador && p.Perro?.Dueño != null)
                                             {
                                                 <span>👤 Dueño: @p.Perro.Dueño.Nombre @p.Perro.Dueño.Apellido</span>
                                             }
                                         </div>
-                                    </div>
 
-                                    <div class="card-right card-right-inline">
-                                        <span class="estado-badge estado-green">● En curso</span>
+                                        @if (TieneDatosRecoleccion(p))
+                                        {
+                                            <div class="recoleccion-mini">
+                                                <div class="recoleccion-mini-title">📍 Recolección</div>
+
+                                                <div class="recoleccion-mini-lines">
+                                                    @if (!string.IsNullOrWhiteSpace(p.DireccionRecogida))
+                                                    {
+                                                        <span><strong>Dirección:</strong> @p.DireccionRecogida</span>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(p.ZonaRecogida))
+                                                    {
+                                                        <span><strong>Zona:</strong> @p.ZonaRecogida</span>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(p.ReferenciasRecogida))
+                                                    {
+                                                        <span><strong>Referencias:</strong> @p.ReferenciasRecogida</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
                                     </div>
+                                </a>
+
+                                <div class="card-right card-right-stack">
+                                    <span class="estado-badge estado-green">● En curso</span>
+
+                                    @if (!string.IsNullOrWhiteSpace(mapsUrl))
+                                    {
+                                        <a href="@mapsUrl"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="btn-maps-mini">
+                                            Abrir Maps
+                                        </a>
+                                    }
                                 </div>
-                            </a>
+                            </div>
                         </div>
                     }
                 </div>
@@ -243,12 +307,14 @@
                     <h2 class="seccion-titulo">Pendientes</h2>
                     <span class="seccion-count count-amber">@pendientes.Count</span>
                 </div>
+
                 <div class="paseos-list">
                     @foreach (var p in pendientes)
                     {
                         var nombresPerros = ObtenerNombresPerros(p);
                         var imagenPerro = ObtenerImagenPerro(p);
                         var cantidadPerros = ObtenerCantidadPerros(p);
+                        var mapsUrl = ObtenerUrlMaps(p);
 
                         <div class="paseo-card card-amber">
                             <div class="paseo-card-inner">
@@ -270,10 +336,12 @@
                                         <div class="paseo-top-row">
                                             <span class="paseo-id">Paseo #@p.Id</span>
                                             <span class="paseo-perro">🐶 @nombresPerros</span>
+
                                             @if (cantidadPerros > 1)
                                             {
                                                 <span class="paseo-badge badge-teal">@cantidadPerros perros</span>
                                             }
+
                                             @if (p.EsProgramado)
                                             {
                                                 <span class="paseo-badge badge-blue">Programado</span>
@@ -289,6 +357,7 @@
                                             {
                                                 <span>📅 @(p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Pendiente")</span>
                                             }
+
                                             <span>⏱ @p.DuracionMinutos min</span>
                                         </div>
 
@@ -297,16 +366,52 @@
                                             {
                                                 <span>👤 Paseador: @p.Paseador.Usuario.Nombre @p.Paseador.Usuario.Apellido</span>
                                             }
+
                                             @if (esPaseador && p.Perro?.Dueño != null)
                                             {
                                                 <span>👤 Dueño: @p.Perro.Dueño.Nombre @p.Perro.Dueño.Apellido</span>
                                             }
                                         </div>
+
+                                        @if (TieneDatosRecoleccion(p))
+                                        {
+                                            <div class="recoleccion-mini">
+                                                <div class="recoleccion-mini-title">📍 Recolección</div>
+
+                                                <div class="recoleccion-mini-lines">
+                                                    @if (!string.IsNullOrWhiteSpace(p.DireccionRecogida))
+                                                    {
+                                                        <span><strong>Dirección:</strong> @p.DireccionRecogida</span>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(p.ZonaRecogida))
+                                                    {
+                                                        <span><strong>Zona:</strong> @p.ZonaRecogida</span>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(p.ReferenciasRecogida))
+                                                    {
+                                                        <span><strong>Referencias:</strong> @p.ReferenciasRecogida</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
                                     </div>
                                 </a>
 
-                                <div class="card-right card-right-actions">
+                                <div class="card-right card-right-actions card-right-actions-wrap">
                                     <span class="estado-badge estado-amber">● Pendiente</span>
+
+                                    @if (!string.IsNullOrWhiteSpace(mapsUrl))
+                                    {
+                                        <a href="@mapsUrl"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="btn-maps-mini">
+                                            Abrir Maps
+                                        </a>
+                                    }
+
                                     <button class="btn-cancelar-toggle"
                                             onclick="toggleCancelar(@p.Id)"
                                             title="Cancelar paseo">
@@ -319,6 +424,7 @@
                                 <form asp-action="Cancelar" asp-route-id="@p.Id" method="post" class="cancelar-form">
                                     @Html.AntiForgeryToken()
                                     <input type="text" name="motivo" class="form-ctrl" placeholder="Motivo de cancelación (opcional)" />
+
                                     <div class="cancelar-actions">
                                         <button type="button" class="btn-no-cancelar" onclick="toggleCancelar(@p.Id)">Volver</button>
                                         <button type="submit" class="btn-confirmar-cancelar"
@@ -342,12 +448,14 @@
                     <h2 class="seccion-titulo">Finalizados</h2>
                     <span class="seccion-count count-muted">@finalizados.Count</span>
                 </div>
+
                 <div class="paseos-list">
                     @foreach (var p in finalizados)
                     {
                         var nombresPerros = ObtenerNombresPerros(p);
                         var imagenPerro = ObtenerImagenPerro(p);
                         var cantidadPerros = ObtenerCantidadPerros(p);
+                        var mapsUrl = ObtenerUrlMaps(p);
 
                         <div class="paseo-card card-muted">
                             <div class="paseo-card-inner">
@@ -369,10 +477,12 @@
                                         <div class="paseo-top-row">
                                             <span class="paseo-id">Paseo #@p.Id</span>
                                             <span class="paseo-perro">🐶 @nombresPerros</span>
+
                                             @if (cantidadPerros > 1)
                                             {
                                                 <span class="paseo-badge badge-teal">@cantidadPerros perros</span>
                                             }
+
                                             @if (p.EsProgramado)
                                             {
                                                 <span class="paseo-badge badge-blue">Programado</span>
@@ -381,10 +491,12 @@
 
                                         <div class="paseo-meta">
                                             <span>▶ @(p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Sin registro")</span>
+
                                             @if (p.FechaFin != null)
                                             {
                                                 <span>⏹ @p.FechaFin?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
                                             }
+
                                             <span>⏱ @p.DuracionMinutos min</span>
                                         </div>
 
@@ -393,11 +505,36 @@
                                             {
                                                 <span>👤 Paseador: @p.Paseador.Usuario.Nombre @p.Paseador.Usuario.Apellido</span>
                                             }
+
                                             @if (esPaseador && p.Perro?.Dueño != null)
                                             {
                                                 <span>👤 Dueño: @p.Perro.Dueño.Nombre @p.Perro.Dueño.Apellido</span>
                                             }
                                         </div>
+
+                                        @if (TieneDatosRecoleccion(p))
+                                        {
+                                            <div class="recoleccion-mini">
+                                                <div class="recoleccion-mini-title">📍 Recolección</div>
+
+                                                <div class="recoleccion-mini-lines">
+                                                    @if (!string.IsNullOrWhiteSpace(p.DireccionRecogida))
+                                                    {
+                                                        <span><strong>Dirección:</strong> @p.DireccionRecogida</span>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(p.ZonaRecogida))
+                                                    {
+                                                        <span><strong>Zona:</strong> @p.ZonaRecogida</span>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(p.ReferenciasRecogida))
+                                                    {
+                                                        <span><strong>Referencias:</strong> @p.ReferenciasRecogida</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
 
                                         @if (p.Calificacion != null)
                                         {
@@ -408,6 +545,7 @@
                                                         <span class="@(i <= p.Calificacion.Puntaje ? "star-on" : "star-off")">★</span>
                                                     }
                                                 </span>
+
                                                 @if (!string.IsNullOrWhiteSpace(p.Calificacion.Comentario))
                                                 {
                                                     <span class="cal-texto">"@p.Calificacion.Comentario"</span>
@@ -419,6 +557,16 @@
 
                                 <div class="card-right card-right-stack">
                                     <span class="estado-badge estado-muted">● Finalizado</span>
+
+                                    @if (!string.IsNullOrWhiteSpace(mapsUrl))
+                                    {
+                                        <a href="@mapsUrl"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="btn-maps-mini">
+                                            Abrir Maps
+                                        </a>
+                                    }
 
                                     @if (p.Calificacion == null && User.IsInRole("Duenio"))
                                     {
@@ -449,6 +597,7 @@
                     <h2 class="seccion-titulo">Cancelados</h2>
                     <span class="seccion-count count-red">@cancelados.Count</span>
                 </div>
+
                 <div class="paseos-list">
                     @foreach (var p in cancelados)
                     {
@@ -456,10 +605,11 @@
                         var imagenPerro = ObtenerImagenPerro(p);
                         var cantidadPerros = ObtenerCantidadPerros(p);
                         var fotoCancelador = p.CanceladoPor == "Paseador" ? p.Paseador?.FotoUrl : null;
+                        var mapsUrl = ObtenerUrlMaps(p);
 
                         <div class="paseo-card card-red">
-                            <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link">
-                                <div class="paseo-card-inner">
+                            <div class="paseo-card-inner">
+                                <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link paseo-link-full">
                                     <div class="card-left">
                                         <div class="dog-photo-wrap">
                                             @if (!string.IsNullOrWhiteSpace(imagenPerro))
@@ -477,9 +627,15 @@
                                         <div class="paseo-top-row">
                                             <span class="paseo-id">Paseo #@p.Id</span>
                                             <span class="paseo-perro">🐶 @nombresPerros</span>
+
                                             @if (cantidadPerros > 1)
                                             {
                                                 <span class="paseo-badge badge-teal">@cantidadPerros perros</span>
+                                            }
+
+                                            @if (p.EsProgramado)
+                                            {
+                                                <span class="paseo-badge badge-blue">Programado</span>
                                             }
                                         </div>
 
@@ -493,11 +649,36 @@
                                             {
                                                 <span>👤 Paseador: @p.Paseador.Usuario.Nombre @p.Paseador.Usuario.Apellido</span>
                                             }
+
                                             @if (esPaseador && p.Perro?.Dueño != null)
                                             {
                                                 <span>👤 Dueño: @p.Perro.Dueño.Nombre @p.Perro.Dueño.Apellido</span>
                                             }
                                         </div>
+
+                                        @if (TieneDatosRecoleccion(p))
+                                        {
+                                            <div class="recoleccion-mini">
+                                                <div class="recoleccion-mini-title">📍 Recolección</div>
+
+                                                <div class="recoleccion-mini-lines">
+                                                    @if (!string.IsNullOrWhiteSpace(p.DireccionRecogida))
+                                                    {
+                                                        <span><strong>Dirección:</strong> @p.DireccionRecogida</span>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(p.ZonaRecogida))
+                                                    {
+                                                        <span><strong>Zona:</strong> @p.ZonaRecogida</span>
+                                                    }
+
+                                                    @if (!string.IsNullOrWhiteSpace(p.ReferenciasRecogida))
+                                                    {
+                                                        <span><strong>Referencias:</strong> @p.ReferenciasRecogida</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
 
                                         @if (!string.IsNullOrWhiteSpace(p.CanceladoPor) || !string.IsNullOrWhiteSpace(p.MotivoCancelacion))
                                         {
@@ -515,10 +696,15 @@
 
                                                 <div class="cancelacion-texto">
                                                     <div class="cancelacion-linea">
+                                                        @{
+                                                            var canceladoPorTexto = p.CanceladoPor == "Duenio" ? "Dueño" : p.CanceladoPor;
+                                                        }
+
                                                         @if (!string.IsNullOrWhiteSpace(p.CanceladoPor))
                                                         {
-                                                            <span>👤 Cancelado por: @p.CanceladoPor</span>
+                                                            <span>👤 Cancelado por: @canceladoPorTexto</span>
                                                         }
+
                                                         @if (p.FechaCancelacion != null)
                                                         {
                                                             <span>🗓 @p.FechaCancelacion?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
@@ -535,12 +721,22 @@
                                             </div>
                                         }
                                     </div>
+                                </a>
 
-                                    <div class="card-right card-right-stack">
-                                        <span class="estado-badge estado-red">● Cancelado</span>
-                                    </div>
+                                <div class="card-right card-right-stack">
+                                    <span class="estado-badge estado-red">● Cancelado</span>
+
+                                    @if (!string.IsNullOrWhiteSpace(mapsUrl))
+                                    {
+                                        <a href="@mapsUrl"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="btn-maps-mini">
+                                            Abrir Maps
+                                        </a>
+                                    }
                                 </div>
-                            </a>
+                            </div>
                         </div>
                     }
                 </div>
