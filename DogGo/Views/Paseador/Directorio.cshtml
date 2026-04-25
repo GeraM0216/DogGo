@@ -68,7 +68,7 @@
 
             <div class="filtro-group">
                 <label>Ordenar por</label>
-                <select name="orden" class="form-ctrl">
+                <select name="orden" class="form-ctrl form-sel">
                     <option value="calificacion_desc" selected="@(ViewBag.Orden == "calificacion_desc")">
                         Mejor calificación
                     </option>
@@ -305,6 +305,61 @@
                                class="form-ctrl" />
                     </div>
 
+                    <!-- ── Ubicación de recoleccion ── -->
+                    <div class="form-group">
+                        <label class="form-lbl">Dirección de recolección</label>
+                        <input type="text"
+                               name="direccionRecogida"
+                               id="direccion-recogida"
+                               class="form-ctrl"
+                               placeholder="Ej. Av. Leones 123, Cumbres"
+                               required />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-lbl">Referencias</label>
+                        <input type="text"
+                               name="referenciasRecogida"
+                               id="referencias-recogida"
+                               class="form-ctrl"
+                               placeholder="Ej. Portón negro, casa de dos pisos" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-lbl">Zona de recolección</label>
+                        <select name="zonaRecogida" id="zona-recogida" class="form-ctrl form-sel" required>
+                            <option value="">Selecciona zona</option>
+                            <option value="Centro">Centro</option>
+                            <option value="Cumbres">Cumbres</option>
+                            <option value="San Pedro">San Pedro</option>
+                            <option value="San Nicolás">San Nicolás</option>
+                            <option value="Guadalupe">Guadalupe</option>
+                            <option value="Apodaca">Apodaca</option>
+                            <option value="Santa Catarina">Santa Catarina</option>
+                            <option value="Escobedo">Escobedo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-lbl">Punto de recolección en el mapa</label>
+                        <div class="form-help">
+                            Marca el punto exacto donde el paseador debe recoger al perro.
+                        </div>
+
+                        <button type="button" class="btn-ubicacion-actual" onclick="usarUbicacionActual()">
+                            Usar mi ubicación actual
+                        </button>
+
+                        <div id="mapa-recogida" class="mapa-recogida"></div>
+
+                        <div id="texto-ubicacion-recogida" class="texto-ubicacion-recogida">
+                            Todavía no has marcado el punto de ubicación.
+                        </div>
+
+                        <input type="hidden" name="latitudRecogida" id="latitud-recogida" />
+                        <input type="hidden" name="longitudRecogida" id="longitud-recogida" />
+                    </div>
+
                     <div class="modal-actions">
                         <button type="button" class="btn-modal-cancel" onclick="cerrarModal()">Cancelar</button>
                         <button type="submit" class="btn-modal-confirm">Confirmar solicitud</button>
@@ -316,9 +371,11 @@
 }
 
 @section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="@Url.Content("~/css/paseador.css")" />
 }
 
 @section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="@Url.Content("~/js/paseador.js")"></script>
 }

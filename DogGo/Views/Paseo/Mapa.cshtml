@@ -4,8 +4,27 @@
 @{
     ViewData["Title"] = "Mapa del paseo";
     var esPaseador = (bool)ViewBag.EsPaseador;
-    var lat = Model.LatitudActual != 0 ? Model.LatitudActual : 25.6866m;
-    var lng = Model.LongitudActual != 0 ? Model.LongitudActual : -100.3161m;
+
+    var tienePuntoRecoleccion = Model.LatitudRecogida.HasValue && Model.LongitudRecogida.HasValue;
+
+    var lat = Model.LatitudActual != 0
+        ? Model.LatitudActual
+        : (Model.LatitudRecogida ?? 25.6866m);
+
+    var lng = Model.LongitudActual != 0
+        ? Model.LongitudActual
+        : (Model.LongitudRecogida ?? -100.3161m);
+
+    var latRecoleccionJs = (Model.LatitudRecogida ?? 0m).ToString(CultureInfo.InvariantCulture);
+    var lngRecoleccionJs = (Model.LongitudRecogida ?? 0m).ToString(CultureInfo.InvariantCulture);
+
+    string? googleMapsRecoleccionUrl = null;
+
+    if (tienePuntoRecoleccion)
+    {
+        googleMapsRecoleccionUrl =
+            $"https://www.google.com/maps?q={Model.LatitudRecogida!.Value.ToString(CultureInfo.InvariantCulture)},{Model.LongitudRecogida!.Value.ToString(CultureInfo.InvariantCulture)}";
+    }
 
     var nombresPerros = (Model.PaseoPerros != null && Model.PaseoPerros.Any(pp => pp.Perro != null))
         ? string.Join(", ",
@@ -26,9 +45,7 @@
     var variosPerros = cantidadPerros > 1;
     var etiquetaPerros = variosPerros ? "Perros" : "Perro";
     var textoFotoInicio = variosPerros ? "Sube una foto de los perros para poder comenzar el paseo." : "Sube una foto del perro para poder comenzar el paseo.";
-    var textoFotoInicioError = variosPerros ? "Debes subir una foto de inicio de los perros para iniciar el paseo." : "Debes subir una foto del perro para iniciar el paseo.";
     var textoFotoFin = variosPerros ? "Antes de finalizar el paseo, sube una foto final de los perros como comprobante." : "Antes de finalizar el paseo, sube una foto final como comprobante.";
-    var textoFotoFinError = variosPerros ? "Debes subir una foto final de los perros antes de terminar el paseo." : "Debes subir una foto final antes de terminar el paseo.";
 }
 
 <div class="mapa-container">
@@ -38,7 +55,7 @@
             Paseo de: @nombresPerros —
             <span id="estadoBadge" class="badge
                 @(Model.Estado == "EnCurso" ? "bg-success" :
-                                                     Model.Estado == "Finalizado" ? "bg-secondary" : "bg-warning text-dark")">
+                                                                                        Model.Estado == "Finalizado" ? "bg-secondary" : "bg-warning text-dark")">
                 @Model.Estado
             </span>
 
@@ -94,6 +111,50 @@
         }
     </div>
 
+    <div class="recoleccion-box">
+        <div class="recoleccion-header">
+            <div>
+                <h6 class="recoleccion-title">📍 Punto de recolección</h6>
+                <p class="recoleccion-sub">
+                    Esta es la ubicación donde el paseador debe recoger al perro.
+                </p>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(googleMapsRecoleccionUrl))
+            {
+                <a href="@googleMapsRecoleccionUrl"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="btn-ver-maps">
+                    Abrir en Maps
+                </a>
+            }
+        </div>
+
+        <div class="recoleccion-grid">
+            <div class="recoleccion-item">
+                <span class="recoleccion-label">Dirección</span>
+                <span class="recoleccion-value">
+                    @(string.IsNullOrWhiteSpace(Model.DireccionRecogida) ? "Sin dirección registrada" : Model.DireccionRecogida)
+                </span>
+            </div>
+
+            <div class="recoleccion-item">
+                <span class="recoleccion-label">Zona</span>
+                <span class="recoleccion-value">
+                    @(string.IsNullOrWhiteSpace(Model.ZonaRecogida) ? "Sin zona registrada" : Model.ZonaRecogida)
+                </span>
+            </div>
+
+            <div class="recoleccion-item recoleccion-full">
+                <span class="recoleccion-label">Referencias</span>
+                <span class="recoleccion-value">
+                    @(string.IsNullOrWhiteSpace(Model.ReferenciasRecogida) ? "Sin referencias adicionales" : Model.ReferenciasRecogida)
+                </span>
+            </div>
+        </div>
+    </div>
+
     <div id="map"></div>
 
     <div class="evidencias-box">
@@ -146,7 +207,7 @@
                 <div class="accion-box">
                     <h6 class="mb-2">Para iniciar el paseo</h6>
                     <p class="text-muted small mb-3">
-                        Presiona <strong>Iniciar paseo</strong>. Si aún no hay evidencia, se te pedirá subir la foto de inicio.
+                        Antes de iniciar, revisa el punto de recolección y sube la foto de inicio.
                     </p>
 
                     <button id="btnIniciar"
@@ -288,9 +349,13 @@
         const tieneFotoFin = @(!string.IsNullOrWhiteSpace(Model.FotoFinUrl) ? "true" : "false");
         const latInicial = @lat.ToString(CultureInfo.InvariantCulture);
         const lngInicial = @lng.ToString(CultureInfo.InvariantCulture);
+        const tienePuntoRecoleccion = @(tienePuntoRecoleccion ? "true" : "false");
+        const latRecoleccion = @latRecoleccionJs;
+        const lngRecoleccion = @lngRecoleccionJs;
 
         let watchId = null;
         let marker = null;
+        let markerRecoleccion = null;
         let ruta = [];
         let polyline = null;
         let map = null;
@@ -334,6 +399,27 @@
         marker = L.marker([latInicial, lngInicial], { icon: iconoPaseo })
         .addTo(map)
         .bindPopup("Ubicación actual del paseo");
+
+        if (tienePuntoRecoleccion) {
+        const iconoRecoleccion = L.divIcon({
+        className: "",
+        html: `<div style="font-size:30px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))">📍</div>`,
+        iconSize: [34, 34],
+        iconAnchor: [17, 34]
+        });
+
+        markerRecoleccion = L.marker([latRecoleccion, lngRecoleccion], { icon: iconoRecoleccion })
+        .addTo(map)
+        .bindPopup("Punto de recolección del perro");
+
+        L.circle([latRecoleccion, lngRecoleccion], {
+        radius: 35,
+        color: "#0f9b8e",
+        fillColor: "#0f9b8e",
+        fillOpacity: 0.12,
+        weight: 2
+        }).addTo(map);
+        }
 
         @if (Model.Ubicaciones != null && Model.Ubicaciones.Any())
         {
@@ -567,6 +653,7 @@
         }
     </script>
 }
+
 @section Styles {
     <link rel="stylesheet" href="@Url.Content("~/css/mapa.css")" />
 }

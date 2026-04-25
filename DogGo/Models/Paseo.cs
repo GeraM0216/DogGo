@@ -23,6 +23,14 @@
         public bool EsProgramado { get; set; } = false;
         public DateTime? FechaProgramada { get; set; }
 
+        // Ubicación de recoleccion del perro para 1 paseo
+        public string? DireccionRecogida { get; set; }
+        public string? ReferenciasRecogida { get; set; }
+        public string? ZonaRecogida { get; set; }
+
+        public decimal? LatitudRecogida { get; set; }
+        public decimal? LongitudRecogida { get; set; }
+
         public string? MotivoCancelacion { get; set; }
         public string? CanceladoPor { get; set; }
         public DateTime? FechaCancelacion { get; set; }
@@ -39,5 +47,7 @@
 
         // Nueva relación para múltiples perros
         public ICollection<PaseoPerro> PaseoPerros { get; set; } = new List<PaseoPerro>();
+
+
     }
 }

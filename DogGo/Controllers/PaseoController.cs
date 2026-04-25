@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Globalization;
 
 namespace DogGo.Controllers
 {
@@ -144,7 +145,12 @@ namespace DogGo.Controllers
             decimal precio,
             int duracionMinutos,
             bool esProgramado,
-            DateTime? fechaProgramada)
+            DateTime? fechaProgramada,
+            string? direccionRecogida,
+            string? referenciasRecogida,
+            string? zonaRecogida,
+            string? latitudRecogida,
+            string? longitudRecogida)
         {
             var usuarioId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -184,6 +190,50 @@ namespace DogGo.Controllers
             if (duracionMinutos < 15 || duracionMinutos > 180)
             {
                 TempData["Error"] = "La duración del paseo debe estar entre 15 y 180 minutos.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
+
+            direccionRecogida = string.IsNullOrWhiteSpace(direccionRecogida) ? null : direccionRecogida.Trim();
+            referenciasRecogida = string.IsNullOrWhiteSpace(referenciasRecogida) ? null : referenciasRecogida.Trim();
+            zonaRecogida = string.IsNullOrWhiteSpace(zonaRecogida) ? null : zonaRecogida.Trim();
+
+            if (direccionRecogida == null)
+            {
+                TempData["Error"] = "Debes escribir la dirección de recogida.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
+
+            if (zonaRecogida == null)
+            {
+                TempData["Error"] = "Debes seleccionar la zona de recogida.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
+
+            decimal latitudRecogidaDecimal;
+            decimal longitudRecogidaDecimal;
+
+            var latitudValida = decimal.TryParse(
+                latitudRecogida,
+                NumberStyles.Any,
+                CultureInfo.InvariantCulture,
+                out latitudRecogidaDecimal);
+
+            var longitudValida = decimal.TryParse(
+                longitudRecogida,
+                NumberStyles.Any,
+                CultureInfo.InvariantCulture,
+                out longitudRecogidaDecimal);
+
+            if (!latitudValida || !longitudValida)
+            {
+                TempData["Error"] = "Debes marcar el punto de recogida en el mapa.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
+
+            if (latitudRecogidaDecimal < -90 || latitudRecogidaDecimal > 90 ||
+                longitudRecogidaDecimal < -180 || longitudRecogidaDecimal > 180)
+            {
+                TempData["Error"] = "La ubicación de recogida no es válida.";
                 return RedirectToAction("Directorio", "Paseador");
             }
 
@@ -277,7 +327,7 @@ namespace DogGo.Controllers
             var paseo = new Paseo
             {
                 PaseadorId = paseadorId,
-                PerroId = primerPerroId, // compatibilidad temporal con vistas actuales
+                PerroId = primerPerroId,
                 FechaInicio = null,
                 FechaFin = null,
                 Estado = "Pendiente",
@@ -285,6 +335,13 @@ namespace DogGo.Controllers
                 DuracionMinutos = duracionMinutos,
                 EsProgramado = esProgramado,
                 FechaProgramada = esProgramado ? fechaProgramada!.Value.ToUniversalTime() : null,
+
+                DireccionRecogida = direccionRecogida,
+                ReferenciasRecogida = referenciasRecogida,
+                ZonaRecogida = zonaRecogida,
+                LatitudRecogida = latitudRecogidaDecimal,
+                LongitudRecogida = longitudRecogidaDecimal,
+
                 FotoInicioUrl = null,
                 FotoFinUrl = null
             };

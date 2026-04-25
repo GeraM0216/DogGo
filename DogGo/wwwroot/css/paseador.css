@@ -1295,3 +1295,39 @@
             width: 100%;
         }
 }
+
+/* ── Mapa de recogida en modal ─────────────────── */
+.mapa-recogida {
+    width: 100%;
+    height: 260px;
+    border-radius: 18px;
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    margin-top: .75rem;
+    background: var(--warm);
+}
+
+.btn-ubicacion-actual {
+    width: 100%;
+    padding: .65rem 1rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--teal-m);
+    background: var(--teal-l);
+    color: var(--teal);
+    font-size: .86rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all .18s;
+}
+
+    .btn-ubicacion-actual:hover {
+        background: var(--teal);
+        color: #fff;
+    }
+
+.texto-ubicacion-recogida {
+    margin-top: .55rem;
+    font-size: .78rem;
+    color: var(--muted);
+    font-weight: 700;
+}
