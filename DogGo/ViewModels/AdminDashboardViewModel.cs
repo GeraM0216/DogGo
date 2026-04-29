@@ -16,6 +16,14 @@
         public int PaseosFinalizados { get; set; }
         public int PaseosCancelados { get; set; }
 
+        // Métricas de dashboard
+        public decimal IngresosFinalizados { get; set; }
+        public decimal TicketPromedioFinalizados { get; set; }
+        public decimal PorcentajeCancelacion { get; set; }
+        public int UsuariosNuevosUltimos7Dias { get; set; }
+        public int PaseosUltimos7Dias { get; set; }
+        public int SolicitudesFinalizacionPendientes { get; set; }
+
         // Filtros usuarios
         public string? BusquedaUsuario { get; set; }
         public string? RolFiltro { get; set; }
@@ -43,6 +51,7 @@
         public List<AdminPaseadorItemViewModel> Paseadores { get; set; } = new();
         public List<AdminPaseoItemViewModel> Paseos { get; set; } = new();
         public List<AdminPaseosPorPaseadorItemViewModel> PaseosPorPaseador { get; set; } = new();
+        public List<AdminActividadItemViewModel> ActividadReciente { get; set; } = new();
 
         public List<AdminPaseadorSelectViewModel> PaseadoresFiltro { get; set; } = new();
     }
@@ -81,6 +90,7 @@
         public string? ZonaServicio { get; set; }
         public int? ExperienciaAnios { get; set; }
         public int TotalPaseos { get; set; }
+        public decimal IngresosFinalizados { get; set; }
     }
 
     public class AdminPaseoItemViewModel
@@ -93,11 +103,15 @@
         public int PaseadorId { get; set; }
         public decimal Precio { get; set; }
         public int DuracionMinutos { get; set; }
+        public int? DuracionRealMinutos { get; set; }
         public bool EsProgramado { get; set; }
         public DateTime? FechaProgramada { get; set; }
         public DateTime? FechaInicio { get; set; }
         public DateTime? FechaFin { get; set; }
+        public DateTime? FechaCancelacion { get; set; }
         public string? ZonaRecoleccion { get; set; }
+        public bool FinalizacionAnticipadaSolicitada { get; set; }
+        public bool? FinalizacionAnticipadaAprobada { get; set; }
     }
 
     public class AdminPaseosPorPaseadorItemViewModel
@@ -111,7 +125,20 @@
         public int Finalizados { get; set; }
         public int Cancelados { get; set; }
         public decimal TotalIngresos { get; set; }
+        public decimal TicketPromedio { get; set; }
         public decimal CalificacionPromedio { get; set; }
+    }
+
+    public class AdminActividadItemViewModel
+    {
+        public int PaseoId { get; set; }
+        public string Estado { get; set; } = string.Empty;
+        public string Accion { get; set; } = string.Empty;
+        public string PerroNombre { get; set; } = string.Empty;
+        public string DuenioNombre { get; set; } = string.Empty;
+        public string PaseadorNombre { get; set; } = string.Empty;
+        public DateTime Fecha { get; set; }
+        public decimal Precio { get; set; }
     }
 
     public class AdminPaseadorSelectViewModel

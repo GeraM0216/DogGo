@@ -33,6 +33,9 @@ namespace DogGo.Controllers
             DateTime? fechaDesde,
             DateTime? fechaHasta)
         {
+            var hoyUtc = DateTime.UtcNow;
+            var hace7DiasUtc = hoyUtc.AddDays(-7);
+
             var usuariosBase = await _context.Usuarios
                 .AsNoTracking()
                 .ToListAsync();
@@ -162,18 +165,25 @@ namespace DogGo.Controllers
             };
 
             var paseadoresVm = paseadores
-                .Select(p => new AdminPaseadorItemViewModel
+                .Select(p =>
                 {
-                    Id = p.Id,
-                    UsuarioId = p.UsuarioId,
-                    NombreCompleto = $"{p.Usuario.Nombre} {p.Usuario.Apellido}".Trim(),
-                    Email = p.Usuario.Email,
-                    TarifaPorHora = p.TarifaPorHora,
-                    CalificacionPromedio = p.CalificacionPromedio,
-                    Disponible = p.Disponible,
-                    ZonaServicio = p.ZonaServicio,
-                    ExperienciaAnios = p.ExperienciaAnios,
-                    TotalPaseos = p.Paseos.Count(x => x.Estado == "Finalizado")
+                    var paseosFinalizados = p.Paseos.Where(x => x.Estado == "Finalizado").ToList();
+                    var ingresos = paseosFinalizados.Sum(x => x.Precio);
+
+                    return new AdminPaseadorItemViewModel
+                    {
+                        Id = p.Id,
+                        UsuarioId = p.UsuarioId,
+                        NombreCompleto = $"{p.Usuario.Nombre} {p.Usuario.Apellido}".Trim(),
+                        Email = p.Usuario.Email,
+                        TarifaPorHora = p.TarifaPorHora,
+                        CalificacionPromedio = p.CalificacionPromedio,
+                        Disponible = p.Disponible,
+                        ZonaServicio = p.ZonaServicio,
+                        ExperienciaAnios = p.ExperienciaAnios,
+                        TotalPaseos = paseosFinalizados.Count,
+                        IngresosFinalizados = ingresos
+                    };
                 })
                 .ToList();
 
@@ -221,13 +231,17 @@ namespace DogGo.Controllers
                     DuenioNombre = $"{p.Perro.Dueño.Nombre} {p.Perro.Dueño.Apellido}".Trim(),
                     PaseadorNombre = $"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}".Trim(),
                     PaseadorId = p.PaseadorId,
-                    Precio = CalcularPrecioPaseo(p.Paseador.TarifaPorHora, p.DuracionMinutos),
+                    Precio = p.Precio > 0 ? p.Precio : CalcularPrecioPaseo(p.Paseador.TarifaPorHora, p.DuracionMinutos),
                     DuracionMinutos = p.DuracionMinutos,
+                    DuracionRealMinutos = p.DuracionRealMinutos,
                     EsProgramado = p.EsProgramado,
                     FechaProgramada = p.FechaProgramada,
                     FechaInicio = p.FechaInicio,
                     FechaFin = p.FechaFin,
-                    ZonaRecoleccion = p.ZonaRecogida
+                    FechaCancelacion = p.FechaCancelacion,
+                    ZonaRecoleccion = p.ZonaRecogida,
+                    FinalizacionAnticipadaSolicitada = p.FinalizacionAnticipadaSolicitada,
+                    FinalizacionAnticipadaAprobada = p.FinalizacionAnticipadaAprobada
                 })
                 .ToList();
 
@@ -242,6 +256,9 @@ namespace DogGo.Controllers
                         .Where(p => p.Estado == "Finalizado")
                         .ToList();
 
+                    var ingresos = paseosFinalizados.Sum(p =>
+                        p.Precio > 0 ? p.Precio : CalcularPrecioPaseo(pa.TarifaPorHora, p.DuracionMinutos));
+
                     return new AdminPaseosPorPaseadorItemViewModel
                     {
                         PaseadorId = pa.Id,
@@ -252,11 +269,44 @@ namespace DogGo.Controllers
                         EnCurso = paseosDePaseador.Count(p => p.Estado == "EnCurso"),
                         Finalizados = paseosFinalizados.Count,
                         Cancelados = paseosDePaseador.Count(p => p.Estado == "Cancelado"),
-                        TotalIngresos = paseosFinalizados.Sum(p => CalcularPrecioPaseo(pa.TarifaPorHora, p.DuracionMinutos)),
+                        TotalIngresos = ingresos,
+                        TicketPromedio = paseosFinalizados.Any()
+                            ? Math.Round(ingresos / paseosFinalizados.Count, 2, MidpointRounding.AwayFromZero)
+                            : 0,
                         CalificacionPromedio = pa.CalificacionPromedio
                     };
                 })
                 .OrderByDescending(p => p.Finalizados)
+                .ToList();
+
+            var paseosFinalizadosGlobal = paseosBase
+                .Where(p => p.Estado == "Finalizado")
+                .ToList();
+
+            var ingresosFinalizados = paseosFinalizadosGlobal.Sum(p =>
+                p.Precio > 0
+                    ? p.Precio
+                    : CalcularPrecioPaseo(p.Paseador.TarifaPorHora, p.DuracionMinutos));
+
+            var actividadReciente = paseosBase
+                .Select(p => new AdminActividadItemViewModel
+                {
+                    PaseoId = p.Id,
+                    Estado = p.Estado,
+                    Accion = ObtenerAccionActividad(p),
+                    PerroNombre = ObtenerNombresPerros(p),
+                    DuenioNombre = p.Perro?.Dueño != null
+                        ? $"{p.Perro.Dueño.Nombre} {p.Perro.Dueño.Apellido}".Trim()
+                        : "—",
+                    PaseadorNombre = p.Paseador?.Usuario != null
+                        ? $"{p.Paseador.Usuario.Nombre} {p.Paseador.Usuario.Apellido}".Trim()
+                        : "—",
+                    Fecha = ObtenerFechaReferencia(p),
+                    Precio = p.Precio
+                })
+                .Where(a => a.Fecha != DateTime.MinValue)
+                .OrderByDescending(a => a.Fecha)
+                .Take(8)
                 .ToList();
 
             var model = new AdminDashboardViewModel
@@ -273,6 +323,20 @@ namespace DogGo.Controllers
                 PaseosEnCurso = paseosBase.Count(p => p.Estado == "EnCurso"),
                 PaseosFinalizados = paseosBase.Count(p => p.Estado == "Finalizado"),
                 PaseosCancelados = paseosBase.Count(p => p.Estado == "Cancelado"),
+
+                IngresosFinalizados = ingresosFinalizados,
+                TicketPromedioFinalizados = paseosFinalizadosGlobal.Any()
+                    ? Math.Round(ingresosFinalizados / paseosFinalizadosGlobal.Count, 2, MidpointRounding.AwayFromZero)
+                    : 0,
+                PorcentajeCancelacion = paseosBase.Any()
+                    ? Math.Round((decimal)paseosBase.Count(p => p.Estado == "Cancelado") * 100 / paseosBase.Count, 1)
+                    : 0,
+                UsuariosNuevosUltimos7Dias = usuariosBase.Count(u => u.FechaRegistro >= hace7DiasUtc),
+                PaseosUltimos7Dias = paseosBase.Count(p => ObtenerFechaReferencia(p) >= hace7DiasUtc),
+                SolicitudesFinalizacionPendientes = paseosBase.Count(p =>
+                    p.Estado == "EnCurso" &&
+                    p.FinalizacionAnticipadaSolicitada &&
+                    p.FinalizacionAnticipadaAprobada == null),
 
                 BusquedaUsuario = busquedaUsuario,
                 RolFiltro = rolFiltro,
@@ -296,6 +360,7 @@ namespace DogGo.Controllers
                 Paseadores = paseadoresVm,
                 Paseos = paseosVm,
                 PaseosPorPaseador = paseosPorPaseador,
+                ActividadReciente = actividadReciente,
 
                 PaseadoresFiltro = paseadoresBase
                     .OrderBy(p => p.Usuario.Nombre)
@@ -372,13 +437,86 @@ namespace DogGo.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmarCorreo(int usuarioId)
+        {
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == usuarioId);
+
+            if (usuario == null)
+            {
+                TempData["Error"] = "Usuario no encontrado.";
+                return RedirectToAction("Index");
+            }
+
+            usuario.EmailConfirmado = true;
+            usuario.CodigoConfirmacion = null;
+            usuario.CodigoExpiraEn = null;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Exito"] = $"Correo confirmado para {usuario.Nombre} {usuario.Apellido}.";
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CambiarDisponibilidadPaseador(int paseadorId)
+        {
+            var paseador = await _context.Paseadores
+                .Include(p => p.Usuario)
+                .FirstOrDefaultAsync(p => p.Id == paseadorId);
+
+            if (paseador == null)
+            {
+                TempData["Error"] = "Paseador no encontrado.";
+                return RedirectToAction("Index");
+            }
+
+            paseador.Disponible = !paseador.Disponible;
+
+            await _context.SaveChangesAsync();
+
+            TempData["Exito"] = paseador.Disponible
+                ? $"{paseador.Usuario.Nombre} ahora aparece como disponible."
+                : $"{paseador.Usuario.Nombre} ahora aparece como no disponible.";
+
+            return RedirectToAction("Index");
+        }
+
         private static DateTime ObtenerFechaReferencia(Paseo paseo)
         {
-            return paseo.FechaProgramada
-                ?? paseo.FechaInicio
+            return paseo.FechaCancelacion
                 ?? paseo.FechaFin
-                ?? paseo.FechaCancelacion
+                ?? paseo.FechaInicio
+                ?? paseo.FechaProgramada
                 ?? DateTime.MinValue;
+        }
+
+        private static string ObtenerAccionActividad(Paseo paseo)
+        {
+            if (paseo.Estado == "Finalizado")
+                return paseo.FinalizacionAnticipadaAprobada == true
+                    ? "Finalizado anticipadamente"
+                    : "Paseo finalizado";
+
+            if (paseo.Estado == "Cancelado")
+                return "Paseo cancelado";
+
+            if (paseo.Estado == "EnCurso")
+            {
+                if (paseo.FinalizacionAnticipadaSolicitada &&
+                    paseo.FinalizacionAnticipadaAprobada == null)
+                    return "Solicitud de finalización";
+
+                return "Paseo en curso";
+            }
+
+            if (paseo.Estado == "Pendiente")
+                return paseo.EsProgramado ? "Paseo programado" : "Paseo pendiente";
+
+            return paseo.Estado;
         }
 
         private static string ObtenerNombresPerros(Paseo paseo)

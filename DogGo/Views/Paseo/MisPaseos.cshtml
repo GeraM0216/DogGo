@@ -3,12 +3,25 @@
 
 @{
     ViewData["Title"] = "Mis paseos";
+
     var enCurso = Model.Where(p => p.Estado == "EnCurso").ToList();
     var pendientes = Model.Where(p => p.Estado == "Pendiente").ToList();
     var finalizados = Model.Where(p => p.Estado == "Finalizado").ToList();
     var cancelados = Model.Where(p => p.Estado == "Cancelado").ToList();
+
+    var solicitudesFinalizacion = Model
+        .Where(p => p.Estado == "EnCurso"
+            && p.FinalizacionAnticipadaSolicitada
+            && p.FinalizacionAnticipadaAprobada == null)
+        .ToList();
+
     var esDuenio = User.IsInRole("Duenio");
     var esPaseador = User.IsInRole("Paseador");
+
+    var totalActivos = enCurso.Count + pendientes.Count;
+    var totalFinalizados = finalizados.Count;
+    var totalCancelados = cancelados.Count;
+    var totalGastadoFinalizados = finalizados.Sum(p => p.Precio);
 
     string ObtenerNombresPerros(DogGo.Models.Paseo paseo)
     {
@@ -16,7 +29,7 @@
         {
             var nombres = paseo.PaseoPerros
                 .Where(pp => pp.Perro != null)
-                .Select(pp => pp.Perro.Nombre)
+                .Select(pp => pp.Perro!.Nombre)
                 .Where(n => !string.IsNullOrWhiteSpace(n))
                 .Distinct()
                 .ToList();
@@ -73,6 +86,50 @@
 
         return $"https://www.google.com/maps?q={lat},{lng}";
     }
+
+    int? ObtenerDuracionReal(DogGo.Models.Paseo paseo)
+    {
+        if (paseo.DuracionRealMinutos.HasValue)
+            return paseo.DuracionRealMinutos.Value;
+
+        if (paseo.FechaInicio.HasValue && paseo.FechaFin.HasValue)
+        {
+            return Math.Max(1, (int)Math.Ceiling((paseo.FechaFin.Value - paseo.FechaInicio.Value).TotalMinutes));
+        }
+
+        if (paseo.Estado == "EnCurso" && paseo.FechaInicio.HasValue)
+        {
+            return Math.Max(1, (int)Math.Ceiling((DateTime.UtcNow - paseo.FechaInicio.Value).TotalMinutes));
+        }
+
+        return null;
+    }
+
+    bool TieneSolicitudFinalizacion(DogGo.Models.Paseo paseo)
+    {
+        return paseo.Estado == "EnCurso"
+            && paseo.FinalizacionAnticipadaSolicitada
+            && paseo.FinalizacionAnticipadaAprobada == null;
+    }
+
+    bool FueFinalizadoAnticipadamente(DogGo.Models.Paseo paseo)
+    {
+        return paseo.Estado == "Finalizado"
+            && paseo.FinalizacionAnticipadaAprobada == true
+            && paseo.DuracionRealMinutos.HasValue
+            && paseo.DuracionRealMinutos.Value < paseo.DuracionMinutos;
+    }
+
+    string PersonaContraria(DogGo.Models.Paseo paseo)
+    {
+        if (esDuenio && paseo.Paseador?.Usuario != null)
+            return $"👤 Paseador: {paseo.Paseador.Usuario.Nombre} {paseo.Paseador.Usuario.Apellido}";
+
+        if (esPaseador && paseo.Perro?.Dueño != null)
+            return $"👤 Dueño: {paseo.Perro.Dueño.Nombre} {paseo.Perro.Dueño.Apellido}";
+
+        return string.Empty;
+    }
 }
 
 <div class="page-header-wrap">
@@ -118,6 +175,57 @@
 </div>
 
 <div class="paseos-container">
+
+    @if (Model.Any())
+    {
+        <div class="mis-paseos-dashboard">
+            <div class="mp-kpi-card">
+                <div class="mp-kpi-icon">🦮</div>
+                <div>
+                    <div class="mp-kpi-label">Paseos activos</div>
+                    <div class="mp-kpi-value">@totalActivos</div>
+                    <div class="mp-kpi-sub">Pendientes y en curso</div>
+                </div>
+            </div>
+
+            <div class="mp-kpi-card">
+                <div class="mp-kpi-icon">✅</div>
+                <div>
+                    <div class="mp-kpi-label">Finalizados</div>
+                    <div class="mp-kpi-value">@totalFinalizados</div>
+                    <div class="mp-kpi-sub">Historial completado</div>
+                </div>
+            </div>
+
+            <div class="mp-kpi-card">
+                <div class="mp-kpi-icon">💰</div>
+                <div>
+                    <div class="mp-kpi-label">Total finalizado</div>
+                    <div class="mp-kpi-value">$@totalGastadoFinalizados.ToString("0.00")</div>
+                    <div class="mp-kpi-sub">Solo paseos finalizados</div>
+                </div>
+            </div>
+
+            <div class="mp-kpi-card @(solicitudesFinalizacion.Any() ? "mp-kpi-alert" : "")">
+                <div class="mp-kpi-icon">⚠️</div>
+                <div>
+                    <div class="mp-kpi-label">Solicitudes</div>
+                    <div class="mp-kpi-value">@solicitudesFinalizacion.Count</div>
+                    <div class="mp-kpi-sub">Finalización anticipada</div>
+                </div>
+            </div>
+        </div>
+
+        @if (solicitudesFinalizacion.Any())
+        {
+            <div class="alert alert-warning shadow-sm border-warning mb-4">
+                <strong>Atención:</strong>
+                tienes @solicitudesFinalizacion.Count solicitud@(solicitudesFinalizacion.Count > 1 ? "es" : "")
+                de finalización anticipada pendiente@(solicitudesFinalizacion.Count > 1 ? "s" : "").
+                Abre el mapa del paseo para aceptar o rechazar.
+            </div>
+        }
+    }
 
     <form asp-action="MisPaseos" method="get" class="filtros-card">
         <div class="filtros-grid">
@@ -198,8 +306,11 @@
                         var imagenPerro = ObtenerImagenPerro(p);
                         var cantidadPerros = ObtenerCantidadPerros(p);
                         var mapsUrl = ObtenerUrlMaps(p);
+                        var duracionReal = ObtenerDuracionReal(p);
+                        var solicitudPendiente = TieneSolicitudFinalizacion(p);
+                        var persona = PersonaContraria(p);
 
-                        <div class="paseo-card card-green">
+                        <div class="paseo-card card-green @(solicitudPendiente ? "card-alerta-finalizacion" : "")">
                             <div class="paseo-card-inner">
                                 <a asp-action="Mapa" asp-route-id="@p.Id" class="paseo-link paseo-link-full">
                                     <div class="card-left">
@@ -229,11 +340,23 @@
                                             {
                                                 <span class="paseo-badge badge-blue">Programado</span>
                                             }
+
+                                            @if (solicitudPendiente)
+                                            {
+                                                <span class="paseo-badge badge-red">Finalización anticipada</span>
+                                            }
                                         </div>
 
                                         <div class="paseo-meta">
                                             <span>📅 @(p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Sin inicio")</span>
-                                            <span>⏱ @p.DuracionMinutos min</span>
+                                            <span>⏱ Solicitado: @p.DuracionMinutos min</span>
+
+                                            @if (duracionReal.HasValue)
+                                            {
+                                                <span>🕒 Actual: @duracionReal.Value min</span>
+                                            }
+
+                                            <span>💰 $@p.Precio.ToString("0.00")</span>
 
                                             @if (p.EsProgramado && p.FechaProgramada != null)
                                             {
@@ -242,16 +365,21 @@
                                         </div>
 
                                         <div class="paseo-extra">
-                                            @if (esDuenio && p.Paseador?.Usuario != null)
+                                            @if (!string.IsNullOrWhiteSpace(persona))
                                             {
-                                                <span>👤 Paseador: @p.Paseador.Usuario.Nombre @p.Paseador.Usuario.Apellido</span>
-                                            }
-
-                                            @if (esPaseador && p.Perro?.Dueño != null)
-                                            {
-                                                <span>👤 Dueño: @p.Perro.Dueño.Nombre @p.Perro.Dueño.Apellido</span>
+                                                <span>@persona</span>
                                             }
                                         </div>
+
+                                        @if (solicitudPendiente)
+                                        {
+                                            <div class="finalizacion-alerta-mini">
+                                                <strong>⚠️ Solicitud pendiente:</strong>
+                                                @(string.IsNullOrWhiteSpace(p.MotivoFinalizacionAnticipada)
+                                                    ? "El paseador solicitó terminar antes de tiempo."
+                                                    : p.MotivoFinalizacionAnticipada)
+                                            </div>
+                                        }
 
                                         @if (TieneDatosRecoleccion(p))
                                         {
@@ -281,6 +409,15 @@
 
                                 <div class="card-right card-right-stack">
                                     <span class="estado-badge estado-green">● En curso</span>
+
+                                    @if (solicitudPendiente && esDuenio)
+                                    {
+                                        <a asp-action="Mapa"
+                                               asp-route-id="@p.Id"
+                                               class="btn-responder-finalizacion">
+                                            Responder
+                                        </a>
+                                    }
 
                                     @if (!string.IsNullOrWhiteSpace(mapsUrl))
                                     {
@@ -315,6 +452,7 @@
                         var imagenPerro = ObtenerImagenPerro(p);
                         var cantidadPerros = ObtenerCantidadPerros(p);
                         var mapsUrl = ObtenerUrlMaps(p);
+                        var persona = PersonaContraria(p);
 
                         <div class="paseo-card card-amber">
                             <div class="paseo-card-inner">
@@ -359,17 +497,13 @@
                                             }
 
                                             <span>⏱ @p.DuracionMinutos min</span>
+                                            <span>💰 $@p.Precio.ToString("0.00")</span>
                                         </div>
 
                                         <div class="paseo-extra">
-                                            @if (esDuenio && p.Paseador?.Usuario != null)
+                                            @if (!string.IsNullOrWhiteSpace(persona))
                                             {
-                                                <span>👤 Paseador: @p.Paseador.Usuario.Nombre @p.Paseador.Usuario.Apellido</span>
-                                            }
-
-                                            @if (esPaseador && p.Perro?.Dueño != null)
-                                            {
-                                                <span>👤 Dueño: @p.Perro.Dueño.Nombre @p.Perro.Dueño.Apellido</span>
+                                                <span>@persona</span>
                                             }
                                         </div>
 
@@ -456,6 +590,9 @@
                         var imagenPerro = ObtenerImagenPerro(p);
                         var cantidadPerros = ObtenerCantidadPerros(p);
                         var mapsUrl = ObtenerUrlMaps(p);
+                        var duracionReal = ObtenerDuracionReal(p);
+                        var anticipado = FueFinalizadoAnticipadamente(p);
+                        var persona = PersonaContraria(p);
 
                         <div class="paseo-card card-muted">
                             <div class="paseo-card-inner">
@@ -487,6 +624,11 @@
                                             {
                                                 <span class="paseo-badge badge-blue">Programado</span>
                                             }
+
+                                            @if (anticipado)
+                                            {
+                                                <span class="paseo-badge badge-red">Anticipado</span>
+                                            }
                                         </div>
 
                                         <div class="paseo-meta">
@@ -497,20 +639,32 @@
                                                 <span>⏹ @p.FechaFin?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
                                             }
 
-                                            <span>⏱ @p.DuracionMinutos min</span>
+                                            <span>⏱ Solicitado: @p.DuracionMinutos min</span>
+
+                                            @if (duracionReal.HasValue)
+                                            {
+                                                <span>✅ Real: @duracionReal.Value min</span>
+                                            }
+
+                                            <span>💰 Final: $@p.Precio.ToString("0.00")</span>
                                         </div>
 
                                         <div class="paseo-extra">
-                                            @if (esDuenio && p.Paseador?.Usuario != null)
+                                            @if (!string.IsNullOrWhiteSpace(persona))
                                             {
-                                                <span>👤 Paseador: @p.Paseador.Usuario.Nombre @p.Paseador.Usuario.Apellido</span>
-                                            }
-
-                                            @if (esPaseador && p.Perro?.Dueño != null)
-                                            {
-                                                <span>👤 Dueño: @p.Perro.Dueño.Nombre @p.Perro.Dueño.Apellido</span>
+                                                <span>@persona</span>
                                             }
                                         </div>
+
+                                        @if (anticipado)
+                                        {
+                                            <div class="finalizacion-alerta-mini finalizacion-finalizada">
+                                                <strong>Finalización anticipada aprobada.</strong>
+                                                @(string.IsNullOrWhiteSpace(p.MotivoFinalizacionAnticipada)
+                                                    ? ""
+                                                    : $"Motivo: {p.MotivoFinalizacionAnticipada}")
+                                            </div>
+                                        }
 
                                         @if (TieneDatosRecoleccion(p))
                                         {
@@ -606,6 +760,7 @@
                         var cantidadPerros = ObtenerCantidadPerros(p);
                         var fotoCancelador = p.CanceladoPor == "Paseador" ? p.Paseador?.FotoUrl : null;
                         var mapsUrl = ObtenerUrlMaps(p);
+                        var persona = PersonaContraria(p);
 
                         <div class="paseo-card card-red">
                             <div class="paseo-card-inner">
@@ -642,17 +797,13 @@
                                         <div class="paseo-meta">
                                             <span>📅 @(p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "Sin registro")</span>
                                             <span>⏱ @p.DuracionMinutos min</span>
+                                            <span>💰 $@p.Precio.ToString("0.00")</span>
                                         </div>
 
                                         <div class="paseo-extra">
-                                            @if (esDuenio && p.Paseador?.Usuario != null)
+                                            @if (!string.IsNullOrWhiteSpace(persona))
                                             {
-                                                <span>👤 Paseador: @p.Paseador.Usuario.Nombre @p.Paseador.Usuario.Apellido</span>
-                                            }
-
-                                            @if (esPaseador && p.Perro?.Dueño != null)
-                                            {
-                                                <span>👤 Dueño: @p.Perro.Dueño.Nombre @p.Perro.Dueño.Apellido</span>
+                                                <span>@persona</span>
                                             }
                                         </div>
 
@@ -747,6 +898,125 @@
 
 @section Styles {
     <link rel="stylesheet" href="@Url.Content("~/css/paseo.css")" />
+
+    <style>
+        .mis-paseos-dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: .9rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .mp-kpi-card {
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+            box-shadow: 0 4px 16px rgba(45,49,66,.06);
+        }
+
+        .mp-kpi-alert {
+            background: #fff7ed;
+            border-color: #f59e0b;
+        }
+
+        .mp-kpi-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 16px;
+            background: var(--warm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            flex-shrink: 0;
+        }
+
+        .mp-kpi-label {
+            font-size: .74rem;
+            font-weight: 900;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .mp-kpi-value {
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: var(--text);
+            line-height: 1.1;
+        }
+
+        .mp-kpi-sub {
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-top: .1rem;
+        }
+
+        .badge-red {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+
+        .card-alerta-finalizacion {
+            border-color: #f59e0b !important;
+            box-shadow: 0 8px 24px rgba(245, 158, 11, .16);
+        }
+
+        .finalizacion-alerta-mini {
+            margin-top: .75rem;
+            padding: .7rem .85rem;
+            border-radius: 14px;
+            background: #fff7ed;
+            border: 1.5px solid #f59e0b;
+            color: #92400e;
+            font-size: .82rem;
+            font-weight: 700;
+        }
+
+        .finalizacion-finalizada {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+
+        .btn-responder-finalizacion {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 999px;
+            padding: .38rem .75rem;
+            font-size: .76rem;
+            font-weight: 900;
+            background: #f59e0b;
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            white-space: nowrap;
+        }
+
+            .btn-responder-finalizacion:hover {
+                color: #fff;
+                background: #d97706;
+            }
+
+        @@media (max-width: 980px) {
+            .mis-paseos-dashboard {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @@media (max-width: 560px) {
+            .mis-paseos-dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 }
 
 @section Scripts {

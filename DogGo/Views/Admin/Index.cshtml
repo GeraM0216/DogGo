@@ -21,6 +21,25 @@
         };
     }
 
+    string EstadoTexto(string estado)
+    {
+        return estado switch
+        {
+            "EnCurso" => "En curso",
+            _ => estado
+        };
+    }
+
+    string FechaPaseo(DogGo.ViewModels.AdminPaseoItemViewModel p)
+    {
+        var fecha = p.FechaCancelacion
+            ?? p.FechaFin
+            ?? p.FechaInicio
+            ?? p.FechaProgramada;
+
+        return fecha?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "—";
+    }
+
     var topPaseadores = Model.PaseosPorPaseador
         .OrderByDescending(p => p.Finalizados)
         .Take(6)
@@ -32,7 +51,6 @@
         .Take(6)
         .ToList();
 
-    var totalIngresosFinalizados = Model.PaseosPorPaseador.Sum(p => p.TotalIngresos);
     var paseadorConMasPaseos = Model.PaseosPorPaseador.OrderByDescending(p => p.Finalizados).FirstOrDefault();
     var paseadorConMasIngresos = Model.PaseosPorPaseador.OrderByDescending(p => p.TotalIngresos).FirstOrDefault();
 
@@ -50,158 +68,247 @@
 }
 
 <div class="admin-wrap">
-    <div class="admin-header">
+
+    @if (TempData["Exito"] != null)
+    {
+        <div class="admin-alert admin-alert-ok">@TempData["Exito"]</div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="admin-alert admin-alert-error">@TempData["Error"]</div>
+    }
+
+    <div class="admin-hero">
         <div>
             <div class="page-eyebrow">Panel de administración</div>
             <h1 class="admin-title">Dashboard Admin</h1>
             <p class="admin-sub">
-                Consulta, filtra y administra registros principales de DogGo.
+                Métricas, actividad reciente, usuarios, paseadores, perros y paseos registrados en DogGo.
             </p>
         </div>
-    </div>
 
-    <div class="admin-stats-grid">
-        <div class="admin-stat-card">
-            <div class="admin-stat-num">@Model.TotalUsuarios</div>
-            <div class="admin-stat-label">Usuarios</div>
-        </div>
-
-        <div class="admin-stat-card">
-            <div class="admin-stat-num">@Model.TotalDuenios</div>
-            <div class="admin-stat-label">Dueños</div>
-        </div>
-
-        <div class="admin-stat-card">
-            <div class="admin-stat-num">@Model.TotalPaseadores</div>
-            <div class="admin-stat-label">Paseadores</div>
-        </div>
-
-        <div class="admin-stat-card">
-            <div class="admin-stat-num">@Model.TotalAdmins</div>
-            <div class="admin-stat-label">Admins</div>
-        </div>
-
-        <div class="admin-stat-card">
-            <div class="admin-stat-num">@Model.TotalPerros</div>
-            <div class="admin-stat-label">Perros</div>
-        </div>
-
-        <div class="admin-stat-card">
-            <div class="admin-stat-num">@Model.TotalPaseos</div>
-            <div class="admin-stat-label">Paseos</div>
-        </div>
-
-        <div class="admin-stat-card stat-amber">
-            <div class="admin-stat-num">@Model.PaseosPendientes</div>
-            <div class="admin-stat-label">Pendientes</div>
-        </div>
-
-        <div class="admin-stat-card stat-green">
-            <div class="admin-stat-num">@Model.PaseosEnCurso</div>
-            <div class="admin-stat-label">En curso</div>
-        </div>
-
-        <div class="admin-stat-card stat-muted">
-            <div class="admin-stat-num">@Model.PaseosFinalizados</div>
-            <div class="admin-stat-label">Finalizados</div>
-        </div>
-
-        <div class="admin-stat-card stat-red">
-            <div class="admin-stat-num">@Model.PaseosCancelados</div>
-            <div class="admin-stat-label">Cancelados</div>
+        <div class="admin-hero-badge">
+            <span>Vista general</span>
+            <strong>@DateTime.Now.ToString("dd/MM/yyyy")</strong>
         </div>
     </div>
 
-    <div class="admin-kpi-grid">
-        <div class="admin-kpi-card">
-            <div class="admin-kpi-icon">💰</div>
-            <div>
-                <div class="admin-kpi-label">Ingresos por paseos finalizados</div>
-                <div class="admin-kpi-value">$@totalIngresosFinalizados.ToString("0.00")</div>
-            </div>
-        </div>
-
-        <div class="admin-kpi-card">
-            <div class="admin-kpi-icon">🏆</div>
-            <div>
-                <div class="admin-kpi-label">Paseador con más paseos finalizados</div>
-                <div class="admin-kpi-value">
-                    @(paseadorConMasPaseos != null ? paseadorConMasPaseos.PaseadorNombre : "—")
-                </div>
-                <div class="admin-kpi-sub">
-                    @(paseadorConMasPaseos != null ? $"{paseadorConMasPaseos.Finalizados} finalizados" : "Sin datos")
-                </div>
-            </div>
-        </div>
-
-        <div class="admin-kpi-card">
-            <div class="admin-kpi-icon">📈</div>
-            <div>
-                <div class="admin-kpi-label">Mayor ingreso finalizado</div>
-                <div class="admin-kpi-value">
-                    @(paseadorConMasIngresos != null ? paseadorConMasIngresos.PaseadorNombre : "—")
-                </div>
-                <div class="admin-kpi-sub">
-                    @(paseadorConMasIngresos != null ? $"${paseadorConMasIngresos.TotalIngresos.ToString("0.00")}" : "Sin datos")
-                </div>
-            </div>
-        </div>
+    <div class="admin-tabs">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#actividad">Actividad</a>
+        <a href="#usuarios">Usuarios</a>
+        <a href="#perros">Perros</a>
+        <a href="#paseadores">Paseadores</a>
+        <a href="#paseos">Paseos</a>
     </div>
 
-    <section class="admin-section dashboard-section">
-        <div class="admin-section-header">
-            <h2>Gráficas generales</h2>
-            <span>Vista ejecutiva</span>
+    <section id="dashboard">
+        <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon">👥</div>
+                <div class="admin-stat-num">@Model.TotalUsuarios</div>
+                <div class="admin-stat-label">Usuarios</div>
+            </div>
+
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon">🐶</div>
+                <div class="admin-stat-num">@Model.TotalPerros</div>
+                <div class="admin-stat-label">Perros</div>
+            </div>
+
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon">🦮</div>
+                <div class="admin-stat-num">@Model.TotalPaseadores</div>
+                <div class="admin-stat-label">Paseadores</div>
+            </div>
+
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon">📍</div>
+                <div class="admin-stat-num">@Model.TotalPaseos</div>
+                <div class="admin-stat-label">Paseos</div>
+            </div>
+
+            <div class="admin-stat-card stat-amber">
+                <div class="admin-stat-icon">⏳</div>
+                <div class="admin-stat-num">@Model.PaseosPendientes</div>
+                <div class="admin-stat-label">Pendientes</div>
+            </div>
+
+            <div class="admin-stat-card stat-green">
+                <div class="admin-stat-icon">▶</div>
+                <div class="admin-stat-num">@Model.PaseosEnCurso</div>
+                <div class="admin-stat-label">En curso</div>
+            </div>
+
+            <div class="admin-stat-card stat-muted">
+                <div class="admin-stat-icon">✅</div>
+                <div class="admin-stat-num">@Model.PaseosFinalizados</div>
+                <div class="admin-stat-label">Finalizados</div>
+            </div>
+
+            <div class="admin-stat-card stat-red">
+                <div class="admin-stat-icon">✕</div>
+                <div class="admin-stat-num">@Model.PaseosCancelados</div>
+                <div class="admin-stat-label">Cancelados</div>
+            </div>
         </div>
 
-        <div class="charts-grid">
-            <div class="chart-card">
-                <div class="chart-card-header">
-                    <div>
-                        <h3>Paseos por estado</h3>
-                        <p>Distribución general de paseos.</p>
-                    </div>
-                </div>
-                <div class="chart-box chart-box-small">
-                    <canvas id="chartPaseosEstado"></canvas>
+        <div class="admin-kpi-grid">
+            <div class="admin-kpi-card kpi-money">
+                <div class="admin-kpi-icon">💰</div>
+                <div>
+                    <div class="admin-kpi-label">Ingresos finalizados</div>
+                    <div class="admin-kpi-value">$@Model.IngresosFinalizados.ToString("0.00")</div>
+                    <div class="admin-kpi-sub">Solo paseos finalizados</div>
                 </div>
             </div>
 
-            <div class="chart-card">
-                <div class="chart-card-header">
-                    <div>
-                        <h3>Usuarios por rol</h3>
-                        <p>Dueños, paseadores y administradores.</p>
-                    </div>
-                </div>
-                <div class="chart-box chart-box-small">
-                    <canvas id="chartUsuariosRol"></canvas>
+            <div class="admin-kpi-card">
+                <div class="admin-kpi-icon">🎟</div>
+                <div>
+                    <div class="admin-kpi-label">Ticket promedio</div>
+                    <div class="admin-kpi-value">$@Model.TicketPromedioFinalizados.ToString("0.00")</div>
+                    <div class="admin-kpi-sub">Promedio por paseo finalizado</div>
                 </div>
             </div>
 
-            <div class="chart-card chart-card-wide">
-                <div class="chart-card-header">
-                    <div>
-                        <h3>Top paseadores por paseos finalizados</h3>
-                        <p>No cuenta paseos cancelados ni pendientes.</p>
+            <div class="admin-kpi-card">
+                <div class="admin-kpi-icon">🏆</div>
+                <div>
+                    <div class="admin-kpi-label">Más paseos finalizados</div>
+                    <div class="admin-kpi-value">
+                        @(paseadorConMasPaseos != null ? paseadorConMasPaseos.PaseadorNombre : "—")
                     </div>
-                </div>
-                <div class="chart-box">
-                    <canvas id="chartTopPaseadores"></canvas>
+                    <div class="admin-kpi-sub">
+                        @(paseadorConMasPaseos != null ? $"{paseadorConMasPaseos.Finalizados} finalizados" : "Sin datos")
+                    </div>
                 </div>
             </div>
 
-            <div class="chart-card chart-card-wide">
-                <div class="chart-card-header">
-                    <div>
-                        <h3>Ingresos por paseador</h3>
-                        <p>Solo considera paseos finalizados y precio calculado por tarifa.</p>
+            <div class="admin-kpi-card">
+                <div class="admin-kpi-icon">📈</div>
+                <div>
+                    <div class="admin-kpi-label">Mayor ingreso</div>
+                    <div class="admin-kpi-value">
+                        @(paseadorConMasIngresos != null ? paseadorConMasIngresos.PaseadorNombre : "—")
+                    </div>
+                    <div class="admin-kpi-sub">
+                        @(paseadorConMasIngresos != null ? $"${paseadorConMasIngresos.TotalIngresos.ToString("0.00")}" : "Sin datos")
                     </div>
                 </div>
-                <div class="chart-box">
-                    <canvas id="chartIngresosPaseador"></canvas>
+            </div>
+
+            <div class="admin-kpi-card">
+                <div class="admin-kpi-icon">🆕</div>
+                <div>
+                    <div class="admin-kpi-label">Usuarios nuevos</div>
+                    <div class="admin-kpi-value">@Model.UsuariosNuevosUltimos7Dias</div>
+                    <div class="admin-kpi-sub">Últimos 7 días</div>
                 </div>
             </div>
+
+            <div class="admin-kpi-card @(Model.SolicitudesFinalizacionPendientes > 0 ? "kpi-warning" : "")">
+                <div class="admin-kpi-icon">⚠️</div>
+                <div>
+                    <div class="admin-kpi-label">Solicitudes pendientes</div>
+                    <div class="admin-kpi-value">@Model.SolicitudesFinalizacionPendientes</div>
+                    <div class="admin-kpi-sub">Finalización anticipada</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-dashboard-grid">
+            <section class="admin-section dashboard-section dashboard-charts-section">
+                <div class="admin-section-header">
+                    <h2>Gráficas generales</h2>
+                    <span>Vista ejecutiva</span>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Paseos por estado</h3>
+                                <p>Pendientes, en curso, finalizados y cancelados.</p>
+                            </div>
+                        </div>
+                        <div class="chart-box chart-box-small">
+                            <canvas id="chartPaseosEstado"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Usuarios por rol</h3>
+                                <p>Dueños, paseadores y administradores.</p>
+                            </div>
+                        </div>
+                        <div class="chart-box chart-box-small">
+                            <canvas id="chartUsuariosRol"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card chart-card-wide">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Top paseadores por finalizados</h3>
+                                <p>No cuenta cancelados ni pendientes.</p>
+                            </div>
+                        </div>
+                        <div class="chart-box">
+                            <canvas id="chartTopPaseadores"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card chart-card-wide">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Ingresos por paseador</h3>
+                                <p>Usa el precio real guardado en paseos finalizados.</p>
+                            </div>
+                        </div>
+                        <div class="chart-box">
+                            <canvas id="chartIngresosPaseador"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="actividad" class="admin-section activity-section">
+                <div class="admin-section-header">
+                    <h2>Actividad reciente</h2>
+                    <span>@Model.ActividadReciente.Count movimientos</span>
+                </div>
+
+                <div class="activity-list">
+                    @foreach (var a in Model.ActividadReciente)
+                    {
+                        <a asp-controller="Paseo"
+                               asp-action="Mapa"
+                               asp-route-id="@a.PaseoId"
+                               class="activity-item">
+                            <div class="activity-dot @EstadoClase(a.Estado)"></div>
+
+                            <div class="activity-main">
+                                <strong>@a.Accion</strong>
+                                <span>Paseo #@a.PaseoId · @a.PerroNombre</span>
+                            </div>
+
+                            <div class="activity-meta">
+                                <span>@a.PaseadorNombre</span>
+                                <span>@a.Fecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        </a>
+                    }
+
+                    @if (!Model.ActividadReciente.Any())
+                    {
+                        <div class="empty-admin">No hay actividad reciente registrada.</div>
+                    }
+                </div>
+            </section>
         </div>
     </section>
 
@@ -217,12 +324,13 @@
                     <tr>
                         <th>Paseador</th>
                         <th>Email</th>
-                        <th>Total general</th>
+                        <th>Total</th>
                         <th>Pendientes</th>
                         <th>En curso</th>
                         <th>Finalizados</th>
                         <th>Cancelados</th>
-                        <th>Ingresos finalizados</th>
+                        <th>Ingresos</th>
+                        <th>Ticket prom.</th>
                         <th>Calificación</th>
                     </tr>
                 </thead>
@@ -238,6 +346,7 @@
                             <td><span class="admin-pill pill-muted">@p.Finalizados</span></td>
                             <td><span class="admin-pill pill-red">@p.Cancelados</span></td>
                             <td>$@p.TotalIngresos.ToString("0.00")</td>
+                            <td>$@p.TicketPromedio.ToString("0.00")</td>
                             <td>⭐ @p.CalificacionPromedio.ToString("0.0")</td>
                         </tr>
                     }
@@ -246,7 +355,7 @@
         </div>
     </section>
 
-    <section class="admin-section">
+    <section id="usuarios" class="admin-section">
         <div class="admin-section-header">
             <h2>Usuarios registrados</h2>
             <span>@Model.Usuarios.Count registros</span>
@@ -295,7 +404,7 @@
                         <th>Nombre</th>
                         <th>Email</th>
                         <th>Teléfono</th>
-                        <th>Rol actual</th>
+                        <th>Rol</th>
                         <th>Cambiar rol</th>
                         <th>Correo</th>
                         <th>Registro</th>
@@ -309,9 +418,7 @@
                             <td>@u.NombreCompleto</td>
                             <td>@u.Email</td>
                             <td>@(string.IsNullOrWhiteSpace(u.Telefono) ? "—" : u.Telefono)</td>
-                            <td>
-                                <span class="admin-pill">@MostrarRol(u.Rol)</span>
-                            </td>
+                            <td><span class="admin-pill">@MostrarRol(u.Rol)</span></td>
                             <td>
                                 <form asp-action="CambiarRol" method="post" class="rol-form">
                                     @Html.AntiForgeryToken()
@@ -337,7 +444,15 @@
                                 }
                                 else
                                 {
-                                    <span class="admin-pill pill-red">Pendiente</span>
+                                    <form asp-action="ConfirmarCorreo" method="post" class="inline-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="usuarioId" value="@u.Id" />
+                                        <button type="submit"
+                                                class="btn-mini-warning"
+                                                onclick="return confirm('¿Confirmar manualmente este correo?')">
+                                            Confirmar
+                                        </button>
+                                    </form>
                                 }
                             </td>
                             <td>@u.FechaRegistro.ToLocalTime().ToString("dd/MM/yyyy")</td>
@@ -348,13 +463,13 @@
         </div>
     </section>
 
-    <section class="admin-section">
+    <section id="perros" class="admin-section">
         <div class="admin-section-header">
             <h2>Perros registrados</h2>
             <span>@Model.Perros.Count registros</span>
         </div>
 
-        <form asp-action="Index" method="get" class="admin-filtros-grid">
+        <form asp-action="Index" method="get" class="admin-filtros-grid filtros-compactos">
             <div class="admin-filter-group">
                 <label>Buscar perro</label>
                 <input type="text"
@@ -411,7 +526,7 @@
         </div>
     </section>
 
-    <section class="admin-section">
+    <section id="paseadores" class="admin-section">
         <div class="admin-section-header">
             <h2>Paseadores</h2>
             <span>@Model.Paseadores.Count registros</span>
@@ -464,8 +579,9 @@
                         <th>Tarifa</th>
                         <th>Calificación</th>
                         <th>Finalizados</th>
+                        <th>Ingresos</th>
                         <th>Zona</th>
-                        <th>Experiencia</th>
+                        <th>Exp.</th>
                         <th>Disponible</th>
                     </tr>
                 </thead>
@@ -479,17 +595,19 @@
                             <td>$@p.TarifaPorHora.ToString("0.00")</td>
                             <td>⭐ @p.CalificacionPromedio.ToString("0.0")</td>
                             <td>@p.TotalPaseos</td>
+                            <td>$@p.IngresosFinalizados.ToString("0.00")</td>
                             <td>@(string.IsNullOrWhiteSpace(p.ZonaServicio) ? "—" : p.ZonaServicio)</td>
                             <td>@(p.ExperienciaAnios.HasValue ? $"{p.ExperienciaAnios} años" : "—")</td>
                             <td>
-                                @if (p.Disponible)
-                                {
-                                    <span class="admin-pill pill-green">Sí</span>
-                                }
-                                else
-                                {
-                                    <span class="admin-pill pill-red">No</span>
-                                }
+                                <form asp-action="CambiarDisponibilidadPaseador" method="post" class="inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="paseadorId" value="@p.Id" />
+
+                                    <button type="submit"
+                                            class="btn-pill-toggle @(p.Disponible ? "toggle-on" : "toggle-off")">
+                                        @(p.Disponible ? "Sí" : "No")
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     }
@@ -498,7 +616,7 @@
         </div>
     </section>
 
-    <section class="admin-section">
+    <section id="paseos" class="admin-section">
         <div class="admin-section-header">
             <h2>Paseos</h2>
             <span>@Model.Paseos.Count registros</span>
@@ -561,7 +679,7 @@
         </form>
 
         <div class="admin-table-wrap">
-            <table class="admin-table">
+            <table class="admin-table admin-table-wide">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -569,43 +687,53 @@
                         <th>Perro(s)</th>
                         <th>Dueño</th>
                         <th>Paseador</th>
-                        <th>Precio calculado</th>
+                        <th>Precio</th>
                         <th>Duración</th>
                         <th>Tipo</th>
                         <th>Fecha</th>
-                        <th>Zona recolección</th>
+                        <th>Zona</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var p in Model.Paseos)
                     {
                         <tr>
-                            <td>#@p.Id</td>
-                            <td><span class="admin-pill @EstadoClase(p.Estado)">@p.Estado</span></td>
+                            <td>
+                                <a asp-controller="Paseo"
+                                       asp-action="Mapa"
+                                       asp-route-id="@p.Id"
+                                       class="admin-link">
+                                    #@p.Id
+                                </a>
+                            </td>
+                            <td>
+                                <span class="admin-pill @EstadoClase(p.Estado)">
+                                    @EstadoTexto(p.Estado)
+                                </span>
+
+                                @if (p.FinalizacionAnticipadaAprobada == true)
+                                {
+                                    <span class="admin-pill pill-red">Anticipado</span>
+                                }
+                                else if (p.FinalizacionAnticipadaSolicitada && p.FinalizacionAnticipadaAprobada == null)
+                                {
+                                    <span class="admin-pill pill-amber">Solicitud</span>
+                                }
+                            </td>
                             <td>@p.PerroNombre</td>
                             <td>@p.DuenioNombre</td>
                             <td>@p.PaseadorNombre</td>
                             <td>$@p.Precio.ToString("0.00")</td>
-                            <td>@p.DuracionMinutos min</td>
-                            <td>@(p.EsProgramado ? "Programado" : "Ahora")</td>
                             <td>
-                                @if (p.FechaProgramada != null)
+                                @p.DuracionMinutos min
+
+                                @if (p.DuracionRealMinutos.HasValue)
                                 {
-                                    @p.FechaProgramada?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                }
-                                else if (p.FechaInicio != null)
-                                {
-                                    @p.FechaInicio?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                }
-                                else if (p.FechaFin != null)
-                                {
-                                    @p.FechaFin?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
-                                }
-                                else
-                                {
-                                    <span>—</span>
+                                    <span class="admin-muted">/ real @p.DuracionRealMinutos min</span>
                                 }
                             </td>
+                            <td>@(p.EsProgramado ? "Programado" : "Ahora")</td>
+                            <td>@FechaPaseo(p)</td>
                             <td>@(string.IsNullOrWhiteSpace(p.ZonaRecoleccion) ? "—" : p.ZonaRecoleccion)</td>
                         </tr>
                     }
@@ -618,21 +746,46 @@
 @section Styles {
     <style>
         .admin-wrap {
-            max-width: 1220px;
+            max-width: 1520px;
             margin: 0 auto;
             padding: 2rem;
         }
 
-        .admin-header {
-            background: var(--warm);
+        .admin-alert {
+            border-radius: 16px;
+            padding: .8rem 1rem;
+            margin-bottom: 1rem;
+            font-size: .9rem;
+            font-weight: 800;
+        }
+
+        .admin-alert-ok {
+            background: #dcfce7;
+            border: 1.5px solid #86efac;
+            color: #15803d;
+        }
+
+        .admin-alert-error {
+            background: #fee2e2;
+            border: 1.5px solid #fca5a5;
+            color: #b91c1c;
+        }
+
+        .admin-hero {
+            background: linear-gradient(135deg, var(--warm), #fff);
             border: 1.5px solid var(--border);
-            border-radius: 26px;
-            padding: 1.75rem;
-            margin-bottom: 1.5rem;
+            border-radius: 28px;
+            padding: 1.7rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 8px 28px rgba(45,49,66,.06);
         }
 
         .admin-title {
-            font-size: clamp(1.8rem, 3vw, 2.4rem);
+            font-size: clamp(1.9rem, 3vw, 2.6rem);
             font-weight: 900;
             color: var(--text);
             margin: 0;
@@ -641,39 +794,84 @@
         .admin-sub {
             color: var(--muted);
             font-size: .95rem;
-            font-weight: 600;
+            font-weight: 700;
             margin: .35rem 0 0;
         }
 
+        .admin-hero-badge {
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            padding: .85rem 1rem;
+            min-width: 170px;
+        }
+
+            .admin-hero-badge span,
+            .admin-stat-label,
+            .admin-kpi-label {
+                display: block;
+                font-size: .72rem;
+                font-weight: 900;
+                color: var(--muted);
+                text-transform: uppercase;
+                letter-spacing: .05em;
+            }
+
+            .admin-hero-badge strong {
+                display: block;
+                color: var(--text);
+                font-size: 1rem;
+                margin-top: .15rem;
+            }
+
+        .admin-tabs {
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+
+            .admin-tabs a {
+                text-decoration: none;
+                background: #fff;
+                color: var(--text);
+                border: 1.5px solid var(--border);
+                border-radius: 999px;
+                padding: .45rem .85rem;
+                font-size: .78rem;
+                font-weight: 900;
+            }
+
+                .admin-tabs a:hover {
+                    border-color: var(--teal);
+                    color: var(--teal);
+                }
+
         .admin-stats-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: .9rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .admin-stat-card {
             background: #fff;
             border: 1.5px solid var(--border);
-            border-radius: 18px;
+            border-radius: 20px;
             padding: 1rem;
             box-shadow: 0 4px 16px rgba(45,49,66,.06);
         }
 
+        .admin-stat-icon {
+            font-size: 1.1rem;
+            margin-bottom: .35rem;
+        }
+
         .admin-stat-num {
-            font-size: 1.7rem;
+            font-size: 1.75rem;
             font-weight: 900;
             color: var(--text);
             line-height: 1;
-        }
-
-        .admin-stat-label {
-            margin-top: .3rem;
-            font-size: .78rem;
-            font-weight: 800;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: .04em;
         }
 
         .stat-green {
@@ -700,7 +898,7 @@
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: .9rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.2rem;
         }
 
         .admin-kpi-card {
@@ -714,6 +912,16 @@
             box-shadow: 0 4px 16px rgba(45,49,66,.06);
         }
 
+        .kpi-money {
+            border-color: #86efac;
+            background: #f0fdf4;
+        }
+
+        .kpi-warning {
+            border-color: #f59e0b;
+            background: #fff7ed;
+        }
+
         .admin-kpi-icon {
             width: 46px;
             height: 46px;
@@ -722,31 +930,30 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
+            font-size: 1.35rem;
             flex-shrink: 0;
         }
 
-        .admin-kpi-label {
-            font-size: .76rem;
-            font-weight: 900;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            margin-bottom: .15rem;
-        }
-
         .admin-kpi-value {
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 900;
             color: var(--text);
-            line-height: 1.25;
+            line-height: 1.2;
         }
 
         .admin-kpi-sub {
-            font-size: .8rem;
+            font-size: .78rem;
             font-weight: 700;
             color: var(--muted);
-            margin-top: .15rem;
+            margin-top: .12rem;
+        }
+
+        .admin-dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 2.1fr) minmax(360px, .9fr);
+            gap: 1rem;
+            align-items: stretch;
+            margin-bottom: 1.4rem;
         }
 
         .admin-section {
@@ -754,12 +961,23 @@
             border: 1.5px solid var(--border);
             border-radius: 22px;
             padding: 1.25rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.4rem;
             box-shadow: 0 4px 16px rgba(45,49,66,.06);
         }
 
+        .dashboard-section,
+        .activity-section {
+            margin-bottom: 0;
+        }
+
         .dashboard-section {
-            background: rgba(255,255,255,.97);
+            background: rgba(255,255,255,.96);
+        }
+
+        .activity-section {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
         }
 
         .admin-section-header {
@@ -801,31 +1019,19 @@
             min-width: 0;
         }
 
-        .chart-card-wide {
-            min-height: 330px;
+        .chart-card-header h3 {
+            font-size: .98rem;
+            font-weight: 900;
+            color: var(--text);
+            margin: 0;
         }
 
-        .chart-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 1rem;
-            margin-bottom: .75rem;
+        .chart-card-header p {
+            margin: .15rem 0 .7rem;
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--muted);
         }
-
-            .chart-card-header h3 {
-                font-size: .98rem;
-                font-weight: 900;
-                color: var(--text);
-                margin: 0;
-            }
-
-            .chart-card-header p {
-                margin: .15rem 0 0;
-                font-size: .78rem;
-                font-weight: 700;
-                color: var(--muted);
-            }
 
         .chart-box {
             position: relative;
@@ -835,6 +1041,71 @@
 
         .chart-box-small {
             height: 240px;
+        }
+
+        .activity-list {
+            display: grid;
+            gap: .65rem;
+            max-height: 690px;
+            overflow-y: auto;
+            padding-right: .25rem;
+        }
+
+            .activity-list::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .activity-list::-webkit-scrollbar-thumb {
+                background: #d9d2c9;
+                border-radius: 999px;
+            }
+
+        .activity-item {
+            display: grid;
+            grid-template-columns: 16px 1fr;
+            gap: .75rem;
+            align-items: start;
+            text-decoration: none;
+            color: var(--text);
+            border: 1.5px solid var(--border);
+            background: var(--warm);
+            border-radius: 16px;
+            padding: .8rem;
+        }
+
+            .activity-item:hover {
+                border-color: var(--teal);
+            }
+
+        .activity-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            margin-top: .25rem;
+        }
+
+        .activity-main strong {
+            display: block;
+            font-size: .86rem;
+            font-weight: 900;
+            color: var(--text);
+        }
+
+        .activity-main span,
+        .activity-meta span {
+            display: block;
+            font-size: .76rem;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .activity-meta {
+            grid-column: 2;
+            display: flex;
+            justify-content: space-between;
+            gap: .5rem;
+            margin-top: .35rem;
+            flex-wrap: wrap;
         }
 
         .admin-filtros-grid {
@@ -851,6 +1122,10 @@
 
         .filtros-paseos {
             grid-template-columns: 1.4fr .8fr 1fr .75fr .75fr auto;
+        }
+
+        .filtros-compactos {
+            grid-template-columns: 1.4fr .8fr auto;
         }
 
         .admin-filter-group label {
@@ -880,13 +1155,7 @@
 
         .admin-select {
             appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
             background-color: #fff;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%232D3142' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right .85rem center;
-            background-size: 12px 8px;
             padding-right: 2.3rem;
         }
 
@@ -931,47 +1200,48 @@
         .admin-table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 950px;
+            min-width: 920px;
         }
 
-            .admin-table th {
-                text-align: left;
-                font-size: .72rem;
-                color: var(--muted);
-                font-weight: 900;
-                text-transform: uppercase;
-                letter-spacing: .04em;
-                padding: .75rem;
-                border-bottom: 1.5px solid var(--border);
-                white-space: nowrap;
-            }
+        .admin-table-wide {
+            min-width: 1100px;
+        }
 
-            .admin-table td {
-                padding: .75rem;
-                border-bottom: 1px solid var(--border);
-                font-size: .82rem;
-                font-weight: 700;
-                color: var(--text);
-                vertical-align: middle;
-                white-space: nowrap;
-            }
+        .admin-table th {
+            text-align: left;
+            font-size: .72rem;
+            color: var(--muted);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            padding: .75rem;
+            border-bottom: 1.5px solid var(--border);
+            white-space: nowrap;
+        }
 
-            .admin-table tr:last-child td {
-                border-bottom: none;
-            }
+        .admin-table td {
+            padding: .75rem;
+            border-bottom: 1px solid var(--border);
+            font-size: .82rem;
+            font-weight: 700;
+            color: var(--text);
+            vertical-align: middle;
+            white-space: nowrap;
+        }
 
         .admin-pill {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             border-radius: 999px;
-            padding: .2rem .6rem;
+            padding: .22rem .62rem;
             font-size: .72rem;
             font-weight: 900;
             background: var(--warm);
             color: var(--muted);
             border: 1px solid var(--border);
             white-space: nowrap;
+            margin-right: .25rem;
         }
 
         .pill-green {
@@ -998,8 +1268,9 @@
             border-color: var(--border);
         }
 
-        .rol-form {
-            display: flex;
+        .rol-form,
+        .inline-form {
+            display: inline-flex;
             gap: .4rem;
             align-items: center;
         }
@@ -1016,37 +1287,94 @@
             outline: none;
         }
 
-        .btn-rol-guardar {
+        .btn-rol-guardar,
+        .btn-mini-warning,
+        .btn-pill-toggle {
             height: 34px;
             border-radius: 999px;
             border: none;
             padding: 0 .75rem;
             font-size: .76rem;
             font-weight: 900;
-            background: var(--teal);
-            color: #fff;
             cursor: pointer;
         }
 
-            .btn-rol-guardar:hover {
-                background: var(--teal-d);
+        .btn-rol-guardar {
+            background: var(--teal);
+            color: #fff;
+        }
+
+        .btn-mini-warning {
+            background: #f59e0b;
+            color: #fff;
+        }
+
+        .btn-pill-toggle.toggle-on {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #86efac;
+        }
+
+        .btn-pill-toggle.toggle-off {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+        }
+
+        .admin-link {
+            color: var(--teal);
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+            .admin-link:hover {
+                text-decoration: underline;
             }
 
+        .admin-muted {
+            color: var(--muted);
+            font-size: .76rem;
+            font-weight: 800;
+        }
+
+        .empty-admin {
+            color: var(--muted);
+            font-size: .88rem;
+            font-weight: 700;
+            padding: .8rem;
+            background: var(--warm);
+            border-radius: 16px;
+        }
+
+        @@media (max-width: 1300px) {
+            .admin-dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .activity-list {
+                max-height: none;
+                overflow-y: visible;
+            }
+        }
+
         @@media (max-width: 1050px) {
+            .admin-hero {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
             .admin-stats-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
-            .admin-kpi-grid {
-                grid-template-columns: 1fr;
-            }
-
+            .admin-kpi-grid,
             .charts-grid {
                 grid-template-columns: 1fr;
             }
 
             .admin-filtros-grid,
-            .filtros-paseos {
+            .filtros-paseos,
+            .filtros-compactos {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
@@ -1060,12 +1388,10 @@
                 padding: 1.2rem;
             }
 
-            .admin-stats-grid {
-                grid-template-columns: 1fr;
-            }
-
+            .admin-stats-grid,
             .admin-filtros-grid,
-            .filtros-paseos {
+            .filtros-paseos,
+            .filtros-compactos {
                 grid-template-columns: 1fr;
             }
 
@@ -1099,17 +1425,11 @@
     <script>
         const doggoChartColors = {
         teal: '#0f9b8e',
-        tealSoft: '#d8f5ef',
         amber: '#f59e0b',
-        amberSoft: '#fef3c7',
         green: '#16a34a',
-        greenSoft: '#dcfce7',
         red: '#dc2626',
-        redSoft: '#fee2e2',
         blue: '#2563eb',
-        blueSoft: '#dbeafe',
-        muted: '#7b8194',
-        warm: '#fff7ed'
+        muted: '#7b8194'
         };
 
         Chart.defaults.font.family = 'Nunito, sans-serif';
