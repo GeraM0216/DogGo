@@ -1,31 +1,44 @@
 // ═══════════════════════════════════════════════
 // DogGo — paseador.js
-// Modal solicitar paseo, ubicación de recolección, zonas checkbox, preview foto
+// Modal solicitar paseo, precio calculado, zonas, preview foto y mapa de recolección
 // ═══════════════════════════════════════════════
 
+let tarifaActualPaseador = 0;
 let mapaRecogida = null;
 let marcadorRecogida = null;
 
-const ubicacionDefault = {
+const centroDefault = {
     lat: 25.6866,
     lng: -100.3161
 };
 
 // ── Modal solicitar paseo ───────────────────────
 function abrirModal(paseadorId, nombre, tarifa) {
-    const inputPaseador = document.getElementById('modal-paseador-id');
+    tarifaActualPaseador = Number(String(tarifa).replace(',', '.')) || 0;
+
+    const inputPaseadorId = document.getElementById('modal-paseador-id');
     const modalSub = document.getElementById('modal-sub');
-    const inputPrecio = document.getElementById('modal-precio');
+    const duracionSelect = document.getElementById('modal-duracion');
     const overlay = document.getElementById('modal-overlay');
 
-    if (!inputPaseador || !modalSub || !inputPrecio || !overlay) {
-        console.error('No se encontraron elementos del modal.');
+    if (!overlay) {
+        console.error('No se encontró #modal-overlay. Revisa que el modal exista en Directorio.cshtml.');
         return;
     }
 
-    inputPaseador.value = paseadorId;
-    modalSub.textContent = 'Con ' + nombre + ' · $' + tarifa + '/hora';
-    inputPrecio.value = tarifa;
+    if (inputPaseadorId) {
+        inputPaseadorId.value = paseadorId;
+    }
+
+    if (modalSub) {
+        modalSub.textContent = 'Con ' + nombre + ' · $' + tarifaActualPaseador.toFixed(2) + '/hora';
+    }
+
+    if (duracionSelect && !duracionSelect.value) {
+        duracionSelect.value = '30';
+    }
+
+    recalcularPrecioEstimado();
 
     overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
@@ -46,123 +59,55 @@ function cerrarModal() {
 }
 
 function cerrarModalFuera(e) {
-    if (e.target === document.getElementById('modal-overlay')) {
+    const overlay = document.getElementById('modal-overlay');
+
+    if (overlay && e.target === overlay) {
         cerrarModal();
     }
 }
 
-// ── Mapa de recolección ─────────────────────────
-function inicializarMapaRecogida() {
-    const mapaDiv = document.getElementById('mapa-recogida');
+function recalcularPrecioEstimado() {
+    const precioInput = document.getElementById('modal-precio');
+    const duracionSelect = document.getElementById('modal-duracion');
+    const ayudaPrecio = document.getElementById('modal-precio-help');
 
-    if (!mapaDiv) return;
+    if (!precioInput || !duracionSelect) return;
 
-    if (typeof L === 'undefined') {
-        console.warn('Leaflet no está cargado. Revisa los scripts en Directorio.cshtml.');
+    const duracion = Number(duracionSelect.value || 0);
+    const precio = tarifaActualPaseador * (duracion / 60);
+
+    if (duracion <= 0 || tarifaActualPaseador <= 0) {
+        precioInput.value = '$0.00';
+
+        if (ayudaPrecio) {
+            ayudaPrecio.textContent = 'Selecciona duración para calcular el precio.';
+        }
+
         return;
     }
 
-    if (!mapaRecogida) {
-        mapaRecogida = L.map('mapa-recogida').setView([ubicacionDefault.lat, ubicacionDefault.lng], 13);
+    precioInput.value = '$' + precio.toFixed(2);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(mapaRecogida);
+    if (ayudaPrecio) {
+        ayudaPrecio.textContent =
+            'Tarifa: $' + tarifaActualPaseador.toFixed(2) +
+            '/hora · Duración: ' + duracion +
+            ' min · Total: $' + precio.toFixed(2);
+    }
+}
 
-        mapaRecogida.on('click', function (e) {
-            establecerPuntoRecogida(e.latlng.lat, e.latlng.lng);
+// ── Botones que abren modal ─────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.js-abrir-modal').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const paseadorId = btn.dataset.paseadorId;
+            const nombre = btn.dataset.nombre || 'Paseador';
+            const tarifa = btn.dataset.tarifa || '0';
+
+            abrirModal(paseadorId, nombre, tarifa);
         });
-    }
-
-    setTimeout(function () {
-        mapaRecogida.invalidateSize();
-    }, 200);
-}
-
-function establecerPuntoRecogida(lat, lng) {
-    const latInput = document.getElementById('latitud-recogida');
-    const lngInput = document.getElementById('longitud-recogida');
-    const textoUbicacion = document.getElementById('texto-ubicacion-recogida');
-
-    lat = Number(lat);
-    lng = Number(lng);
-
-    if (isNaN(lat) || isNaN(lng)) {
-        console.error('Latitud o longitud no válida.');
-        return;
-    }
-
-    if (latInput) latInput.value = lat.toFixed(8);
-    if (lngInput) lngInput.value = lng.toFixed(8);
-
-    if (mapaRecogida) {
-        if (!marcadorRecogida) {
-            marcadorRecogida = L.marker([lat, lng], {
-                draggable: true
-            }).addTo(mapaRecogida);
-
-            marcadorRecogida.on('dragend', function () {
-                const pos = marcadorRecogida.getLatLng();
-                establecerPuntoRecogida(pos.lat, pos.lng);
-            });
-        } else {
-            marcadorRecogida.setLatLng([lat, lng]);
-        }
-
-        mapaRecogida.setView([lat, lng], 16);
-    }
-
-    if (textoUbicacion) {
-        textoUbicacion.textContent = 'Punto de recolección seleccionado. Puedes mover el marcador para ajustar la ubicación.';
-    }
-}
-
-function usarUbicacionActual() {
-    if (!navigator.geolocation) {
-        alert('Tu navegador no permite obtener la ubicación actual.');
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-        function (position) {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-
-            establecerPuntoRecogida(lat, lng);
-        },
-        function () {
-            alert('No se pudo obtener tu ubicación. Puedes marcar el punto manualmente en el mapa.');
-        },
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
-    );
-}
-
-function usarUbicacionPredeterminada(btn) {
-    const direccion = btn.dataset.direccion || '';
-    const referencias = btn.dataset.referencias || '';
-    const zona = btn.dataset.zona || '';
-    const lat = parseFloat(btn.dataset.lat);
-    const lng = parseFloat(btn.dataset.lng);
-
-    const direccionInput = document.getElementById('direccion-recogida');
-    const referenciasInput = document.getElementById('referencias-recogida');
-    const zonaInput = document.getElementById('zona-recogida');
-
-    if (direccionInput) direccionInput.value = direccion;
-    if (referenciasInput) referenciasInput.value = referencias;
-    if (zonaInput) zonaInput.value = zona;
-
-    if (!isNaN(lat) && !isNaN(lng)) {
-        establecerPuntoRecogida(lat, lng);
-    } else {
-        alert('Tu ubicación predeterminada no tiene coordenadas válidas.');
-    }
-}
+    });
+});
 
 // ── Tipo de paseo: mostrar/ocultar fecha ────────
 document.addEventListener('DOMContentLoaded', function () {
@@ -191,39 +136,190 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// ── Validar formulario de solicitud de paseo ─────
+// ── Precio estimado por duración ─────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    const duracionSelect = document.getElementById('modal-duracion');
+
+    if (duracionSelect) {
+        duracionSelect.addEventListener('change', recalcularPrecioEstimado);
+    }
+});
+
+// ── Selección de perros ──────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    const checks = document.querySelectorAll('.perro-check');
+    const resumen = document.getElementById('perros-seleccionados');
+
+    if (!checks.length || !resumen) return;
+
+    function actualizarPerrosSeleccionados() {
+        const seleccionados = Array.from(document.querySelectorAll('.perro-check:checked'));
+
+        const nombres = seleccionados.map(function (chk) {
+            const card = chk.closest('.perro-option');
+            const nombre = card ? card.querySelector('.perro-option-name') : null;
+            return nombre ? nombre.textContent.trim() : '';
+        }).filter(Boolean);
+
+        if (!nombres.length) {
+            resumen.textContent = 'Ningún perro seleccionado.';
+        } else if (nombres.length === 1) {
+            resumen.textContent = 'Seleccionado: ' + nombres[0];
+        } else {
+            resumen.textContent = 'Seleccionados: ' + nombres.join(', ');
+        }
+    }
+
+    checks.forEach(function (chk) {
+        chk.addEventListener('change', actualizarPerrosSeleccionados);
+    });
+
+    actualizarPerrosSeleccionados();
+});
+
+// ── Validación del formulario de solicitud ───────
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('modal-form');
 
     if (!form) return;
 
     form.addEventListener('submit', function (e) {
-        const direccion = document.getElementById('direccion-recogida');
-        const zona = document.getElementById('zona-recogida');
-        const latitud = document.getElementById('latitud-recogida');
-        const longitud = document.getElementById('longitud-recogida');
+        const perrosSeleccionados = document.querySelectorAll('.perro-check:checked');
+        const lat = document.getElementById('latitud-recogida');
+        const lng = document.getElementById('longitud-recogida');
+        const duracion = document.getElementById('modal-duracion');
 
-        if (direccion && direccion.value.trim() === '') {
+        if (!perrosSeleccionados.length) {
             e.preventDefault();
-            alert('Escribe la dirección de recolección.');
-            direccion.focus();
+            alert('Selecciona al menos un perro para el paseo.');
             return;
         }
 
-        if (zona && zona.value.trim() === '') {
+        if (!duracion || !duracion.value) {
             e.preventDefault();
-            alert('Selecciona la zona de recolección.');
-            zona.focus();
+            alert('Selecciona la duración del paseo.');
             return;
         }
 
-        if (latitud && longitud && (latitud.value.trim() === '' || longitud.value.trim() === '')) {
+        if (!lat || !lng || !lat.value || !lng.value) {
             e.preventDefault();
-            alert('Marca el punto de recolección en el mapa, usa tu ubicación actual o usa tu ubicación predeterminada.');
+            alert('Marca el punto de recolección en el mapa.');
             return;
         }
     });
 });
+
+// ── Mapa de recolección ──────────────────────────
+function inicializarMapaRecogida() {
+    const mapDiv = document.getElementById('mapa-recogida');
+
+    if (!mapDiv) return;
+
+    if (typeof L === 'undefined') {
+        console.error('Leaflet no está cargado. Revisa el script de Leaflet en Directorio.cshtml.');
+        return;
+    }
+
+    if (!mapaRecogida) {
+        mapaRecogida = L.map('mapa-recogida').setView([centroDefault.lat, centroDefault.lng], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(mapaRecogida);
+
+        mapaRecogida.on('click', function (e) {
+            colocarPuntoRecogida(e.latlng.lat, e.latlng.lng, true);
+        });
+    }
+
+    setTimeout(function () {
+        mapaRecogida.invalidateSize();
+    }, 200);
+}
+
+function colocarPuntoRecogida(lat, lng, centrarMapa) {
+    const latInput = document.getElementById('latitud-recogida');
+    const lngInput = document.getElementById('longitud-recogida');
+    const texto = document.getElementById('texto-ubicacion-recogida');
+
+    lat = Number(lat);
+    lng = Number(lng);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    if (latInput) latInput.value = lat.toFixed(7);
+    if (lngInput) lngInput.value = lng.toFixed(7);
+
+    if (mapaRecogida) {
+        if (!marcadorRecogida) {
+            marcadorRecogida = L.marker([lat, lng], { draggable: true }).addTo(mapaRecogida);
+
+            marcadorRecogida.on('dragend', function () {
+                const pos = marcadorRecogida.getLatLng();
+                colocarPuntoRecogida(pos.lat, pos.lng, false);
+            });
+        } else {
+            marcadorRecogida.setLatLng([lat, lng]);
+        }
+
+        if (centrarMapa) {
+            mapaRecogida.setView([lat, lng], 16);
+        }
+    }
+
+    if (texto) {
+        texto.textContent = 'Punto de recolección marcado correctamente.';
+    }
+}
+
+function usarUbicacionActual() {
+    inicializarMapaRecogida();
+
+    if (!navigator.geolocation) {
+        alert('Tu navegador no permite obtener la ubicación actual.');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        function (pos) {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+
+            colocarPuntoRecogida(lat, lng, true);
+        },
+        function () {
+            alert('No se pudo obtener tu ubicación. Puedes marcar el punto manualmente en el mapa.');
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
+
+function usarUbicacionPredeterminada(btn) {
+    if (!btn) return;
+
+    inicializarMapaRecogida();
+
+    const direccion = btn.dataset.direccion || '';
+    const referencias = btn.dataset.referencias || '';
+    const zona = btn.dataset.zona || '';
+    const lat = btn.dataset.lat;
+    const lng = btn.dataset.lng;
+
+    const direccionInput = document.getElementById('direccion-recogida');
+    const referenciasInput = document.getElementById('referencias-recogida');
+    const zonaSelect = document.getElementById('zona-recogida');
+
+    if (direccionInput) direccionInput.value = direccion;
+    if (referenciasInput) referenciasInput.value = referencias;
+    if (zonaSelect) zonaSelect.value = zona;
+
+    colocarPuntoRecogida(lat, lng, true);
+}
 
 // ── Zonas de servicio: sincronizar hidden input ──
 function actualizarZonas() {
@@ -258,7 +354,8 @@ function previewFotoPaseador(input) {
                 if (ph) {
                     ph.replaceWith(img);
                 } else {
-                    document.querySelector('.form-section').prepend(img);
+                    const formSection = document.querySelector('.form-section');
+                    if (formSection) formSection.prepend(img);
                 }
             }
 
@@ -268,3 +365,11 @@ function previewFotoPaseador(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
+
+// ── Exponer funciones globales para botones inline ─
+window.abrirModal = abrirModal;
+window.cerrarModal = cerrarModal;
+window.cerrarModalFuera = cerrarModalFuera;
+window.usarUbicacionActual = usarUbicacionActual;
+window.usarUbicacionPredeterminada = usarUbicacionPredeterminada;
+window.previewFotoPaseador = previewFotoPaseador;

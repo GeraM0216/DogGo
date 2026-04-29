@@ -43,6 +43,13 @@
                             <a class="nav-link" asp-controller="Paseo" asp-action="MisPaseos">Mis paseos</a>
                         </li>
 
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="Index">Admin</a>
+                            </li>
+                        }
+
                         @if (User.IsInRole("Paseador"))
                         {
                             <li class="nav-item">

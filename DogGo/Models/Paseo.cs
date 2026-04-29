@@ -20,10 +20,13 @@
 
         public int DuracionMinutos { get; set; }
 
+        // Duración real final del paseo. Se calcula al finalizar.
+        public int? DuracionRealMinutos { get; set; }
+
         public bool EsProgramado { get; set; } = false;
         public DateTime? FechaProgramada { get; set; }
 
-        // Ubicación de recoleccion del perro para 1 paseo
+        // Ubicación de recolección del perro para 1 paseo
         public string? DireccionRecogida { get; set; }
         public string? ReferenciasRecogida { get; set; }
         public string? ZonaRecogida { get; set; }
@@ -38,6 +41,13 @@
         public string? FotoInicioUrl { get; set; }
         public string? FotoFinUrl { get; set; }
 
+        // Finalización anticipada
+        public bool FinalizacionAnticipadaSolicitada { get; set; } = false;
+        public string? MotivoFinalizacionAnticipada { get; set; }
+        public DateTime? FechaSolicitudFinalizacionAnticipada { get; set; }
+        public bool? FinalizacionAnticipadaAprobada { get; set; }
+        public DateTime? FechaRespuestaFinalizacionAnticipada { get; set; }
+
         // Navegación actual
         public Paseador Paseador { get; set; } = null!;
         public Perro Perro { get; set; } = null!;
@@ -47,7 +57,5 @@
 
         // Nueva relación para múltiples perros
         public ICollection<PaseoPerro> PaseoPerros { get; set; } = new List<PaseoPerro>();
-
-
     }
 }

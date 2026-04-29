@@ -107,7 +107,6 @@
             @foreach (var p in Model)
             {
                 var nombrePaseador = $"{p.Usuario.Nombre} {p.Usuario.Apellido}";
-                var nombrePaseadorJs = nombrePaseador.Replace("\\", "\\\\").Replace("'", "\\'");
                 var tarifaJs = p.TarifaPorHora.ToString(CultureInfo.InvariantCulture);
 
                 <div class="paseador-card">
@@ -127,7 +126,7 @@
 
                         <div class="pc-info">
                             <div class="pc-name">@p.Usuario.Nombre @p.Usuario.Apellido</div>
-                            <div class="pc-tarifa">$@p.TarifaPorHora / hora</div>
+                            <div class="pc-tarifa">$@p.TarifaPorHora.ToString("0.00") / hora</div>
                         </div>
 
                         <div class="pc-stars-wrap">
@@ -142,7 +141,7 @@
                     </div>
 
                     <!-- Descripción -->
-                    @if (!string.IsNullOrEmpty(p.Descripcion))
+                    @if (!string.IsNullOrWhiteSpace(p.Descripcion))
                     {
                         <p class="pc-desc">@p.Descripcion</p>
                     }
@@ -180,8 +179,10 @@
                             if (perros != null && perros.Any())
                             {
                                 <button type="button"
-                                        class="btn-solicitar"
-                                        onclick="abrirModal(@p.Id, '@nombrePaseadorJs', '@tarifaJs')"
+                                        class="btn-solicitar js-abrir-modal"
+                                        data-paseador-id="@p.Id"
+                                        data-nombre="@nombrePaseador"
+                                        data-tarifa="@tarifaJs"
                                     @(p.Disponible ? "" : "disabled")>
                                     Solicitar paseo
                                 </button>
@@ -267,19 +268,21 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-lbl">Precio ($)</label>
-                        <input type="number"
-                               name="precio"
+                        <label class="form-lbl">Precio estimado</label>
+                        <input type="text"
                                id="modal-precio"
                                class="form-ctrl"
-                               step="0.01"
-                               min="0"
-                               required />
+                               value="$0.00"
+                               readonly />
+
+                        <div class="form-help" id="modal-precio-help">
+                            Se calcula automáticamente con la tarifa del paseador y la duración del paseo.
+                        </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-lbl">Duración del paseo</label>
-                        <select name="duracionMinutos" class="form-ctrl form-sel" required>
+                        <select name="duracionMinutos" id="modal-duracion" class="form-ctrl form-sel" required>
                             <option value="">Selecciona duración</option>
                             <option value="30">30 minutos</option>
                             <option value="60">60 minutos</option>
@@ -410,5 +413,5 @@
 
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="@Url.Content("~/js/paseador.js")"></script>
+    <script src="~/js/paseador.js" asp-append-version="true"></script>
 }

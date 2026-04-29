@@ -40,7 +40,9 @@ namespace DogGo.Controllers
             if (paseo == null || paseo.Perro == null || paseo.Paseador == null)
                 return NotFound();
 
-            var esDuenio = paseo.Perro.DueñoId == usuarioId;
+            var esDuenio = paseo.Perro.DueñoId == usuarioId ||
+                           paseo.PaseoPerros.Any(pp => pp.Perro != null && pp.Perro.DueñoId == usuarioId);
+
             var esPaseador = paseo.Paseador.UsuarioId == usuarioId;
 
             if (!esDuenio && !esPaseador)
@@ -53,7 +55,6 @@ namespace DogGo.Controllers
             return View(paseo);
         }
 
-        // GET: /Paseo/MisPaseos
         // GET: /Paseo/MisPaseos
         public async Task<IActionResult> MisPaseos(
             string? estado,
@@ -142,7 +143,6 @@ namespace DogGo.Controllers
         public async Task<IActionResult> Crear(
             int paseadorId,
             List<int> perroIds,
-            decimal precio,
             int duracionMinutos,
             bool esProgramado,
             DateTime? fechaProgramada,
@@ -181,12 +181,6 @@ namespace DogGo.Controllers
             if (paseador == null)
                 return NotFound();
 
-            if (precio <= 0)
-            {
-                TempData["Error"] = "El precio del paseo no es válido.";
-                return RedirectToAction("Directorio", "Paseador");
-            }
-
             if (duracionMinutos < 15 || duracionMinutos > 180)
             {
                 TempData["Error"] = "La duración del paseo debe estar entre 15 y 180 minutos.";
@@ -199,13 +193,13 @@ namespace DogGo.Controllers
 
             if (direccionRecogida == null)
             {
-                TempData["Error"] = "Debes escribir la dirección de recogida.";
+                TempData["Error"] = "Debes escribir la dirección de recolección.";
                 return RedirectToAction("Directorio", "Paseador");
             }
 
             if (zonaRecogida == null)
             {
-                TempData["Error"] = "Debes seleccionar la zona de recogida.";
+                TempData["Error"] = "Debes seleccionar la zona de recolección.";
                 return RedirectToAction("Directorio", "Paseador");
             }
 
@@ -226,14 +220,14 @@ namespace DogGo.Controllers
 
             if (!latitudValida || !longitudValida)
             {
-                TempData["Error"] = "Debes marcar el punto de recogida en el mapa.";
+                TempData["Error"] = "Debes marcar el punto de recolección en el mapa.";
                 return RedirectToAction("Directorio", "Paseador");
             }
 
             if (latitudRecogidaDecimal < -90 || latitudRecogidaDecimal > 90 ||
                 longitudRecogidaDecimal < -180 || longitudRecogidaDecimal > 180)
             {
-                TempData["Error"] = "La ubicación de recogida no es válida.";
+                TempData["Error"] = "La ubicación de recolección no es válida.";
                 return RedirectToAction("Directorio", "Paseador");
             }
 
@@ -245,6 +239,14 @@ namespace DogGo.Controllers
                 paseador.TarifaPorHora <= 0)
             {
                 TempData["Error"] = "El paseador aún no tiene su perfil completo.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
+
+            var precioCalculado = CalcularPrecioPaseo(paseador.TarifaPorHora, duracionMinutos);
+
+            if (precioCalculado <= 0)
+            {
+                TempData["Error"] = "No se pudo calcular el precio del paseo.";
                 return RedirectToAction("Directorio", "Paseador");
             }
 
@@ -331,7 +333,7 @@ namespace DogGo.Controllers
                 FechaInicio = null,
                 FechaFin = null,
                 Estado = "Pendiente",
-                Precio = precio,
+                Precio = precioCalculado,
                 DuracionMinutos = duracionMinutos,
                 EsProgramado = esProgramado,
                 FechaProgramada = esProgramado ? fechaProgramada!.Value.ToUniversalTime() : null,
@@ -361,8 +363,8 @@ namespace DogGo.Controllers
             await _context.SaveChangesAsync();
 
             TempData["Exito"] = esProgramado
-                ? "Paseo programado correctamente."
-                : "Paseo solicitado correctamente.";
+                ? $"Paseo programado correctamente. Precio calculado: ${precioCalculado:0.00}."
+                : $"Paseo solicitado correctamente. Precio calculado: ${precioCalculado:0.00}.";
 
             return RedirectToAction("Mapa", new { id = paseo.Id });
         }
@@ -516,6 +518,8 @@ namespace DogGo.Controllers
             var paseo = await _context.Paseos
                 .Include(p => p.Perro)
                 .Include(p => p.Paseador)
+                .Include(p => p.PaseoPerros)
+                    .ThenInclude(pp => pp.Perro)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (paseo == null)
@@ -524,7 +528,9 @@ namespace DogGo.Controllers
             if (paseo.Perro == null || paseo.Paseador == null)
                 return NotFound();
 
-            var esDuenio = paseo.Perro.DueñoId == usuarioId;
+            var esDuenio = paseo.Perro.DueñoId == usuarioId ||
+                           paseo.PaseoPerros.Any(pp => pp.Perro != null && pp.Perro.DueñoId == usuarioId);
+
             var esPaseador = paseo.Paseador.UsuarioId == usuarioId;
 
             if (!esDuenio && !esPaseador)
@@ -577,6 +583,15 @@ namespace DogGo.Controllers
 
             TempData["Error"] = "Debes completar tu perfil antes de continuar.";
             return RedirectToAction("Editar", "Paseador");
+        }
+
+        private static decimal CalcularPrecioPaseo(decimal tarifaPorHora, int duracionMinutos)
+        {
+            return Math.Round(
+                tarifaPorHora * (duracionMinutos / 60m),
+                2,
+                MidpointRounding.AwayFromZero
+            );
         }
     }
 }

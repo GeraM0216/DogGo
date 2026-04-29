@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "Mapa del paseo";
     var esPaseador = (bool)ViewBag.EsPaseador;
+    var esDuenio = !esPaseador;
 
     var tienePuntoRecoleccion = Model.LatitudRecogida.HasValue && Model.LongitudRecogida.HasValue;
 
@@ -46,6 +47,25 @@
     var etiquetaPerros = variosPerros ? "Perros" : "Perro";
     var textoFotoInicio = variosPerros ? "Sube una foto de los perros para poder comenzar el paseo." : "Sube una foto del perro para poder comenzar el paseo.";
     var textoFotoFin = variosPerros ? "Antes de finalizar el paseo, sube una foto final de los perros como comprobante." : "Antes de finalizar el paseo, sube una foto final como comprobante.";
+
+    var haySolicitudFinalizacionAnticipada =
+        Model.Estado == "EnCurso" &&
+        Model.FinalizacionAnticipadaSolicitada &&
+        Model.FinalizacionAnticipadaAprobada == null;
+
+    var duracionActualMinutos = 0;
+
+    if (Model.Estado == "EnCurso" && Model.FechaInicio != null)
+    {
+        duracionActualMinutos = Math.Max(1, (int)Math.Ceiling((DateTime.UtcNow - Model.FechaInicio.Value).TotalMinutes));
+    }
+
+    var minutosCobradosEstimados = Math.Min(duracionActualMinutos, Model.DuracionMinutos);
+    minutosCobradosEstimados = Math.Max(minutosCobradosEstimados, 15);
+
+    var precioEstimadoAnticipado = Model.Paseador != null
+        ? Math.Round(Model.Paseador.TarifaPorHora * (minutosCobradosEstimados / 60m), 2, MidpointRounding.AwayFromZero)
+        : 0m;
 }
 
 <div class="mapa-container">
@@ -55,7 +75,8 @@
             Paseo de: @nombresPerros —
             <span id="estadoBadge" class="badge
                 @(Model.Estado == "EnCurso" ? "bg-success" :
-                                                                                        Model.Estado == "Finalizado" ? "bg-secondary" : "bg-warning text-dark")">
+                                                     Model.Estado == "Finalizado" ? "bg-secondary" :
+                                                     Model.Estado == "Cancelado" ? "bg-danger" : "bg-warning text-dark")">
                 @Model.Estado
             </span>
 
@@ -68,12 +89,18 @@
             {
                 <span class="badge bg-info text-dark ms-2">Programado</span>
             }
+
+            @if (haySolicitudFinalizacionAnticipada)
+            {
+                <span class="badge bg-danger ms-2">Finalización anticipada solicitada</span>
+            }
         </h5>
 
         <div class="mapa-info">
             <span>🐶 @etiquetaPerros: @nombresPerros</span>
-            <span>👤 @Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</span>
+            <span>👤 Paseador: @Model.Paseador.Usuario.Nombre @Model.Paseador.Usuario.Apellido</span>
             <span>⏱ Duración solicitada: @Model.DuracionMinutos min</span>
+            <span>💰 Precio actual: $@Model.Precio.ToString("0.00")</span>
 
             @if (Model.FechaInicio != null)
             {
@@ -95,7 +122,11 @@
                 <span>⏹ Fin real: @Model.FechaFin?.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
             }
 
-            @if (Model.FechaInicio != null && Model.FechaFin != null)
+            @if (Model.DuracionRealMinutos.HasValue)
+            {
+                <span>✅ Duración real: @Model.DuracionRealMinutos min</span>
+            }
+            else if (Model.FechaInicio != null && Model.FechaFin != null)
             {
                 var duracionReal = Model.FechaFin.Value - Model.FechaInicio.Value;
                 <span>✅ Duración real: @((int)duracionReal.TotalMinutes) min</span>
@@ -110,6 +141,57 @@
             </div>
         }
     </div>
+
+    @if (haySolicitudFinalizacionAnticipada)
+    {
+        <div class="alert alert-warning border-warning shadow-sm">
+            <h6 class="fw-bold mb-2">Solicitud de finalización anticipada</h6>
+
+            <p class="mb-1">
+                El paseador solicitó terminar el paseo antes de cumplir la duración acordada.
+            </p>
+
+            <p class="mb-1">
+                <strong>Motivo:</strong>
+                @(string.IsNullOrWhiteSpace(Model.MotivoFinalizacionAnticipada) ? "Sin motivo registrado." : Model.MotivoFinalizacionAnticipada)
+            </p>
+
+            <p class="mb-1">
+                <strong>Duración solicitada:</strong> @Model.DuracionMinutos min
+            </p>
+
+            <p class="mb-1">
+                <strong>Tiempo realizado aprox.:</strong> @duracionActualMinutos min
+            </p>
+
+            <p class="mb-3">
+                <strong>Nuevo precio estimado:</strong> $@precioEstimadoAnticipado.ToString("0.00")
+            </p>
+
+            @if (esDuenio)
+            {
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button"
+                            class="btn btn-success"
+                            onclick="responderFinalizacionAnticipada(true)">
+                        Aceptar finalización
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-outline-danger"
+                            onclick="responderFinalizacionAnticipada(false)">
+                        Rechazar
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info py-2 mb-0">
+                    Esperando respuesta del dueño.
+                </div>
+            }
+        </div>
+    }
 
     <div class="recoleccion-box">
         <div class="recoleccion-header">
@@ -293,17 +375,33 @@
                     @if (!string.IsNullOrWhiteSpace(Model.FotoFinUrl))
                     {
                         <div class="alert alert-success py-2 mb-0">
-                            Ya subiste la foto final. Ya puedes terminar el paseo.
+                            Ya subiste la foto final. Puedes intentar terminar el paseo.
+                            Si todavía no se cumple el tiempo acordado, se pedirá motivo y aprobación del dueño.
                         </div>
                     }
                 </div>
 
-                <button id="btnFinalizar"
-                        class="btn btn-danger w-100"
-                        onclick="cambiarEstado('Finalizado')"
-                        disabled="@(string.IsNullOrWhiteSpace(Model.FotoFinUrl) ? "disabled" : null)">
-                    ⏹ Finalizar paseo
-                </button>
+                @if (haySolicitudFinalizacionAnticipada)
+                {
+                    <button id="btnFinalizar"
+                            class="btn btn-danger w-100"
+                            disabled>
+                        ⏹ Solicitud enviada al dueño
+                    </button>
+
+                    <small class="text-muted d-block mt-2">
+                        No puedes enviar otra solicitud mientras el dueño no responda.
+                    </small>
+                }
+                else
+                {
+                    <button id="btnFinalizar"
+                            class="btn btn-danger w-100"
+                            onclick="cambiarEstado('Finalizado')"
+                            disabled="@(string.IsNullOrWhiteSpace(Model.FotoFinUrl) ? "disabled" : null)">
+                        ⏹ Finalizar paseo
+                    </button>
+                }
 
                 @if (string.IsNullOrWhiteSpace(Model.FotoFinUrl))
                 {
@@ -337,6 +435,53 @@
 
 </div>
 
+<div id="modalFinalizacionAnticipada" class="doggo-modal-backdrop" style="display:none;">
+    <div class="doggo-modal-card">
+        <div class="doggo-modal-header">
+            <div>
+                <h5 class="mb-1">Finalización anticipada</h5>
+                <p class="text-muted small mb-0">
+                    El paseo aún no cumple la duración solicitada.
+                </p>
+            </div>
+
+            <button type="button" class="doggo-modal-close" onclick="cerrarModalFinalizacionAnticipada()">✕</button>
+        </div>
+
+        <div class="alert alert-warning py-2">
+            <div><strong>Duración solicitada:</strong> <span id="modalDuracionSolicitada">0</span> min</div>
+            <div><strong>Tiempo realizado:</strong> <span id="modalMinutosReales">0</span> min</div>
+            <div><strong>Nuevo precio estimado:</strong> $<span id="modalPrecioEstimado">0.00</span></div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Motivo de finalización anticipada</label>
+            <textarea id="motivoFinalizacionAnticipada"
+                      class="form-control"
+                      rows="4"
+                      maxlength="500"
+                      placeholder="Ej. El perro se cansó, comenzó a llover, el dueño solicitó terminar antes, emergencia, etc."></textarea>
+            <small class="text-muted">
+                Este motivo se enviará al dueño para que acepte o rechace la finalización.
+            </small>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="button"
+                    class="btn btn-outline-secondary w-100"
+                    onclick="cerrarModalFinalizacionAnticipada()">
+                Cancelar
+            </button>
+
+            <button type="button"
+                    class="btn btn-danger w-100"
+                    onclick="enviarSolicitudFinalizacionAnticipada()">
+                Enviar solicitud al dueño
+            </button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -345,6 +490,7 @@
     <script>
         const paseoId = @Model.Id;
         const esPaseador = @(esPaseador ? "true" : "false");
+        const esDuenio = @(esDuenio ? "true" : "false");
         const tieneFotoInicio = @(!string.IsNullOrWhiteSpace(Model.FotoInicioUrl) ? "true" : "false");
         const tieneFotoFin = @(!string.IsNullOrWhiteSpace(Model.FotoFinUrl) ? "true" : "false");
         const latInicial = @lat.ToString(CultureInfo.InvariantCulture);
@@ -472,11 +618,44 @@
         }
         });
 
+        connection.on("AccionPaseoRechazada", (mensaje) => {
+        alert(mensaje || "No se pudo realizar la acción.");
+        });
+
+        connection.on("FinalizacionAnticipadaRequerida", (minutosReales, duracionSolicitada, precioEstimado) => {
+        mostrarModalFinalizacionAnticipada(minutosReales, duracionSolicitada, precioEstimado);
+        });
+
+        connection.on("SolicitudFinalizacionAnticipada", (minutosReales, duracionSolicitada, precioEstimado, motivo) => {
+        if (esPaseador) {
+        alert("Solicitud enviada al dueño. Debes esperar su respuesta.");
+        } else {
+        alert("El paseador solicitó finalizar antes de tiempo. Revisa la solicitud.");
+        }
+
+        setTimeout(() => {
+        location.reload();
+        }, 700);
+        });
+
+        connection.on("FinalizacionAnticipadaRespondida", (aprobada) => {
+        if (aprobada) {
+        alert("El dueño aceptó la finalización anticipada.");
+        } else {
+        alert("El dueño rechazó la finalización anticipada. El paseo debe continuar.");
+        }
+
+        setTimeout(() => {
+        location.reload();
+        }, 700);
+        });
+
         connection.on("EstadoCambiado", (estado) => {
         const badge = document.getElementById("estadoBadge");
-        badge.textContent = estado;
 
-        badge.classList.remove("bg-warning", "text-dark", "bg-success", "bg-secondary");
+        if (badge) {
+        badge.textContent = estado;
+        badge.classList.remove("bg-warning", "text-dark", "bg-success", "bg-secondary", "bg-danger");
 
         if (estado === "Pendiente") {
         badge.classList.add("bg-warning", "text-dark");
@@ -484,6 +663,9 @@
         badge.classList.add("bg-success");
         } else if (estado === "Finalizado") {
         badge.classList.add("bg-secondary");
+        } else if (estado === "Cancelado") {
+        badge.classList.add("bg-danger");
+        }
         }
 
         if (estado === "EnCurso" && esPaseador) {
@@ -556,6 +738,7 @@
 
         function mostrarPanelFotoInicio() {
         const panel = document.getElementById("panelFotoInicio");
+
         if (panel) {
         panel.style.display = "block";
         panel.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -647,6 +830,67 @@
         .catch(err => console.error("Error al cambiar estado:", err));
         }
 
+        function mostrarModalFinalizacionAnticipada(minutosReales, duracionSolicitada, precioEstimado) {
+        const modal = document.getElementById("modalFinalizacionAnticipada");
+        const minutosSpan = document.getElementById("modalMinutosReales");
+        const duracionSpan = document.getElementById("modalDuracionSolicitada");
+        const precioSpan = document.getElementById("modalPrecioEstimado");
+        const motivo = document.getElementById("motivoFinalizacionAnticipada");
+
+        if (minutosSpan) minutosSpan.textContent = minutosReales;
+        if (duracionSpan) duracionSpan.textContent = duracionSolicitada;
+        if (precioSpan) precioSpan.textContent = Number(precioEstimado || 0).toFixed(2);
+        if (motivo) motivo.value = "";
+
+        if (modal) {
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+        }
+        }
+
+        function cerrarModalFinalizacionAnticipada() {
+        const modal = document.getElementById("modalFinalizacionAnticipada");
+
+        if (modal) {
+        modal.style.display = "none";
+        document.body.style.overflow = "";
+        }
+        }
+
+        function enviarSolicitudFinalizacionAnticipada() {
+        const motivo = document.getElementById("motivoFinalizacionAnticipada")?.value?.trim() || "";
+
+        if (motivo.length < 5) {
+        alert("Escribe un motivo válido para solicitar la finalización anticipada.");
+        return;
+        }
+
+        connection.invoke("SolicitarFinalizacionAnticipada", paseoId, motivo)
+        .then(() => {
+        cerrarModalFinalizacionAnticipada();
+        })
+        .catch(err => {
+        console.error("Error al solicitar finalización anticipada:", err);
+        alert("No se pudo enviar la solicitud.");
+        });
+        }
+
+        function responderFinalizacionAnticipada(aprobar) {
+        const texto = aprobar
+        ? "¿Aceptar la finalización anticipada del paseo?"
+        : "¿Rechazar la finalización anticipada y continuar el paseo?";
+
+        if (!confirm(texto)) {
+        return;
+        }
+
+        connection.invoke("ResponderFinalizacionAnticipada", paseoId, aprobar)
+        .catch(err => {
+        console.error("Error al responder finalización anticipada:", err);
+        alert("No se pudo enviar la respuesta.");
+        });
+        }
+
         @if (Model.Estado == "EnCurso" && esPaseador)
         {
             <text>iniciarGPS();</text>
@@ -656,4 +900,48 @@
 
 @section Styles {
     <link rel="stylesheet" href="@Url.Content("~/css/mapa.css")" />
+
+    <style>
+        .doggo-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: rgba(0, 0, 0, .45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        }
+
+        .doggo-modal-card {
+        width: min(520px, 100%);
+        background: #fff;
+        border-radius: 22px;
+        padding: 1.25rem;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .25);
+        }
+
+        .doggo-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        }
+
+        .doggo-modal-close {
+        border: none;
+        background: #f3f4f6;
+        color: #111827;
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        font-weight: 900;
+        cursor: pointer;
+        }
+
+        .doggo-modal-close:hover {
+        background: #e5e7eb;
+        }
+    </style>
 }
