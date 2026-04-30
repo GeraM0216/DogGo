@@ -106,6 +106,28 @@ namespace DogGo.Controllers.Api
             });
         }
 
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto dto)
+        {
+            var result = await _authService.SolicitarRecuperacionAsync(dto);
+
+            if (!result.Success)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message
+            });
+        }
+
         [HttpGet("perfil")]
         [Authorize(AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> Perfil()
@@ -136,6 +158,40 @@ namespace DogGo.Controllers.Api
             {
                 success = true,
                 data = perfil
+            });
+        }
+
+        [HttpPut("perfil")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> ActualizarPerfil([FromBody] UpdatePerfilRequestDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out int usuarioId))
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Token inválido."
+                });
+            }
+
+            var result = await _authService.ActualizarPerfilAsync(usuarioId, dto);
+
+            if (!result.Success || result.Data == null)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message,
+                data = result.Data
             });
         }
     }

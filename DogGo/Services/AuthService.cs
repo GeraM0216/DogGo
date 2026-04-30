@@ -2,7 +2,6 @@
 using DogGo.DTOs.Auth;
 using DogGo.Models;
 using Microsoft.EntityFrameworkCore;
-using Org.BouncyCastle.Crypto.Generators;
 
 namespace DogGo.Services
 {
@@ -66,7 +65,16 @@ namespace DogGo.Services
                 return (false, "Correo o contraseña incorrectos.", null);
             }
 
-            var passwordValido = BCrypt.Net.BCrypt.Verify(dto.Password, usuario.PasswordHash);
+            bool passwordValido;
+
+            try
+            {
+                passwordValido = BCrypt.Net.BCrypt.Verify(dto.Password, usuario.PasswordHash);
+            }
+            catch
+            {
+                return (false, "La contraseña almacenada de este usuario no tiene un formato válido. Crea de nuevo el usuario o actualiza su contraseña.", null);
+            }
 
             if (!passwordValido)
             {
@@ -157,6 +165,28 @@ namespace DogGo.Services
             return (true, "Se envió un nuevo código de confirmación.");
         }
 
+        public async Task<(bool Success, string Message)> SolicitarRecuperacionAsync(ForgotPasswordRequestDto dto)
+        {
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+
+            if (usuario == null)
+            {
+                return (false, "No se encontró un usuario con ese correo.");
+            }
+
+            var codigo = GenerarCodigoConfirmacion();
+
+            usuario.CodigoRecuperacion = codigo;
+            usuario.CodigoRecuperacionExpiraEn = DateTime.UtcNow.AddMinutes(10);
+
+            await _context.SaveChangesAsync();
+
+            await EnviarCodigoRecuperacionAsync(usuario.Email, usuario.Nombre, codigo);
+
+            return (true, "Se enviaron instrucciones de recuperación a tu correo.");
+        }
+
         public async Task<PerfilResponseDto?> ObtenerPerfilAsync(int usuarioId)
         {
             var usuario = await _context.Usuarios
@@ -178,6 +208,37 @@ namespace DogGo.Services
             };
         }
 
+        public async Task<(bool Success, string Message, PerfilResponseDto? Data)> ActualizarPerfilAsync(
+            int usuarioId,
+            UpdatePerfilRequestDto dto)
+        {
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == usuarioId);
+
+            if (usuario == null)
+            {
+                return (false, "Usuario no encontrado.", null);
+            }
+
+            usuario.Nombre = dto.Nombre.Trim();
+            usuario.Apellido = dto.Apellido.Trim();
+            usuario.Telefono = dto.Telefono?.Trim() ?? string.Empty;
+
+            await _context.SaveChangesAsync();
+
+            var perfil = new PerfilResponseDto
+            {
+                UsuarioId = usuario.Id,
+                Nombre = usuario.Nombre,
+                Apellido = usuario.Apellido,
+                Email = usuario.Email,
+                Telefono = usuario.Telefono,
+                Rol = usuario.Rol
+            };
+
+            return (true, "Perfil actualizado correctamente.", perfil);
+        }
+
         private static string GenerarCodigoConfirmacion()
         {
             var random = new Random();
@@ -190,6 +251,18 @@ namespace DogGo.Services
             var cuerpo = $@"
                 <h2>Hola {nombre}</h2>
                 <p>Tu código de confirmación es:</p>
+                <h1 style='letter-spacing: 4px;'>{codigo}</h1>
+                <p>Este código expira en 10 minutos.</p>";
+
+            await _emailService.EnviarCorreoAsync(email, asunto, cuerpo);
+        }
+
+        private async Task EnviarCodigoRecuperacionAsync(string email, string nombre, string codigo)
+        {
+            var asunto = "Recupera tu contraseña en DogGo";
+            var cuerpo = $@"
+                <h2>Hola {nombre}</h2>
+                <p>Tu código de recuperación es:</p>
                 <h1 style='letter-spacing: 4px;'>{codigo}</h1>
                 <p>Este código expira en 10 minutos.</p>";
 

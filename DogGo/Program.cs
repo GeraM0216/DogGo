@@ -84,6 +84,7 @@ app.MapHub<DogGo.Hubs.ChatHub>("/chatHub");
 app.MapHub<DogGo.Hubs.PaseoHub>("/paseoHub");
 
 app.MapStaticAssets();
+app.MapControllers();
 
 app.MapControllerRoute(
     name: "default",
