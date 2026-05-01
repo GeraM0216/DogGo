@@ -23,23 +23,40 @@ namespace DogGo.Services
 
         public async Task<(bool Success, string Message)> RegistrarAsync(RegistrarRequestDto dto)
         {
+            if (dto == null)
+            {
+                return (false, "Datos de registro inválidos.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Nombre) ||
+                string.IsNullOrWhiteSpace(dto.Apellido) ||
+                string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.Password) ||
+                string.IsNullOrWhiteSpace(dto.Rol))
+            {
+                return (false, "Debes completar nombre, apellido, correo, contraseña y rol.");
+            }
+
+            var emailNormalizado = dto.Email.Trim().ToLower();
+
             var existeUsuario = await _context.Usuarios
-                .AnyAsync(u => u.Email == dto.Email);
+                .AnyAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (existeUsuario)
             {
                 return (false, "Ya existe un usuario con ese correo.");
             }
 
+            var rolNormalizado = NormalizarRol(dto.Rol);
             var codigo = GenerarCodigoConfirmacion();
 
             var usuario = new Usuario
             {
-                Nombre = dto.Nombre,
-                Apellido = dto.Apellido,
-                Email = dto.Email,
-                Telefono = dto.Telefono,
-                Rol = dto.Rol,
+                Nombre = dto.Nombre.Trim(),
+                Apellido = dto.Apellido.Trim(),
+                Email = emailNormalizado,
+                Telefono = dto.Telefono?.Trim() ?? string.Empty,
+                Rol = rolNormalizado,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 EmailConfirmado = false,
                 CodigoConfirmacion = codigo,
@@ -50,6 +67,29 @@ namespace DogGo.Services
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
 
+            if (rolNormalizado == "Paseador")
+            {
+                var existePaseador = await _context.Paseadores
+                    .AnyAsync(p => p.UsuarioId == usuario.Id);
+
+                if (!existePaseador)
+                {
+                    _context.Paseadores.Add(new Paseador
+                    {
+                        UsuarioId = usuario.Id,
+                        Descripcion = "",
+                        TarifaPorHora = 0,
+                        CalificacionPromedio = 0,
+                        Disponible = true,
+                        FotoUrl = "",
+                        ZonaServicio = "",
+                        ExperienciaAnios = 0
+                    });
+
+                    await _context.SaveChangesAsync();
+                }
+            }
+
             await EnviarCodigoConfirmacionAsync(usuario.Email, usuario.Nombre, codigo);
 
             return (true, "Usuario registrado. Revisa tu correo para confirmar tu cuenta.");
@@ -57,8 +97,17 @@ namespace DogGo.Services
 
         public async Task<(bool Success, string Message, AuthResponseDto? Data)> LoginAsync(LoginRequestDto dto)
         {
+            if (dto == null ||
+                string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return (false, "Debes capturar correo y contraseña.", null);
+            }
+
+            var emailNormalizado = dto.Email.Trim().ToLower();
+
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (usuario == null)
             {
@@ -102,8 +151,17 @@ namespace DogGo.Services
 
         public async Task<(bool Success, string Message)> ConfirmarCorreoAsync(ConfirmarCorreoRequestDto dto)
         {
+            if (dto == null ||
+                string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.Codigo))
+            {
+                return (false, "Debes capturar correo y código.");
+            }
+
+            var emailNormalizado = dto.Email.Trim().ToLower();
+
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (usuario == null)
             {
@@ -125,7 +183,7 @@ namespace DogGo.Services
                 return (false, "El código ha expirado.");
             }
 
-            if (usuario.CodigoConfirmacion != dto.Codigo)
+            if (usuario.CodigoConfirmacion != dto.Codigo.Trim())
             {
                 return (false, "El código es incorrecto.");
             }
@@ -141,8 +199,15 @@ namespace DogGo.Services
 
         public async Task<(bool Success, string Message)> ReenviarCodigoAsync(ReenviarCodigoRequestDto dto)
         {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
+            {
+                return (false, "Debes indicar un correo.");
+            }
+
+            var emailNormalizado = dto.Email.Trim().ToLower();
+
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (usuario == null)
             {
@@ -167,8 +232,15 @@ namespace DogGo.Services
 
         public async Task<(bool Success, string Message)> SolicitarRecuperacionAsync(ForgotPasswordRequestDto dto)
         {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
+            {
+                return (false, "Debes indicar un correo.");
+            }
+
+            var emailNormalizado = dto.Email.Trim().ToLower();
+
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (usuario == null)
             {
@@ -185,6 +257,60 @@ namespace DogGo.Services
             await EnviarCodigoRecuperacionAsync(usuario.Email, usuario.Nombre, codigo);
 
             return (true, "Se enviaron instrucciones de recuperación a tu correo.");
+        }
+
+        public async Task<(bool Success, string Message)> ResetPasswordAsync(ResetPasswordRequestDto dto)
+        {
+            if (dto == null)
+            {
+                return (false, "Datos inválidos.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.Codigo) ||
+                string.IsNullOrWhiteSpace(dto.NuevaPassword))
+            {
+                return (false, "Debes completar correo, código y nueva contraseña.");
+            }
+
+            if (dto.NuevaPassword.Length < 6)
+            {
+                return (false, "La nueva contraseña debe tener al menos 6 caracteres.");
+            }
+
+            var emailNormalizado = dto.Email.Trim().ToLower();
+
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
+
+            if (usuario == null)
+            {
+                return (false, "No se encontró una cuenta con ese correo.");
+            }
+
+            if (string.IsNullOrWhiteSpace(usuario.CodigoRecuperacion) ||
+                usuario.CodigoRecuperacionExpiraEn == null)
+            {
+                return (false, "No hay un código de recuperación activo. Solicita uno nuevo.");
+            }
+
+            if (usuario.CodigoRecuperacionExpiraEn < DateTime.UtcNow)
+            {
+                return (false, "El código ya expiró. Solicita uno nuevo.");
+            }
+
+            if (usuario.CodigoRecuperacion != dto.Codigo.Trim())
+            {
+                return (false, "El código es incorrecto.");
+            }
+
+            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NuevaPassword);
+            usuario.CodigoRecuperacion = null;
+            usuario.CodigoRecuperacionExpiraEn = null;
+
+            await _context.SaveChangesAsync();
+
+            return (true, "Contraseña actualizada correctamente.");
         }
 
         public async Task<PerfilResponseDto?> ObtenerPerfilAsync(int usuarioId)
@@ -212,6 +338,11 @@ namespace DogGo.Services
             int usuarioId,
             UpdatePerfilRequestDto dto)
         {
+            if (dto == null)
+            {
+                return (false, "Datos inválidos.", null);
+            }
+
             var usuario = await _context.Usuarios
                 .FirstOrDefaultAsync(u => u.Id == usuarioId);
 
@@ -237,6 +368,25 @@ namespace DogGo.Services
             };
 
             return (true, "Perfil actualizado correctamente.", perfil);
+        }
+
+        private static string NormalizarRol(string rol)
+        {
+            var normalizado = rol.Trim().ToLower();
+
+            if (normalizado == "dueño" ||
+                normalizado == "duenio" ||
+                normalizado == "cliente")
+            {
+                return "Duenio";
+            }
+
+            if (normalizado == "paseador")
+            {
+                return "Paseador";
+            }
+
+            return rol.Trim();
         }
 
         private static string GenerarCodigoConfirmacion()

@@ -128,6 +128,28 @@ namespace DogGo.Controllers.Api
             });
         }
 
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto dto)
+        {
+            var result = await _authService.ResetPasswordAsync(dto);
+
+            if (!result.Success)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message
+            });
+        }
+
         [HttpGet("perfil")]
         [Authorize(AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> Perfil()
