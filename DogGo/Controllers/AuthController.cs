@@ -10,7 +10,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-
 namespace DogGo.Controllers
 {
     public class AuthController : Controller
@@ -34,11 +33,20 @@ namespace DogGo.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            var hash = HashPassword(model.Password);
+            var emailNormalizado = model.Email.Trim().ToLower();
+
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email == model.Email && u.PasswordHash == hash);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (usuario == null)
+            {
+                ModelState.AddModelError("", "Email o contraseña incorrectos");
+                return View(model);
+            }
+
+            var passwordValido = await VerificarPasswordYActualizarSiNecesarioAsync(usuario, model.Password);
+
+            if (!passwordValido)
             {
                 ModelState.AddModelError("", "Email o contraseña incorrectos");
                 return View(model);
@@ -85,7 +93,9 @@ namespace DogGo.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            var existe = await _context.Usuarios.AnyAsync(u => u.Email == model.Email);
+            var emailNormalizado = model.Email.Trim().ToLower();
+
+            var existe = await _context.Usuarios.AnyAsync(u => u.Email.ToLower() == emailNormalizado);
             if (existe)
             {
                 ModelState.AddModelError("Email", "Ya existe una cuenta con ese email");
@@ -96,12 +106,12 @@ namespace DogGo.Controllers
 
             var usuario = new Usuario
             {
-                Nombre = model.Nombre,
-                Apellido = model.Apellido,
-                Email = model.Email,
-                Telefono = model.Telefono,
+                Nombre = model.Nombre.Trim(),
+                Apellido = model.Apellido.Trim(),
+                Email = emailNormalizado,
+                Telefono = model.Telefono?.Trim() ?? string.Empty,
                 Rol = model.Rol,
-                PasswordHash = HashPassword(model.Password),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
                 FechaRegistro = DateTime.UtcNow,
                 EmailConfirmado = false,
                 CodigoConfirmacion = codigo,
@@ -151,7 +161,10 @@ namespace DogGo.Controllers
                 return View();
             }
 
-            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+            var emailNormalizado = email.Trim().ToLower();
+
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (usuario == null)
             {
@@ -173,7 +186,7 @@ namespace DogGo.Controllers
                 return View();
             }
 
-            if (usuario.CodigoConfirmacion != codigo)
+            if (usuario.CodigoConfirmacion != codigo.Trim())
             {
                 ViewBag.Error = "El código es incorrecto.";
                 ViewBag.Email = email;
@@ -190,7 +203,7 @@ namespace DogGo.Controllers
             return RedirectToAction("Login");
         }
 
-        //Reenviar codigo
+        // POST: /Auth/ReenviarCodigo
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReenviarCodigo(string email)
@@ -201,7 +214,10 @@ namespace DogGo.Controllers
                 return RedirectToAction("ConfirmarCorreo");
             }
 
-            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+            var emailNormalizado = email.Trim().ToLower();
+
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (usuario == null)
             {
@@ -229,14 +245,6 @@ namespace DogGo.Controllers
             return RedirectToAction("ConfirmarCorreo");
         }
 
-
-
-
-
-
-
-
-
         // POST: /Auth/Logout
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -244,49 +252,6 @@ namespace DogGo.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
-        }
-
-        // ── Helpers ──────────────────────────────────────────────
-
-        private async Task SignInUser(Usuario usuario, bool rememberMe)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                new Claim(ClaimTypes.Name, usuario.Nombre),
-                new Claim(ClaimTypes.Email, usuario.Email),
-                new Claim(ClaimTypes.Role, usuario.Rol)
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            var props = new AuthenticationProperties
-            {
-                IsPersistent = rememberMe,
-                ExpiresUtc = rememberMe
-                    ? DateTimeOffset.UtcNow.AddDays(30)
-                    : DateTimeOffset.UtcNow.AddHours(8)
-            };
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                props
-            );
-        }
-
-        private static string GenerarCodigoConfirmacion()
-        {
-            var random = new Random();
-            return random.Next(100000, 999999).ToString();
-        }
-
-        private static string HashPassword(string password)
-        {
-            using var sha = SHA256.Create();
-            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToHexString(bytes);
         }
 
         [HttpGet]
@@ -305,7 +270,10 @@ namespace DogGo.Controllers
                 return View();
             }
 
-            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+            var emailNormalizado = email.Trim().ToLower();
+
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (usuario == null)
             {
@@ -360,7 +328,17 @@ namespace DogGo.Controllers
                 return View();
             }
 
-            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
+            if (nuevaPassword.Length < 6)
+            {
+                ViewBag.Error = "La contraseña debe tener al menos 6 caracteres.";
+                ViewBag.Email = email;
+                return View();
+            }
+
+            var emailNormalizado = email.Trim().ToLower();
+
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
             if (usuario == null)
             {
@@ -376,14 +354,14 @@ namespace DogGo.Controllers
                 return View();
             }
 
-            if (usuario.CodigoRecuperacion != codigo)
+            if (usuario.CodigoRecuperacion != codigo.Trim())
             {
                 ViewBag.Error = "El código es incorrecto.";
                 ViewBag.Email = email;
                 return View();
             }
 
-            usuario.PasswordHash = HashPassword(nuevaPassword);
+            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(nuevaPassword);
             usuario.CodigoRecuperacion = null;
             usuario.CodigoRecuperacionExpiraEn = null;
 
@@ -393,8 +371,78 @@ namespace DogGo.Controllers
             return RedirectToAction("Login");
         }
 
+        // ── Helpers ──────────────────────────────────────────────
 
+        private async Task SignInUser(Usuario usuario, bool rememberMe)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                new Claim(ClaimTypes.Name, usuario.Nombre),
+                new Claim(ClaimTypes.Email, usuario.Email),
+                new Claim(ClaimTypes.Role, usuario.Rol)
+            };
 
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
 
+            var props = new AuthenticationProperties
+            {
+                IsPersistent = rememberMe,
+                ExpiresUtc = rememberMe
+                    ? DateTimeOffset.UtcNow.AddDays(30)
+                    : DateTimeOffset.UtcNow.AddHours(8)
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal,
+                props
+            );
+        }
+
+        private async Task<bool> VerificarPasswordYActualizarSiNecesarioAsync(Usuario usuario, string password)
+        {
+            if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(usuario.PasswordHash))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // Si truena, probablemente era hash viejo SHA256.
+            }
+
+            var hashSha256 = HashPasswordSha256(password);
+
+            if (string.Equals(usuario.PasswordHash, hashSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static string GenerarCodigoConfirmacion()
+        {
+            var random = new Random();
+            return random.Next(100000, 999999).ToString();
+        }
+
+        private static string HashPasswordSha256(string password)
+        {
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return Convert.ToHexString(bytes);
+        }
     }
 }

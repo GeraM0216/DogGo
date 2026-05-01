@@ -2,6 +2,8 @@
 using DogGo.DTOs.Auth;
 using DogGo.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DogGo.Services
 {
@@ -114,16 +116,7 @@ namespace DogGo.Services
                 return (false, "Correo o contraseña incorrectos.", null);
             }
 
-            bool passwordValido;
-
-            try
-            {
-                passwordValido = BCrypt.Net.BCrypt.Verify(dto.Password, usuario.PasswordHash);
-            }
-            catch
-            {
-                return (false, "La contraseña almacenada de este usuario no tiene un formato válido. Crea de nuevo el usuario o actualiza su contraseña.", null);
-            }
+            var passwordValido = await VerificarPasswordYActualizarSiNecesarioAsync(usuario, dto.Password);
 
             if (!passwordValido)
             {
@@ -370,6 +363,37 @@ namespace DogGo.Services
             return (true, "Perfil actualizado correctamente.", perfil);
         }
 
+        private async Task<bool> VerificarPasswordYActualizarSiNecesarioAsync(Usuario usuario, string password)
+        {
+            if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(usuario.PasswordHash))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // Si truena, probablemente era hash viejo SHA256 de la web.
+            }
+
+            var hashSha256 = HashPasswordSha256(password);
+
+            if (string.Equals(usuario.PasswordHash, hashSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
+        }
+
         private static string NormalizarRol(string rol)
         {
             var normalizado = rol.Trim().ToLower();
@@ -393,6 +417,13 @@ namespace DogGo.Services
         {
             var random = new Random();
             return random.Next(100000, 999999).ToString();
+        }
+
+        private static string HashPasswordSha256(string password)
+        {
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
+            return Convert.ToHexString(bytes);
         }
 
         private async Task EnviarCodigoConfirmacionAsync(string email, string nombre, string codigo)
