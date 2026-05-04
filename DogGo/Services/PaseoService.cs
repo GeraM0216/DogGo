@@ -1,6 +1,8 @@
 ﻿using DogGo.Data;
 using DogGo.DTOs.Paseos;
 using DogGo.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace DogGo.Services
@@ -8,10 +10,12 @@ namespace DogGo.Services
     public class PaseoService
     {
         private readonly DogGoDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public PaseoService(DogGoDbContext context)
+        public PaseoService(DogGoDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         public async Task<(bool Success, string Message, PaseoResponseDto? Data)> CrearAsync(int usuarioId, PaseoCreateRequestDto dto)
@@ -25,6 +29,7 @@ namespace DogGo.Services
             }
 
             var paseador = await _context.Paseadores
+                .Include(p => p.Usuario)
                 .FirstOrDefaultAsync(p => p.Id == dto.PaseadorId);
 
             if (paseador == null)
@@ -32,45 +37,50 @@ namespace DogGo.Services
                 return (false, "Paseador no encontrado.", null);
             }
 
+            var duracion = dto.DuracionMinutos > 0 ? dto.DuracionMinutos : 30;
+
+            var precio = dto.Precio > 0
+                ? dto.Precio
+                : Math.Round(paseador.TarifaPorHora * duracion / 60m, 2);
+
+            var esProgramado = dto.EsProgramado || dto.FechaProgramada.HasValue;
+
             var paseo = new Paseo
             {
                 PerroId = dto.PerroId,
                 PaseadorId = dto.PaseadorId,
-                DuracionMinutos = dto.DuracionMinutos,
-                EsProgramado = dto.EsProgramado,
+                DuracionMinutos = duracion,
+                EsProgramado = esProgramado,
                 FechaProgramada = dto.FechaProgramada,
-                Precio = dto.Precio,
+                Precio = precio,
                 Estado = "Pendiente",
-                FechaInicio = dto.EsProgramado ? null : DateTime.UtcNow,
+                FechaInicio = null,
                 LatitudActual = 0,
-                LongitudActual = 0
+                LongitudActual = 0,
+
+                DireccionRecogida = PrimerTexto(dto.DireccionRecogida, dto.UbicacionTexto),
+                ReferenciasRecogida = PrimerTexto(dto.ReferenciasRecogida, dto.Notas, dto.Observaciones),
+                ZonaRecogida = TextoONull(dto.ZonaRecogida),
+                LatitudRecogida = dto.LatitudRecogida,
+                LongitudRecogida = dto.LongitudRecogida
             };
 
             _context.Paseos.Add(paseo);
             await _context.SaveChangesAsync();
 
-            var response = new PaseoResponseDto
-            {
-                Id = paseo.Id,
-                PerroId = paseo.PerroId,
-                PaseadorId = paseo.PaseadorId,
-                Estado = paseo.Estado,
-                DuracionMinutos = paseo.DuracionMinutos,
-                EsProgramado = paseo.EsProgramado,
-                FechaProgramada = paseo.FechaProgramada,
-                FechaInicio = paseo.FechaInicio,
-                FechaFin = paseo.FechaFin,
-                Precio = paseo.Precio
-            };
+            var creado = await QueryPaseosCompletos()
+                .FirstAsync(p => p.Id == paseo.Id);
 
-            return (true, "Paseo creado correctamente.", response);
+            return (true, "Paseo creado correctamente.", MapResponse(creado));
         }
 
         public async Task<List<PaseoResponseDto>> ObtenerMisPaseosAsync(int usuarioId, string rol)
         {
-            IQueryable<Paseo> query = _context.Paseos;
+            var rolNormalizado = NormalizarRol(rol);
 
-            if (rol == "Paseador")
+            IQueryable<Paseo> query = QueryPaseosCompletos();
+
+            if (rolNormalizado == "Paseador")
             {
                 var paseador = await _context.Paseadores
                     .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
@@ -82,82 +92,38 @@ namespace DogGo.Services
 
                 query = query.Where(p => p.PaseadorId == paseador.Id);
             }
+            else if (rolNormalizado == "Admin")
+            {
+                // Admin puede ver todo.
+            }
             else
             {
                 query = query.Where(p => p.Perro.DueñoId == usuarioId);
             }
 
-            return await query
+            var paseos = await query
                 .OrderByDescending(p => p.Id)
-                .Select(p => new PaseoResponseDto
-                {
-                    Id = p.Id,
-                    PerroId = p.PerroId,
-                    PaseadorId = p.PaseadorId,
-                    Estado = p.Estado,
-                    DuracionMinutos = p.DuracionMinutos,
-                    EsProgramado = p.EsProgramado,
-                    FechaProgramada = p.FechaProgramada,
-                    FechaInicio = p.FechaInicio,
-                    FechaFin = p.FechaFin,
-                    Precio = p.Precio
-                })
                 .ToListAsync();
+
+            return paseos.Select(MapResponse).ToList();
         }
 
         public async Task<PaseoDetalleDto?> ObtenerPorIdAsync(int paseoId, int usuarioId, string rol)
         {
-            var query = _context.Paseos
-                .Include(p => p.Perro)
-                    .ThenInclude(pe => pe.Dueño)
-                .Include(p => p.Paseador)
-                    .ThenInclude(pa => pa.Usuario)
-                .AsQueryable();
-
-            if (rol == "Paseador")
-            {
-                var paseador = await _context.Paseadores
-                    .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
-
-                if (paseador == null)
-                {
-                    return null;
-                }
-
-                query = query.Where(p => p.Id == paseoId && p.PaseadorId == paseador.Id);
-            }
-            else
-            {
-                query = query.Where(p => p.Id == paseoId && p.Perro.DueñoId == usuarioId);
-            }
-
-            var paseo = await query.FirstOrDefaultAsync();
+            var paseo = await QueryPaseosCompletos()
+                .FirstOrDefaultAsync(p => p.Id == paseoId);
 
             if (paseo == null)
             {
                 return null;
             }
 
-            return new PaseoDetalleDto
+            if (!await UsuarioPuedeVerPaseoAsync(paseo, usuarioId, rol))
             {
-                Id = paseo.Id,
-                PerroId = paseo.PerroId,
-                PerroNombre = paseo.Perro.Nombre,
-                PaseadorId = paseo.PaseadorId,
-                PaseadorNombre = $"{paseo.Paseador.Usuario.Nombre} {paseo.Paseador.Usuario.Apellido}",
-                Estado = paseo.Estado,
-                DuracionMinutos = paseo.DuracionMinutos,
-                EsProgramado = paseo.EsProgramado,
-                FechaProgramada = paseo.FechaProgramada,
-                FechaInicio = paseo.FechaInicio,
-                FechaFin = paseo.FechaFin,
-                Precio = paseo.Precio,
-                MotivoCancelacion = paseo.MotivoCancelacion,
-                CanceladoPor = paseo.CanceladoPor,
-                FechaCancelacion = paseo.FechaCancelacion,
-                FotoInicioUrl = paseo.FotoInicioUrl,
-                FotoFinUrl = paseo.FotoFinUrl
-            };
+                return null;
+            }
+
+            return MapDetalle(paseo);
         }
 
         public async Task<(bool Success, string Message)> AceptarAsync(int paseoId, int usuarioId)
@@ -227,6 +193,12 @@ namespace DogGo.Services
             paseo.Estado = "Finalizado";
             paseo.FechaFin = DateTime.UtcNow;
 
+            if (paseo.FechaInicio.HasValue)
+            {
+                var minutos = (int)Math.Max(0, (paseo.FechaFin.Value - paseo.FechaInicio.Value).TotalMinutes);
+                paseo.DuracionRealMinutos = minutos;
+            }
+
             await _context.SaveChangesAsync();
 
             return (true, "Paseo finalizado correctamente.");
@@ -234,8 +206,7 @@ namespace DogGo.Services
 
         public async Task<(bool Success, string Message)> CancelarAsync(int paseoId, int usuarioId, string rol, string? motivo = null)
         {
-            var paseo = await _context.Paseos
-                .Include(p => p.Perro)
+            var paseo = await QueryPaseosCompletos()
                 .FirstOrDefaultAsync(p => p.Id == paseoId);
 
             if (paseo == null)
@@ -243,11 +214,7 @@ namespace DogGo.Services
                 return (false, "Paseo no encontrado.");
             }
 
-            var tienePermiso = rol == "Paseador"
-                ? await EsPaseadorDelPaseoAsync(paseo, usuarioId)
-                : paseo.Perro.DueñoId == usuarioId;
-
-            if (!tienePermiso)
+            if (!await UsuarioPuedeVerPaseoAsync(paseo, usuarioId, rol))
             {
                 return (false, "No tienes permiso para cancelar este paseo.");
             }
@@ -258,13 +225,220 @@ namespace DogGo.Services
             }
 
             paseo.Estado = "Cancelado";
-            paseo.CanceladoPor = rol;
+            paseo.CanceladoPor = NormalizarRol(rol);
             paseo.FechaCancelacion = DateTime.UtcNow;
-            paseo.MotivoCancelacion = motivo;
+            paseo.MotivoCancelacion = string.IsNullOrWhiteSpace(motivo)
+                ? "Cancelado desde la app móvil"
+                : motivo.Trim();
 
             await _context.SaveChangesAsync();
 
             return (true, "Paseo cancelado correctamente.");
+        }
+
+        public async Task<(bool Success, string Message, PaseoDetalleDto? Data)> SubirFotoAsync(
+            int paseoId,
+            int usuarioId,
+            string rol,
+            string tipo,
+            IFormFile archivo)
+        {
+            var paseo = await QueryPaseosCompletos()
+                .FirstOrDefaultAsync(p => p.Id == paseoId);
+
+            if (paseo == null)
+            {
+                return (false, "Paseo no encontrado.", null);
+            }
+
+            if (NormalizarRol(rol) != "Admin" && !await EsPaseadorDelPaseoAsync(paseo, usuarioId))
+            {
+                return (false, "Solo el paseador asignado puede subir evidencias.", null);
+            }
+
+            if (paseo.Estado == "Cancelado")
+            {
+                return (false, "No puedes subir evidencias de un paseo cancelado.", null);
+            }
+
+            var tipoNormalizado = tipo.Trim().ToLowerInvariant();
+
+            if (tipoNormalizado != "inicio" && tipoNormalizado != "fin")
+            {
+                return (false, "Tipo de evidencia inválido.", null);
+            }
+
+            if (archivo.Length <= 0)
+            {
+                return (false, "El archivo está vacío.", null);
+            }
+
+            var extension = Path.GetExtension(archivo.FileName).ToLowerInvariant();
+            var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+
+            if (!extensionesPermitidas.Contains(extension))
+            {
+                return (false, "Formato de imagen no permitido. Usa jpg, png o webp.", null);
+            }
+
+            var webRoot = _environment.WebRootPath;
+
+            if (string.IsNullOrWhiteSpace(webRoot))
+            {
+                webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            }
+
+            var carpeta = Path.Combine(webRoot, "uploads", "evidencias");
+            Directory.CreateDirectory(carpeta);
+
+            var nombreArchivo = $"paseo-{paseoId}-{tipoNormalizado}-{Guid.NewGuid():N}{extension}";
+            var rutaFisica = Path.Combine(carpeta, nombreArchivo);
+
+            await using (var stream = new FileStream(rutaFisica, FileMode.Create))
+            {
+                await archivo.CopyToAsync(stream);
+            }
+
+            var urlPublica = $"/uploads/evidencias/{nombreArchivo}";
+
+            if (tipoNormalizado == "inicio")
+            {
+                paseo.FotoInicioUrl = urlPublica;
+            }
+            else
+            {
+                paseo.FotoFinUrl = urlPublica;
+            }
+
+            await _context.SaveChangesAsync();
+
+            var actualizado = await QueryPaseosCompletos()
+                .FirstAsync(p => p.Id == paseoId);
+
+            return (true, "Evidencia subida correctamente.", MapDetalle(actualizado));
+        }
+
+        public async Task<(bool Success, string Message, object? Data)> EnviarUbicacionAsync(
+            int paseoId,
+            int usuarioId,
+            string rol,
+            decimal latitud,
+            decimal longitud)
+        {
+            var paseo = await QueryPaseosCompletos()
+                .FirstOrDefaultAsync(p => p.Id == paseoId);
+
+            if (paseo == null)
+            {
+                return (false, "Paseo no encontrado.", null);
+            }
+
+            if (NormalizarRol(rol) != "Admin" && !await EsPaseadorDelPaseoAsync(paseo, usuarioId))
+            {
+                return (false, "Solo el paseador asignado puede enviar ubicación.", null);
+            }
+
+            if (paseo.Estado != "EnCurso")
+            {
+                return (false, "Solo se puede enviar ubicación de paseos en curso.", null);
+            }
+
+            paseo.LatitudActual = latitud;
+            paseo.LongitudActual = longitud;
+
+            var ubicacion = new Ubicacion
+            {
+                PaseoId = paseo.Id,
+                Latitud = latitud,
+                Longitud = longitud,
+                Timestamp = DateTime.UtcNow
+            };
+
+            _context.Ubicaciones.Add(ubicacion);
+            await _context.SaveChangesAsync();
+
+            return (true, "Ubicación enviada correctamente.", new
+            {
+                paseoId = paseo.Id,
+                latitud = ubicacion.Latitud,
+                longitud = ubicacion.Longitud,
+                timestamp = ubicacion.Timestamp,
+                fecha = ubicacion.Timestamp,
+                latitudActual = paseo.LatitudActual,
+                longitudActual = paseo.LongitudActual
+            });
+        }
+
+        public async Task<(bool Success, string Message, object? Data)> ObtenerUltimaUbicacionAsync(
+            int paseoId,
+            int usuarioId,
+            string rol)
+        {
+            var paseo = await QueryPaseosCompletos()
+                .FirstOrDefaultAsync(p => p.Id == paseoId);
+
+            if (paseo == null)
+            {
+                return (false, "Paseo no encontrado.", null);
+            }
+
+            if (!await UsuarioPuedeVerPaseoAsync(paseo, usuarioId, rol))
+            {
+                return (false, "No tienes permiso para ver la ubicación de este paseo.", null);
+            }
+
+            var ubicacion = await _context.Ubicaciones
+                .Where(u => u.PaseoId == paseoId)
+                .OrderByDescending(u => u.Timestamp)
+                .FirstOrDefaultAsync();
+
+            if (ubicacion != null)
+            {
+                return (true, "Última ubicación obtenida.", new
+                {
+                    paseoId = paseo.Id,
+                    latitud = ubicacion.Latitud,
+                    longitud = ubicacion.Longitud,
+                    latitudActual = ubicacion.Latitud,
+                    longitudActual = ubicacion.Longitud,
+                    timestamp = ubicacion.Timestamp,
+                    fecha = ubicacion.Timestamp
+                });
+            }
+
+            if (paseo.LatitudActual != 0 || paseo.LongitudActual != 0)
+            {
+                return (true, "Última ubicación obtenida.", new
+                {
+                    paseoId = paseo.Id,
+                    latitud = paseo.LatitudActual,
+                    longitud = paseo.LongitudActual,
+                    latitudActual = paseo.LatitudActual,
+                    longitudActual = paseo.LongitudActual,
+                    timestamp = paseo.FechaInicio,
+                    fecha = paseo.FechaInicio
+                });
+            }
+
+            return (true, "Todavía no hay ubicación GPS registrada.", new
+            {
+                paseoId = paseo.Id,
+                latitud = (decimal?)null,
+                longitud = (decimal?)null,
+                latitudActual = (decimal?)null,
+                longitudActual = (decimal?)null,
+                timestamp = (DateTime?)null,
+                fecha = (DateTime?)null
+            });
+        }
+
+        private IQueryable<Paseo> QueryPaseosCompletos()
+        {
+            return _context.Paseos
+                .Include(p => p.Perro)
+                    .ThenInclude(pe => pe.Dueño)
+                .Include(p => p.Paseador)
+                    .ThenInclude(pa => pa.Usuario);
         }
 
         private async Task<Paseo?> ObtenerPaseoComoPaseadorAsync(int paseoId, int usuarioId)
@@ -287,6 +461,172 @@ namespace DogGo.Services
                 .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId);
 
             return paseador != null && paseo.PaseadorId == paseador.Id;
+        }
+
+        private async Task<bool> UsuarioPuedeVerPaseoAsync(Paseo paseo, int usuarioId, string rol)
+        {
+            var rolNormalizado = NormalizarRol(rol);
+
+            if (rolNormalizado == "Admin")
+            {
+                return true;
+            }
+
+            if (rolNormalizado == "Paseador")
+            {
+                return await EsPaseadorDelPaseoAsync(paseo, usuarioId);
+            }
+
+            return paseo.Perro.DueñoId == usuarioId;
+        }
+
+        private static string NormalizarRol(string? rol)
+        {
+            var r = (rol ?? string.Empty).Trim();
+
+            if (r.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Admin";
+            }
+
+            if (r.Equals("Paseador", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Paseador";
+            }
+
+            if (r.Equals("Dueño", StringComparison.OrdinalIgnoreCase) ||
+                r.Equals("Duenio", StringComparison.OrdinalIgnoreCase) ||
+                r.Equals("Dueno", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Dueño";
+            }
+
+            return r;
+        }
+
+        private static string? TextoONull(string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return null;
+            return texto.Trim();
+        }
+
+        private static string? PrimerTexto(params string?[] valores)
+        {
+            foreach (var valor in valores)
+            {
+                if (!string.IsNullOrWhiteSpace(valor))
+                {
+                    return valor.Trim();
+                }
+            }
+
+            return null;
+        }
+
+        private static PaseoResponseDto MapResponse(Paseo paseo)
+        {
+            var duenio = paseo.Perro.Dueño;
+            var usuarioPaseador = paseo.Paseador.Usuario;
+
+            return new PaseoResponseDto
+            {
+                Id = paseo.Id,
+
+                PerroId = paseo.PerroId,
+                PerroNombre = paseo.Perro.Nombre,
+                PerroFotoUrl = paseo.Perro.ImagenUrl,
+
+                PaseadorId = paseo.PaseadorId,
+                PaseadorNombre = usuarioPaseador.Nombre,
+                PaseadorApellido = usuarioPaseador.Apellido,
+                PaseadorFotoUrl = paseo.Paseador.FotoUrl,
+
+                DuenioId = duenio.Id,
+                DuenioNombre = duenio.Nombre,
+                DuenioApellido = duenio.Apellido,
+
+                Estado = paseo.Estado,
+
+                DuracionMinutos = paseo.DuracionMinutos,
+                DuracionRealMinutos = paseo.DuracionRealMinutos,
+
+                EsProgramado = paseo.EsProgramado,
+                FechaProgramada = paseo.FechaProgramada,
+                FechaInicio = paseo.FechaInicio,
+                FechaFin = paseo.FechaFin,
+
+                Precio = paseo.Precio,
+
+                DireccionRecogida = paseo.DireccionRecogida,
+                UbicacionTexto = paseo.DireccionRecogida,
+                ReferenciasRecogida = paseo.ReferenciasRecogida,
+                ZonaRecogida = paseo.ZonaRecogida,
+                LatitudRecogida = paseo.LatitudRecogida,
+                LongitudRecogida = paseo.LongitudRecogida,
+
+                LatitudActual = paseo.LatitudActual,
+                LongitudActual = paseo.LongitudActual,
+
+                MotivoCancelacion = paseo.MotivoCancelacion,
+                CanceladoPor = paseo.CanceladoPor,
+                FechaCancelacion = paseo.FechaCancelacion,
+
+                FotoInicioUrl = paseo.FotoInicioUrl,
+                FotoFinUrl = paseo.FotoFinUrl
+            };
+        }
+
+        private static PaseoDetalleDto MapDetalle(Paseo paseo)
+        {
+            var duenio = paseo.Perro.Dueño;
+            var usuarioPaseador = paseo.Paseador.Usuario;
+
+            return new PaseoDetalleDto
+            {
+                Id = paseo.Id,
+
+                PerroId = paseo.PerroId,
+                PerroNombre = paseo.Perro.Nombre,
+                PerroFotoUrl = paseo.Perro.ImagenUrl,
+
+                PaseadorId = paseo.PaseadorId,
+                PaseadorNombre = usuarioPaseador.Nombre,
+                PaseadorApellido = usuarioPaseador.Apellido,
+                PaseadorFotoUrl = paseo.Paseador.FotoUrl,
+
+                DuenioId = duenio.Id,
+                DuenioNombre = duenio.Nombre,
+                DuenioApellido = duenio.Apellido,
+
+                Estado = paseo.Estado,
+
+                DuracionMinutos = paseo.DuracionMinutos,
+                DuracionRealMinutos = paseo.DuracionRealMinutos,
+
+                EsProgramado = paseo.EsProgramado,
+                FechaProgramada = paseo.FechaProgramada,
+                FechaInicio = paseo.FechaInicio,
+                FechaFin = paseo.FechaFin,
+
+                Precio = paseo.Precio,
+
+                DireccionRecogida = paseo.DireccionRecogida,
+                UbicacionTexto = paseo.DireccionRecogida,
+                ReferenciasRecogida = paseo.ReferenciasRecogida,
+                ZonaRecogida = paseo.ZonaRecogida,
+                LatitudRecogida = paseo.LatitudRecogida,
+                LongitudRecogida = paseo.LongitudRecogida,
+
+                LatitudActual = paseo.LatitudActual,
+                LongitudActual = paseo.LongitudActual,
+
+                MotivoCancelacion = paseo.MotivoCancelacion,
+                CanceladoPor = paseo.CanceladoPor,
+                FechaCancelacion = paseo.FechaCancelacion,
+
+                FotoInicioUrl = paseo.FotoInicioUrl,
+                FotoFinUrl = paseo.FotoFinUrl
+            };
         }
     }
 }

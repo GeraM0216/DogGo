@@ -75,6 +75,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Necesario para servir fotos subidas en wwwroot/uploads/*
+app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseAuthentication();
