@@ -26,30 +26,17 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var result = await _paseoService.CrearAsync(usuarioId.Value, dto);
 
             if (!result.Success)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = result.Message
-                });
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message,
-                data = result.Data
-            });
+            return Ok(new { success = true, message = result.Message, data = result.Data });
         }
 
         [HttpGet("mis-paseos")]
@@ -60,20 +47,12 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var paseos = await _paseoService.ObtenerMisPaseosAsync(usuarioId.Value, rol);
 
-            return Ok(new
-            {
-                success = true,
-                data = paseos
-            });
+            return Ok(new { success = true, data = paseos });
         }
 
         [HttpGet("{id:int}")]
@@ -84,29 +63,17 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var paseo = await _paseoService.ObtenerPorIdAsync(id, usuarioId.Value, rol);
 
             if (paseo == null)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Paseo no encontrado."
-                });
+                return NotFound(new { success = false, message = "Paseo no encontrado." });
             }
 
-            return Ok(new
-            {
-                success = true,
-                data = paseo
-            });
+            return Ok(new { success = true, data = paseo });
         }
 
         [HttpPut("{id:int}/aceptar")]
@@ -116,29 +83,17 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var result = await _paseoService.AceptarAsync(id, usuarioId.Value);
 
             if (!result.Success)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = result.Message
-                });
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message
-            });
+            return Ok(new { success = true, message = result.Message });
         }
 
         [HttpPut("{id:int}/rechazar")]
@@ -148,29 +103,17 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var result = await _paseoService.RechazarAsync(id, usuarioId.Value);
 
             if (!result.Success)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = result.Message
-                });
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message
-            });
+            return Ok(new { success = true, message = result.Message });
         }
 
         [HttpPut("{id:int}/iniciar")]
@@ -180,29 +123,17 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var result = await _paseoService.IniciarAsync(id, usuarioId.Value);
 
             if (!result.Success)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = result.Message
-                });
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message
-            });
+            return Ok(new { success = true, message = result.Message });
         }
 
         [HttpPut("{id:int}/finalizar")]
@@ -212,29 +143,17 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var result = await _paseoService.FinalizarAsync(id, usuarioId.Value);
 
             if (!result.Success)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = result.Message
-                });
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message
-            });
+            return Ok(new { success = true, message = result.Message });
         }
 
         [HttpPut("{id:int}/cancelar")]
@@ -245,11 +164,7 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var motivo = dto?.MotivoCancelacion ?? dto?.Motivo ?? dto?.Mensaje;
@@ -258,23 +173,15 @@ namespace DogGo.Controllers.Api
 
             if (!result.Success)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = result.Message
-                });
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message
-            });
+            return Ok(new { success = true, message = result.Message });
         }
 
         [HttpPost("{id:int}/foto-inicio")]
         [Consumes("multipart/form-data")]
-        [RequestSizeLimit(10_000_000)]
+        [RequestSizeLimit(5_000_000)]
         public async Task<IActionResult> SubirFotoInicio(int id)
         {
             return await SubirFoto(id, "inicio");
@@ -282,7 +189,7 @@ namespace DogGo.Controllers.Api
 
         [HttpPost("{id:int}/foto-fin")]
         [Consumes("multipart/form-data")]
-        [RequestSizeLimit(10_000_000)]
+        [RequestSizeLimit(5_000_000)]
         public async Task<IActionResult> SubirFotoFin(int id)
         {
             return await SubirFoto(id, "fin");
@@ -295,31 +202,19 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             if (!Request.HasFormContentType)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "La solicitud debe ser multipart/form-data."
-                });
+                return BadRequest(new { success = false, message = "La solicitud debe ser multipart/form-data." });
             }
 
             var archivo = Request.Form.Files.FirstOrDefault();
 
             if (archivo == null)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "No se recibió ningún archivo."
-                });
+                return BadRequest(new { success = false, message = "No se recibió ningún archivo." });
             }
 
             var result = await _paseoService.SubirFotoAsync(
@@ -331,19 +226,10 @@ namespace DogGo.Controllers.Api
 
             if (!result.Success)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = result.Message
-                });
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message,
-                data = result.Data
-            });
+            return Ok(new { success = true, message = result.Message, data = result.Data });
         }
 
         [HttpPost("{id:int}/ubicacion")]
@@ -355,11 +241,7 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var latitud = dto.Latitud ?? dto.LatitudActual;
@@ -367,11 +249,7 @@ namespace DogGo.Controllers.Api
 
             if (latitud == null || longitud == null)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Latitud y longitud son obligatorias."
-                });
+                return BadRequest(new { success = false, message = "Latitud y longitud son obligatorias." });
             }
 
             var result = await _paseoService.EnviarUbicacionAsync(
@@ -383,19 +261,10 @@ namespace DogGo.Controllers.Api
 
             if (!result.Success)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = result.Message
-                });
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message,
-                data = result.Data
-            });
+            return Ok(new { success = true, message = result.Message, data = result.Data });
         }
 
         [HttpGet("{id:int}/ubicacion")]
@@ -407,11 +276,7 @@ namespace DogGo.Controllers.Api
 
             if (usuarioId == null)
             {
-                return Unauthorized(new
-                {
-                    success = false,
-                    message = "Token inválido."
-                });
+                return Unauthorized(new { success = false, message = "Token inválido." });
             }
 
             var result = await _paseoService.ObtenerUltimaUbicacionAsync(
@@ -421,19 +286,10 @@ namespace DogGo.Controllers.Api
 
             if (!result.Success)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = result.Message
-                });
+                return BadRequest(new { success = false, message = result.Message });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = result.Message,
-                data = result.Data
-            });
+            return Ok(new { success = true, message = result.Message, data = result.Data });
         }
 
         private int? ObtenerUsuarioId()

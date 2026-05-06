@@ -20,6 +20,12 @@ namespace DogGo.Services
 
         public async Task<(bool Success, string Message, PaseoResponseDto? Data)> CrearAsync(int usuarioId, PaseoCreateRequestDto dto)
         {
+            var validacion = ValidarCrearPaseo(dto);
+            if (!validacion.Success)
+            {
+                return (false, validacion.Message, null);
+            }
+
             var perro = await _context.Perros
                 .FirstOrDefaultAsync(p => p.Id == dto.PerroId && p.DueñoId == usuarioId);
 
@@ -58,8 +64,8 @@ namespace DogGo.Services
                 LatitudActual = 0,
                 LongitudActual = 0,
 
-                DireccionRecogida = PrimerTexto(dto.DireccionRecogida, dto.UbicacionTexto),
-                ReferenciasRecogida = PrimerTexto(dto.ReferenciasRecogida, dto.Notas, dto.Observaciones),
+                DireccionRecogida = PrimerTexto(dto.DireccionRecogida, dto.UbicacionTexto, dto.Direccion),
+                ReferenciasRecogida = PrimerTexto(dto.ReferenciasRecogida, dto.Referencias, dto.Notas, dto.Observaciones),
                 ZonaRecogida = TextoONull(dto.ZonaRecogida),
                 LatitudRecogida = dto.LatitudRecogida,
                 LongitudRecogida = dto.LongitudRecogida
@@ -77,7 +83,6 @@ namespace DogGo.Services
         public async Task<List<PaseoResponseDto>> ObtenerMisPaseosAsync(int usuarioId, string rol)
         {
             var rolNormalizado = NormalizarRol(rol);
-
             IQueryable<Paseo> query = QueryPaseosCompletos();
 
             if (rolNormalizado == "Paseador")
@@ -196,7 +201,7 @@ namespace DogGo.Services
             if (paseo.FechaInicio.HasValue)
             {
                 var minutos = (int)Math.Max(0, (paseo.FechaFin.Value - paseo.FechaInicio.Value).TotalMinutes);
-                paseo.DuracionRealMinutos = minutos;
+                paseo.DuracionRealMinutos = Math.Min(minutos, 1440);
             }
 
             await _context.SaveChangesAsync();
@@ -224,12 +229,19 @@ namespace DogGo.Services
                 return (false, "Ese paseo ya no se puede cancelar.");
             }
 
+            var motivoLimpio = string.IsNullOrWhiteSpace(motivo)
+                ? "Cancelado desde la app móvil"
+                : motivo.Trim();
+
+            if (motivoLimpio.Length > 300)
+            {
+                return (false, "El motivo de cancelación no puede superar 300 caracteres.");
+            }
+
             paseo.Estado = "Cancelado";
             paseo.CanceladoPor = NormalizarRol(rol);
             paseo.FechaCancelacion = DateTime.UtcNow;
-            paseo.MotivoCancelacion = string.IsNullOrWhiteSpace(motivo)
-                ? "Cancelado desde la app móvil"
-                : motivo.Trim();
+            paseo.MotivoCancelacion = motivoLimpio;
 
             await _context.SaveChangesAsync();
 
@@ -268,9 +280,14 @@ namespace DogGo.Services
                 return (false, "Tipo de evidencia inválido.", null);
             }
 
-            if (archivo.Length <= 0)
+            if (archivo == null || archivo.Length <= 0)
             {
                 return (false, "El archivo está vacío.", null);
+            }
+
+            if (archivo.Length > 5_000_000)
+            {
+                return (false, "La imagen no puede superar 5 MB.", null);
             }
 
             var extension = Path.GetExtension(archivo.FileName).ToLowerInvariant();
@@ -278,7 +295,7 @@ namespace DogGo.Services
 
             if (!extensionesPermitidas.Contains(extension))
             {
-                return (false, "Formato de imagen no permitido. Usa jpg, png o webp.", null);
+                return (false, "Formato de imagen no permitido. Usa jpg, jpeg, png o webp.", null);
             }
 
             var webRoot = _environment.WebRootPath;
@@ -341,6 +358,11 @@ namespace DogGo.Services
             if (paseo.Estado != "EnCurso")
             {
                 return (false, "Solo se puede enviar ubicación de paseos en curso.", null);
+            }
+
+            if (latitud < -90 || latitud > 90 || longitud < -180 || longitud > 180)
+            {
+                return (false, "Coordenadas inválidas.", null);
             }
 
             paseo.LatitudActual = latitud;
@@ -480,6 +502,71 @@ namespace DogGo.Services
             return paseo.Perro.DueñoId == usuarioId;
         }
 
+        private static (bool Success, string Message) ValidarCrearPaseo(PaseoCreateRequestDto dto)
+        {
+            if (dto == null)
+            {
+                return (false, "Datos inválidos.");
+            }
+
+            if (dto.PerroId <= 0)
+            {
+                return (false, "Selecciona un perro válido.");
+            }
+
+            if (dto.PaseadorId <= 0)
+            {
+                return (false, "Selecciona un paseador válido.");
+            }
+
+            if (dto.DuracionMinutos <= 0 || dto.DuracionMinutos > 1440)
+            {
+                return (false, "La duración debe estar entre 1 y 1440 minutos.");
+            }
+
+            if (dto.Precio < 0 || dto.Precio > 100000)
+            {
+                return (false, "El precio debe estar entre 0 y 100000.");
+            }
+
+            if (dto.LatitudRecogida.HasValue && (dto.LatitudRecogida.Value < -90 || dto.LatitudRecogida.Value > 90))
+            {
+                return (false, "La latitud de recogida es inválida.");
+            }
+
+            if (dto.LongitudRecogida.HasValue && (dto.LongitudRecogida.Value < -180 || dto.LongitudRecogida.Value > 180))
+            {
+                return (false, "La longitud de recogida es inválida.");
+            }
+
+            if (LargoMayor(dto.UbicacionTexto, 200) ||
+                LargoMayor(dto.DireccionRecogida, 200) ||
+                LargoMayor(dto.Direccion, 200))
+            {
+                return (false, "La dirección de recogida no puede superar 200 caracteres.");
+            }
+
+            if (LargoMayor(dto.ReferenciasRecogida, 300) ||
+                LargoMayor(dto.Referencias, 300) ||
+                LargoMayor(dto.Notas, 300) ||
+                LargoMayor(dto.Observaciones, 300))
+            {
+                return (false, "Las referencias o notas no pueden superar 300 caracteres.");
+            }
+
+            if (LargoMayor(dto.ZonaRecogida, 100))
+            {
+                return (false, "La zona de recogida no puede superar 100 caracteres.");
+            }
+
+            return (true, "OK");
+        }
+
+        private static bool LargoMayor(string? texto, int max)
+        {
+            return !string.IsNullOrWhiteSpace(texto) && texto.Trim().Length > max;
+        }
+
         private static string NormalizarRol(string? rol)
         {
             var r = (rol ?? string.Empty).Trim();
@@ -527,6 +614,8 @@ namespace DogGo.Services
         {
             var duenio = paseo.Perro.Dueño;
             var usuarioPaseador = paseo.Paseador.Usuario;
+            var paseadorNombreCompleto = $"{usuarioPaseador.Nombre} {usuarioPaseador.Apellido}".Trim();
+            var duenioNombreCompleto = $"{duenio.Nombre} {duenio.Apellido}".Trim();
 
             return new PaseoResponseDto
             {
@@ -535,15 +624,18 @@ namespace DogGo.Services
                 PerroId = paseo.PerroId,
                 PerroNombre = paseo.Perro.Nombre,
                 PerroFotoUrl = paseo.Perro.ImagenUrl,
+                PerroImagenUrl = paseo.Perro.ImagenUrl,
 
                 PaseadorId = paseo.PaseadorId,
                 PaseadorNombre = usuarioPaseador.Nombre,
                 PaseadorApellido = usuarioPaseador.Apellido,
+                PaseadorNombreCompleto = paseadorNombreCompleto,
                 PaseadorFotoUrl = paseo.Paseador.FotoUrl,
 
                 DuenioId = duenio.Id,
                 DuenioNombre = duenio.Nombre,
                 DuenioApellido = duenio.Apellido,
+                DuenioNombreCompleto = duenioNombreCompleto,
 
                 Estado = paseo.Estado,
 
@@ -580,6 +672,8 @@ namespace DogGo.Services
         {
             var duenio = paseo.Perro.Dueño;
             var usuarioPaseador = paseo.Paseador.Usuario;
+            var paseadorNombreCompleto = $"{usuarioPaseador.Nombre} {usuarioPaseador.Apellido}".Trim();
+            var duenioNombreCompleto = $"{duenio.Nombre} {duenio.Apellido}".Trim();
 
             return new PaseoDetalleDto
             {
@@ -588,15 +682,18 @@ namespace DogGo.Services
                 PerroId = paseo.PerroId,
                 PerroNombre = paseo.Perro.Nombre,
                 PerroFotoUrl = paseo.Perro.ImagenUrl,
+                PerroImagenUrl = paseo.Perro.ImagenUrl,
 
                 PaseadorId = paseo.PaseadorId,
                 PaseadorNombre = usuarioPaseador.Nombre,
                 PaseadorApellido = usuarioPaseador.Apellido,
+                PaseadorNombreCompleto = paseadorNombreCompleto,
                 PaseadorFotoUrl = paseo.Paseador.FotoUrl,
 
                 DuenioId = duenio.Id,
                 DuenioNombre = duenio.Nombre,
                 DuenioApellido = duenio.Apellido,
+                DuenioNombreCompleto = duenioNombreCompleto,
 
                 Estado = paseo.Estado,
 

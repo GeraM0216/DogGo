@@ -26,7 +26,7 @@ namespace DogGo.Controllers.Api
             });
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
             var paseador = await _paseadorService.ObtenerPorIdAsync(id);

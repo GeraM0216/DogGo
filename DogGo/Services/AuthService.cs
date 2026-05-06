@@ -23,21 +23,10 @@ namespace DogGo.Services
             _jwtService = jwtService;
         }
 
-        public async Task<(bool Success, string Message)> RegistrarAsync(RegistrarRequestDto dto)
+        public async Task<(bool Success, string Message)> RegistrarAsync(RegisterRequestDto dto)
         {
-            if (dto == null)
-            {
-                return (false, "Datos de registro inválidos.");
-            }
-
-            if (string.IsNullOrWhiteSpace(dto.Nombre) ||
-                string.IsNullOrWhiteSpace(dto.Apellido) ||
-                string.IsNullOrWhiteSpace(dto.Email) ||
-                string.IsNullOrWhiteSpace(dto.Password) ||
-                string.IsNullOrWhiteSpace(dto.Rol))
-            {
-                return (false, "Debes completar nombre, apellido, correo, contraseña y rol.");
-            }
+            var validacion = ValidarRegistro(dto);
+            if (!validacion.Success) return validacion;
 
             var emailNormalizado = dto.Email.Trim().ToLower();
 
@@ -50,6 +39,12 @@ namespace DogGo.Services
             }
 
             var rolNormalizado = NormalizarRol(dto.Rol);
+
+            if (!RolValido(rolNormalizado))
+            {
+                return (false, "Rol inválido. Usa Duenio o Paseador.");
+            }
+
             var codigo = GenerarCodigoConfirmacion();
 
             var usuario = new Usuario
@@ -106,6 +101,11 @@ namespace DogGo.Services
                 return (false, "Debes capturar correo y contraseña.", null);
             }
 
+            if (dto.Email.Length > 120 || dto.Password.Length > 100)
+            {
+                return (false, "Correo o contraseña incorrectos.", null);
+            }
+
             var emailNormalizado = dto.Email.Trim().ToLower();
 
             var usuario = await _context.Usuarios
@@ -149,6 +149,11 @@ namespace DogGo.Services
                 string.IsNullOrWhiteSpace(dto.Codigo))
             {
                 return (false, "Debes capturar correo y código.");
+            }
+
+            if (dto.Email.Length > 120 || dto.Codigo.Length != 6)
+            {
+                return (false, "Correo o código inválido.");
             }
 
             var emailNormalizado = dto.Email.Trim().ToLower();
@@ -197,6 +202,11 @@ namespace DogGo.Services
                 return (false, "Debes indicar un correo.");
             }
 
+            if (dto.Email.Length > 120)
+            {
+                return (false, "El correo no puede superar 120 caracteres.");
+            }
+
             var emailNormalizado = dto.Email.Trim().ToLower();
 
             var usuario = await _context.Usuarios
@@ -228,6 +238,11 @@ namespace DogGo.Services
             if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
             {
                 return (false, "Debes indicar un correo.");
+            }
+
+            if (dto.Email.Length > 120)
+            {
+                return (false, "El correo no puede superar 120 caracteres.");
             }
 
             var emailNormalizado = dto.Email.Trim().ToLower();
@@ -266,9 +281,24 @@ namespace DogGo.Services
                 return (false, "Debes completar correo, código y nueva contraseña.");
             }
 
+            if (dto.Email.Length > 120)
+            {
+                return (false, "El correo no puede superar 120 caracteres.");
+            }
+
+            if (dto.Codigo.Trim().Length != 6)
+            {
+                return (false, "El código debe tener 6 dígitos.");
+            }
+
             if (dto.NuevaPassword.Length < 6)
             {
                 return (false, "La nueva contraseña debe tener al menos 6 caracteres.");
+            }
+
+            if (dto.NuevaPassword.Length > 100)
+            {
+                return (false, "La nueva contraseña no puede superar 100 caracteres.");
             }
 
             var emailNormalizado = dto.Email.Trim().ToLower();
@@ -336,6 +366,9 @@ namespace DogGo.Services
                 return (false, "Datos inválidos.", null);
             }
 
+            var validacion = ValidarPerfil(dto.Nombre, dto.Apellido, dto.Telefono);
+            if (!validacion.Success) return (false, validacion.Message, null);
+
             var usuario = await _context.Usuarios
                 .FirstOrDefaultAsync(u => u.Id == usuarioId);
 
@@ -361,6 +394,55 @@ namespace DogGo.Services
             };
 
             return (true, "Perfil actualizado correctamente.", perfil);
+        }
+
+        public async Task<(bool Success, string Message)> ChangePasswordAsync(
+            int usuarioId,
+            ChangePasswordRequestDto dto)
+        {
+            if (dto == null)
+            {
+                return (false, "Datos inválidos.");
+            }
+
+            var passwordActual = PrimerTexto(dto.CurrentPassword, dto.PasswordActual);
+            var passwordNueva = PrimerTexto(dto.NewPassword, dto.PasswordNueva, dto.NuevaPassword);
+
+            if (string.IsNullOrWhiteSpace(passwordActual) || string.IsNullOrWhiteSpace(passwordNueva))
+            {
+                return (false, "Debes capturar contraseña actual y nueva contraseña.");
+            }
+
+            if (passwordActual.Length > 100 || passwordNueva.Length > 100)
+            {
+                return (false, "La contraseña no puede superar 100 caracteres.");
+            }
+
+            if (passwordNueva.Length < 6)
+            {
+                return (false, "La nueva contraseña debe tener al menos 6 caracteres.");
+            }
+
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == usuarioId);
+
+            if (usuario == null)
+            {
+                return (false, "Usuario no encontrado.");
+            }
+
+            var actualValida = await VerificarPasswordYActualizarSiNecesarioAsync(usuario, passwordActual);
+
+            if (!actualValida)
+            {
+                return (false, "La contraseña actual es incorrecta.");
+            }
+
+            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordNueva);
+
+            await _context.SaveChangesAsync();
+
+            return (true, "Contraseña actualizada correctamente.");
         }
 
         private async Task<bool> VerificarPasswordYActualizarSiNecesarioAsync(Usuario usuario, string password)
@@ -394,12 +476,104 @@ namespace DogGo.Services
             return false;
         }
 
+        private static (bool Success, string Message) ValidarRegistro(RegisterRequestDto dto)
+        {
+            if (dto == null)
+            {
+                return (false, "Datos de registro inválidos.");
+            }
+
+            var perfil = ValidarPerfil(dto.Nombre, dto.Apellido, dto.Telefono);
+            if (!perfil.Success) return perfil;
+
+            if (string.IsNullOrWhiteSpace(dto.Email))
+            {
+                return (false, "El correo es obligatorio.");
+            }
+
+            if (dto.Email.Trim().Length > 120)
+            {
+                return (false, "El correo no puede superar 120 caracteres.");
+            }
+
+            if (!dto.Email.Contains("@"))
+            {
+                return (false, "El correo no tiene un formato válido.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return (false, "La contraseña es obligatoria.");
+            }
+
+            if (dto.Password.Length < 6)
+            {
+                return (false, "La contraseña debe tener al menos 6 caracteres.");
+            }
+
+            if (dto.Password.Length > 100)
+            {
+                return (false, "La contraseña no puede superar 100 caracteres.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Rol))
+            {
+                return (false, "El rol es obligatorio.");
+            }
+
+            if (dto.Rol.Trim().Length > 20)
+            {
+                return (false, "El rol no puede superar 20 caracteres.");
+            }
+
+            return (true, "OK");
+        }
+
+        private static (bool Success, string Message) ValidarPerfil(
+            string? nombre,
+            string? apellido,
+            string? telefono)
+        {
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                return (false, "El nombre es obligatorio.");
+            }
+
+            if (nombre.Trim().Length > 50)
+            {
+                return (false, "El nombre no puede superar 50 caracteres.");
+            }
+
+            if (string.IsNullOrWhiteSpace(apellido))
+            {
+                return (false, "El apellido es obligatorio.");
+            }
+
+            if (apellido.Trim().Length > 50)
+            {
+                return (false, "El apellido no puede superar 50 caracteres.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(telefono) && telefono.Trim().Length > 20)
+            {
+                return (false, "El teléfono no puede superar 20 caracteres.");
+            }
+
+            return (true, "OK");
+        }
+
+        private static bool RolValido(string rol)
+        {
+            return rol == "Duenio" || rol == "Paseador" || rol == "Admin";
+        }
+
         private static string NormalizarRol(string rol)
         {
             var normalizado = rol.Trim().ToLower();
 
             if (normalizado == "dueño" ||
                 normalizado == "duenio" ||
+                normalizado == "dueno" ||
                 normalizado == "cliente")
             {
                 return "Duenio";
@@ -408,6 +582,11 @@ namespace DogGo.Services
             if (normalizado == "paseador")
             {
                 return "Paseador";
+            }
+
+            if (normalizado == "admin" || normalizado == "administrador")
+            {
+                return "Admin";
             }
 
             return rol.Trim();
@@ -424,6 +603,19 @@ namespace DogGo.Services
             using var sha = SHA256.Create();
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
             return Convert.ToHexString(bytes);
+        }
+
+        private static string? PrimerTexto(params string?[] valores)
+        {
+            foreach (var valor in valores)
+            {
+                if (!string.IsNullOrWhiteSpace(valor))
+                {
+                    return valor.Trim();
+                }
+            }
+
+            return null;
         }
 
         private async Task EnviarCodigoConfirmacionAsync(string email, string nombre, string codigo)

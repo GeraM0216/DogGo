@@ -7,15 +7,18 @@
         public int PerroId { get; set; }
         public string PerroNombre { get; set; } = string.Empty;
         public string? PerroFotoUrl { get; set; }
+        public string? PerroImagenUrl { get; set; }
 
         public int PaseadorId { get; set; }
         public string PaseadorNombre { get; set; } = string.Empty;
         public string PaseadorApellido { get; set; } = string.Empty;
+        public string PaseadorNombreCompleto { get; set; } = string.Empty;
         public string? PaseadorFotoUrl { get; set; }
 
         public int DuenioId { get; set; }
         public string DuenioNombre { get; set; } = string.Empty;
         public string DuenioApellido { get; set; } = string.Empty;
+        public string DuenioNombreCompleto { get; set; } = string.Empty;
 
         public string Estado { get; set; } = string.Empty;
 

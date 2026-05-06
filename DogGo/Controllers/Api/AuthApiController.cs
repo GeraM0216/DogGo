@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using DogGo.DTOs.Auth;
 using DogGo.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +20,7 @@ namespace DogGo.Controllers.Api
 
         [HttpPost("register")]
         [AllowAnonymous]
-        public async Task<IActionResult> Register([FromBody] RegistrarRequestDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto dto)
         {
             var result = await _authService.RegistrarAsync(dto);
 
@@ -151,12 +152,12 @@ namespace DogGo.Controllers.Api
         }
 
         [HttpGet("perfil")]
-        [Authorize(AuthenticationSchemes = "Bearer")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> Perfil()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var usuarioId = ObtenerUsuarioId();
 
-            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out int usuarioId))
+            if (usuarioId == null)
             {
                 return Unauthorized(new
                 {
@@ -165,7 +166,7 @@ namespace DogGo.Controllers.Api
                 });
             }
 
-            var perfil = await _authService.ObtenerPerfilAsync(usuarioId);
+            var perfil = await _authService.ObtenerPerfilAsync(usuarioId.Value);
 
             if (perfil == null)
             {
@@ -184,12 +185,12 @@ namespace DogGo.Controllers.Api
         }
 
         [HttpPut("perfil")]
-        [Authorize(AuthenticationSchemes = "Bearer")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<IActionResult> ActualizarPerfil([FromBody] UpdatePerfilRequestDto dto)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var usuarioId = ObtenerUsuarioId();
 
-            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out int usuarioId))
+            if (usuarioId == null)
             {
                 return Unauthorized(new
                 {
@@ -198,7 +199,7 @@ namespace DogGo.Controllers.Api
                 });
             }
 
-            var result = await _authService.ActualizarPerfilAsync(usuarioId, dto);
+            var result = await _authService.ActualizarPerfilAsync(usuarioId.Value, dto);
 
             if (!result.Success || result.Data == null)
             {
@@ -215,6 +216,51 @@ namespace DogGo.Controllers.Api
                 message = result.Message,
                 data = result.Data
             });
+        }
+
+        [HttpPut("change-password")]
+        [HttpPut("cambiar-password")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto dto)
+        {
+            var usuarioId = ObtenerUsuarioId();
+
+            if (usuarioId == null)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Token inválido."
+                });
+            }
+
+            var result = await _authService.ChangePasswordAsync(usuarioId.Value, dto);
+
+            if (!result.Success)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = result.Message
+            });
+        }
+
+        private int? ObtenerUsuarioId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value
+                ?? User.FindFirst("id")?.Value
+                ?? User.FindFirst("usuarioId")?.Value
+                ?? User.FindFirst("UsuarioId")?.Value;
+
+            return int.TryParse(userIdClaim, out var usuarioId) ? usuarioId : null;
         }
     }
 }

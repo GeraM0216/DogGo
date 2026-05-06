@@ -4,6 +4,7 @@ using DogGo.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DogGo.Migrations
 {
     [DbContext(typeof(DogGoDbContext))]
-    partial class DogGoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260506054501_LimitesPaseadoresDatos")]
+    partial class LimitesPaseadoresDatos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -153,8 +156,7 @@ namespace DogGo.Migrations
 
                     b.Property<string>("Descripcion")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
+                        .HasColumnType("longtext");
 
                     b.Property<bool>("Disponible")
                         .HasColumnType("tinyint(1)");
@@ -163,8 +165,7 @@ namespace DogGo.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("FotoUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
+                        .HasColumnType("longtext");
 
                     b.Property<decimal>("TarifaPorHora")
                         .HasPrecision(10, 2)
@@ -174,8 +175,7 @@ namespace DogGo.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ZonaServicio")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -194,12 +194,10 @@ namespace DogGo.Migrations
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CanceladoPor")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("DireccionRecogida")
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("DuracionMinutos")
                         .HasColumnType("int");
@@ -212,8 +210,7 @@ namespace DogGo.Migrations
 
                     b.Property<string>("Estado")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("FechaCancelacion")
                         .HasColumnType("datetime(6)");
@@ -240,12 +237,10 @@ namespace DogGo.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("FotoFinUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("FotoInicioUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
+                        .HasColumnType("longtext");
 
                     b.Property<decimal>("LatitudActual")
                         .HasPrecision(10, 7)
@@ -264,12 +259,10 @@ namespace DogGo.Migrations
                         .HasColumnType("decimal(10,7)");
 
                     b.Property<string>("MotivoCancelacion")
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("MotivoFinalizacionAnticipada")
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("PaseadorId")
                         .HasColumnType("int");
@@ -282,12 +275,10 @@ namespace DogGo.Migrations
                         .HasColumnType("decimal(10,2)");
 
                     b.Property<string>("ReferenciasRecogida")
-                        .HasMaxLength(300)
-                        .HasColumnType("varchar(300)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ZonaRecogida")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
