@@ -65,6 +65,10 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddSignalR();
 builder.Services.AddAuthorization();
 
+builder.Services.AddScoped<ChatService>();
+
+builder.Services.AddScoped<CalificacionService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

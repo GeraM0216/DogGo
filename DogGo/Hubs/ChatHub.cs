@@ -1,68 +1,109 @@
-﻿using DogGo.Data;
-using DogGo.Models;
+﻿using System.Security.Claims;
+using DogGo.DTOs.Chat;
+using DogGo.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace DogGo.Hubs
 {
     [Authorize]
     public class ChatHub : Hub
     {
-        private readonly DogGoDbContext _context;
+        private readonly ChatService _chatService;
 
-        public ChatHub(DogGoDbContext context)
+        public ChatHub(ChatService chatService)
         {
-            _context = context;
+            _chatService = chatService;
         }
 
-        // Se llama cuando el cliente envía un mensaje
         public async Task EnviarMensaje(int paseoId, int receptorId, string contenido)
         {
-            var emisorId = int.Parse(
-                Context.User.FindFirstValue(ClaimTypes.NameIdentifier)
-            );
+            var usuarioId = ObtenerUsuarioId();
+            var rol = ObtenerRol();
 
-            // Guardar en base de datos
-            var mensaje = new Mensaje
+            if (usuarioId == null)
             {
-                EmisorId = emisorId,
-                ReceptorId = receptorId,
+                throw new HubException("Token inválido.");
+            }
+
+            var dto = new EnviarMensajeRequestDto
+            {
                 PaseoId = paseoId,
-                Contenido = contenido,
-                FechaEnvio = DateTime.UtcNow,
-                Leido = false
+                ReceptorId = receptorId,
+                Contenido = contenido
             };
 
-            _context.Mensajes.Add(mensaje);
-            await _context.SaveChangesAsync();
+            var result = await _chatService.EnviarMensajeAsync(paseoId, usuarioId.Value, rol, dto);
 
-            // Cargar nombre del emisor para mostrarlo en el chat
-            var emisor = await _context.Usuarios.FindAsync(emisorId);
-            var nombreEmisor = $"{emisor.Nombre} {emisor.Apellido}";
+            if (!result.Success || result.Data == null)
+            {
+                throw new HubException(result.Message);
+            }
 
-            // Enviar al grupo del paseo (emisor + receptor lo ven)
             await Clients.Group(paseoId.ToString()).SendAsync("RecibirMensaje", new
             {
-                emisorId,
-                nombreEmisor,
-                contenido,
-                fechaEnvio = mensaje.FechaEnvio.ToString("HH:mm"),
-                esMio = false   // el cliente lo ajusta según su propio Id
+                id = result.Data.Id,
+                paseoId = result.Data.PaseoId,
+                emisorId = result.Data.EmisorId,
+                receptorId = result.Data.ReceptorId,
+                nombreEmisor = result.Data.EmisorNombreCompleto,
+                emisorNombre = result.Data.EmisorNombre,
+                emisorApellido = result.Data.EmisorApellido,
+                emisorRol = result.Data.EmisorRol,
+                contenido = result.Data.Contenido,
+                fechaEnvio = result.Data.FechaEnvio,
+                hora = result.Data.FechaEnvio.ToLocalTime().ToString("HH:mm"),
+                leido = result.Data.Leido
             });
         }
 
-        // Al conectarse, unirse al grupo del paseo
         public async Task UnirseAPaseo(int paseoId)
         {
+            var usuarioId = ObtenerUsuarioId();
+            var rol = ObtenerRol();
+
+            if (usuarioId == null)
+            {
+                throw new HubException("Token inválido.");
+            }
+
+            var permitido = await _chatService.PuedeUnirseAlPaseoAsync(paseoId, usuarioId.Value, rol);
+
+            if (!permitido)
+            {
+                throw new HubException("No tienes permiso para unirte a este chat.");
+            }
+
             await Groups.AddToGroupAsync(Context.ConnectionId, paseoId.ToString());
         }
 
-        // Al desconectarse, salir del grupo
-        public override async Task OnDisconnectedAsync(Exception exception)
+        public async Task SalirDePaseo(int paseoId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, paseoId.ToString());
+        }
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
             await base.OnDisconnectedAsync(exception);
+        }
+
+        private int? ObtenerUsuarioId()
+        {
+            var valor = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? Context.User?.FindFirstValue("sub")
+                ?? Context.User?.FindFirstValue("id")
+                ?? Context.User?.FindFirstValue("usuarioId")
+                ?? Context.User?.FindFirstValue("UsuarioId");
+
+            return int.TryParse(valor, out var usuarioId) ? usuarioId : null;
+        }
+
+        private string ObtenerRol()
+        {
+            return Context.User?.FindFirstValue(ClaimTypes.Role)
+                ?? Context.User?.FindFirstValue("role")
+                ?? Context.User?.FindFirstValue("rol")
+                ?? string.Empty;
         }
     }
 }
