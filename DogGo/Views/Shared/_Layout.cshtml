@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
@@ -9,17 +9,177 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="@Url.Content("~/css/site.css")" />
-
     @await RenderSectionAsync("Styles", required: false)
+
+    <style>
+        /* ── Chip de usuario (nuevo, no pisa el site.css) ── */
+        .nav-user-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 12px 5px 5px;
+            background: var(--teal-l);
+            border-radius: 999px;
+            border: 1.5px solid var(--border);
+        }
+
+        .nav-user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--teal);
+            color: #fff;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-user-avatar.av-paseador {
+            background: var(--amber);
+        }
+
+        .nav-user-info {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .nav-chip-nombre {
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .nav-chip-rol {
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--teal);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-chip-rol.rol-paseador {
+            color: var(--amber-d);
+        }
+
+        /* ── Widget flotante compacto ── */
+        .mode-fab {
+            position: fixed;
+            bottom: 24px;
+            left: 20px;
+            z-index: 1050;
+        }
+
+        .mode-fab-inner {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.8);
+            border-radius: 999px;
+            box-shadow: 0 4px 20px rgba(45,49,66,0.12);
+            padding: 5px;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+
+        .mode-fab-inner:hover {
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 6px 24px rgba(45,49,66,0.16);
+        }
+
+        .mode-fab-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .mode-fab-icon.duenio   { background: var(--teal-l); }
+        .mode-fab-icon.paseador { background: var(--amber-l); }
+
+        .mode-fab-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.15s;
+            flex-shrink: 0;
+        }
+
+        .mode-fab-btn.to-paseador { background: var(--amber); color: white; }
+        .mode-fab-btn.to-duenio   { background: var(--teal);  color: white; }
+        .mode-fab-btn:hover  { transform: scale(1.12) rotate(20deg); }
+        .mode-fab-btn:active { transform: scale(0.93); }
+
+        .mode-fab-tooltip {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: var(--text);
+            color: #fff;
+            font-family: 'Nunito', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 999px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.18s, transform 0.18s;
+        }
+
+        .mode-fab:hover .mode-fab-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
 </head>
 <body>
 
-    <!-- ── Navbar ── -->
+    @{
+        var rolActual = User.Identity != null && User.Identity.IsAuthenticated
+            ? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+            : null;
+        var nombreActual = User.Identity != null && User.Identity.IsAuthenticated
+            ? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+            : null;
+        var iniciales = "";
+        if (!string.IsNullOrWhiteSpace(nombreActual)) {
+            var partes = nombreActual.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            iniciales = partes.Length >= 2
+                ? $"{partes[0][0]}{partes[1][0]}"
+                : $"{partes[0][0]}";
+        }
+        var labelRol = rolActual == "Duenio" ? "Cliente" : rolActual;
+    }
+
     <nav class="navbar navbar-expand-md navbar-doggo sticky-top">
         <div class="container-fluid px-3">
 
             <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                <img src="@Url.Content("https://cdn.phototourl.com/free/2026-04-07-4b0ab729-6be0-43c9-96bb-2189d1589f86.png")" alt="DogGo" class="nav-logo-img" />
+                <img src="@Url.Content("https://cdn.phototourl.com/free/2026-04-07-4b0ab729-6be0-43c9-96bb-2189d1589f86.png")"
+                     alt="DogGo" class="nav-logo-img" />
             </a>
 
             <button class="navbar-toggler border-0" type="button"
@@ -28,61 +188,56 @@
             </button>
 
             <div class="collapse navbar-collapse" id="navMenu">
-                <ul class="navbar-nav me-auto gap-1 ms-2">
+
+                <ul class="navbar-nav me-auto align-items-center gap-1 ms-2">
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
                     </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Paseador" asp-action="Directorio">Paseadores</a>
-                    </li>
-
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    @if (rolActual == "Admin")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Admin" asp-action="Index">Admin</a>
+                        </li>
+                    }
+                    @if (rolActual == "Paseador")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Paseo" asp-action="MisPaseos">Mis servicios</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Paseador" asp-action="Perfil">Mi perfil</a>
+                        </li>
+                    }
+                    @if (rolActual == "Duenio")
                     {
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Paseo" asp-action="MisPaseos">Mis paseos</a>
                         </li>
-
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Admin" asp-action="Index">Admin</a>
-                            </li>
-                        }
-
-                        @if (User.IsInRole("Paseador"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Paseador" asp-action="Perfil">Mi perfil</a>
-                            </li>
-                        }
-
-                        @if (User.IsInRole("Duenio"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="DuenioPerfil" asp-action="Editar">Mi perfil</a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Perro" asp-action="Index">Mis perros</a>
-                            </li>
-                        }
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="DuenioPerfil" asp-action="Editar">Mi perfil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Perro" asp-action="Index">Mis perros</a>
+                        </li>
                     }
                 </ul>
 
-                <ul class="navbar-nav gap-1 align-items-center">
-                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                <ul class="navbar-nav gap-2 align-items-center">
+                    @if (rolActual != null)
                     {
-                        var nombre = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
-                        var rol = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-                        var rolMostrado = rol == "Duenio" ? "Cliente" :
-                                          rol == "Paseador" ? "Paseador" : rol;
-
-                        <li class="nav-item d-flex align-items-center gap-2 px-2">
-                            <span class="nav-user-name">👤 @nombre</span>
-                            <span class="nav-badge-rol">@rolMostrado</span>
+                        <li class="nav-item">
+                            <div class="nav-user-chip">
+                                <div class="nav-user-avatar @(rolActual == "Paseador" ? "av-paseador" : "")">
+                                    @iniciales
+                                </div>
+                                <div class="nav-user-info">
+                                    <span class="nav-chip-nombre">@nombreActual</span>
+                                    <span class="nav-chip-rol @(rolActual == "Paseador" ? "rol-paseador" : "")">
+                                        @labelRol
+                                    </span>
+                                </div>
+                            </div>
                         </li>
-
                         <li class="nav-item">
                             <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
                                 @Html.AntiForgeryToken()
@@ -95,53 +250,69 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Auth" asp-action="Login">Iniciar sesión</a>
                         </li>
-
                         <li class="nav-item">
                             <a class="nav-cta-btn" asp-controller="Auth" asp-action="Register">Registrarse</a>
                         </li>
                     }
                 </ul>
+
             </div>
         </div>
     </nav>
 
-    <!-- ── TempData Alerts ── -->
-    @if (TempData["Exito"] != null)
-    {
-        <div class="alert alert-success alert-dismissible tempdata-alert" role="alert">
-            ✅ @TempData["Exito"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible tempdata-alert" role="alert">
-            ❌ @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+    <div class="container mt-3">
+        @if (TempData["Exito"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                ✅ @TempData["Exito"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                ❌ @TempData["Error"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+    </div>
 
     <main>
         @RenderBody()
     </main>
 
-    <!-- ── Footer ── -->
     <footer class="footer-doggo">
         <div class="footer-inner">
-            <img src="@Url.Content("https://cdn.phototourl.com/free/2026-04-07-4b0ab729-6be0-43c9-96bb-2189d1589f86.png")" alt="DogGo" class="footer-logo-img" />
+            <img src="@Url.Content("https://cdn.phototourl.com/free/2026-04-07-4b0ab729-6be0-43c9-96bb-2189d1589f86.png")"
+                 alt="DogGo" class="footer-logo-img" />
             <span>DogGo &copy; @DateTime.Now.Year — Proyecto universitario</span>
         </div>
     </footer>
 
+    @if (rolActual == "Duenio" || rolActual == "Paseador")
+    {
+        <div class="mode-fab">
+            <div class="mode-fab-tooltip">
+                Cambiar a modo @(rolActual == "Duenio" ? "Paseador" : "Cliente")
+            </div>
+            <form asp-controller="Auth" asp-action="SwitchView" method="post" class="m-0">
+                @Html.AntiForgeryToken()
+                <div class="mode-fab-inner">
+                    <div class="mode-fab-icon @(rolActual == "Duenio" ? "duenio" : "paseador")">
+                        @(rolActual == "Duenio" ? "🐶" : "🦮")
+                    </div>
+                    <button type="submit"
+                            class="mode-fab-btn @(rolActual == "Duenio" ? "to-paseador" : "to-duenio")"
+                            title="Cambiar a modo @(rolActual == "Duenio" ? "Paseador" : "Cliente")">
+                        🔄
+                    </button>
+                </div>
+            </form>
+        </div>
+    }
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        document.querySelectorAll(".tempdata-alert").forEach(a => {
-        setTimeout(() => bootstrap.Alert.getOrCreateInstance(a).close(), 4000);
-        });
-    </script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

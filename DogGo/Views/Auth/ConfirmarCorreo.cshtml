@@ -1,129 +1,33 @@
-﻿@{
-    Layout = null;
-    ViewData["Title"] = "Confirmar correo";
-    var email = ViewBag.Email as string;
+﻿@model DogGo.Controllers.ConfirmacionAuxiliar
+@{
+    ViewData["Title"] = "Verificar Cuenta";
 }
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] — DogGo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-</head>
-<body>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body p-5 text-center">
+                    <h2 class="fw-bold mb-4">Verifica tu cuenta 🐾</h2>
+                    <p class="text-muted">Ingresa el código enviado a <strong>@Model.Email</strong></p>
+                    
+                    <form asp-controller="Auth" asp-action="ConfirmarEmail" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Email" />
+                        
+                        <div class="form-group mb-4">
+                            <label class="form-label">Código de 6 dígitos</label>
+                            <input asp-for="Codigo" class="form-control form-control-lg text-center fw-bold" 
+                                   placeholder="000000" maxlength="6" style="letter-spacing: 8px;" required />
+                            <span asp-validation-for="Codigo" class="text-danger"></span>
+                        </div>
 
-<div class="auth-container">
-
-    <div class="auth-left">
-        <div class="auth-left-circle"></div>
-        <div class="auth-left-circle2"></div>
-        <img src="https://cdn.phototourl.com/free/2026-04-07-4b0ab729-6be0-43c9-96bb-2189d1589f86.png"
-             alt="DogGo" class="auth-logo-img" />
-        <h1 class="auth-left-title">DogGo</h1>
-        <p class="auth-left-sub">Casi listo — solo falta confirmar que el correo es tuyo</p>
-        <div class="auth-trust">
-            <div class="trust-item"><span class="trust-dot"></span> Código enviado en segundos</div>
-            <div class="trust-item"><span class="trust-dot"></span> Válido por 10 minutos</div>
-            <div class="trust-item"><span class="trust-dot"></span> Puedes reenviar si no llega</div>
-        </div>
-    </div>
-
-    <div class="auth-right">
-        <div class="auth-card">
-            <div class="auth-card-header">
-                <div class="confirm-icon">📧</div>
-                <h2>Confirma tu correo</h2>
-                <p>Ingresa el código de 6 dígitos que te enviamos</p>
-            </div>
-
-            @if (!string.IsNullOrWhiteSpace(email))
-            {
-                <div class="info-banner">
-                    Código enviado a <strong>@email</strong>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm">
+                            Confirmar Registro
+                        </button>
+                    </form>
                 </div>
-            }
-
-            @if (ViewBag.Error != null)
-            {
-                <div class="auth-error">@ViewBag.Error</div>
-            }
-
-            <form asp-action="ConfirmarCorreo" method="post">
-                @Html.AntiForgeryToken()
-
-                <div class="field-group">
-                    <label>Correo electrónico</label>
-                    <input name="email" value="@email" placeholder="tu@correo.com" />
-                </div>
-
-                <div class="field-group">
-                    <label>Código de verificación</label>
-                    <input name="codigo" maxlength="6" placeholder="123456"
-                           style="letter-spacing:.35em; font-size:1.2rem; text-align:center;" />
-                </div>
-
-                <button type="submit" class="auth-btn">Confirmar correo</button>
-            </form>
-
-            @if (!string.IsNullOrWhiteSpace(email))
-            {
-                <form asp-action="ReenviarCodigo" method="post" style="margin-top:.75rem">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="email" value="@email" />
-                    <button type="submit" class="auth-btn-outline">Reenviar código</button>
-                </form>
-            }
-
-            <div class="auth-footer">
-                <a asp-action="Login">← Volver al inicio de sesión</a>
             </div>
         </div>
     </div>
-
 </div>
-
-<style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; font-family: 'Nunito', system-ui, sans-serif; background: #FFFBF5; color: #2D3142; }
-    .auth-container { display: flex; height: 100vh; width: 100%; }
-    .auth-left {
-        width: 38%; max-width: 420px;
-        background: linear-gradient(145deg, #0F9B8E, #0d8a7e);
-        color: white; display: flex; flex-direction: column; justify-content: center;
-        padding: 60px 50px; position: relative; overflow: hidden;
-    }
-    .auth-left-circle { position: absolute; width: 320px; height: 320px; background: rgba(255,255,255,.08); border-radius: 50%; top: -80px; left: -80px; }
-    .auth-left-circle2 { position: absolute; width: 200px; height: 200px; background: rgba(255,255,255,.06); border-radius: 50%; bottom: -40px; right: -40px; }
-    .auth-logo-img { height: 52px; width: auto; object-fit: contain; margin-bottom: 1.5rem; position: relative; z-index: 1; }
-    .auth-left-title { font-size: 3.2rem; font-weight: 900; margin: 0 0 .6rem; letter-spacing: -.5px; position: relative; z-index: 1; }
-    .auth-left-sub { font-size: 1rem; font-weight: 600; opacity: .88; line-height: 1.6; max-width: 280px; margin-bottom: 2rem; position: relative; z-index: 1; }
-    .auth-trust { display: flex; flex-direction: column; gap: .55rem; position: relative; z-index: 1; }
-    .trust-item { display: flex; align-items: center; gap: .5rem; font-size: .85rem; font-weight: 700; opacity: .9; }
-    .trust-dot { width: 8px; height: 8px; border-radius: 50%; background: #5DCAA5; flex-shrink: 0; }
-    .auth-right { flex: 1; display: flex; justify-content: center; align-items: center; background: url('/images/parque-ecologico.jpg') center/cover no-repeat; position: relative; }
-    .auth-right::before { content: ""; position: absolute; inset: 0; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background: rgba(15,155,142,.12); }
-    .auth-card { width: 380px; max-width: 92%; padding: 2.2rem; border-radius: 24px; background: rgba(255,255,255,.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1.5px solid rgba(255,255,255,.7); box-shadow: 0 20px 48px rgba(15,155,142,.18); position: relative; z-index: 2; animation: fadeUp .5s ease both; }
-    .confirm-icon { font-size: 2.5rem; margin-bottom: .5rem; }
-    .auth-card-header { margin-bottom: 1.2rem; }
-    .auth-card-header h2 { font-size: 1.5rem; font-weight: 900; color: #2D3142; margin: 0 0 .2rem; }
-    .auth-card-header p { font-size: .88rem; font-weight: 600; color: #7B8194; margin: 0; }
-    .info-banner { background: #E0F5F3; border: 1.5px solid #5DCAA5; color: #0d8a7e; border-radius: 12px; padding: .65rem 1rem; font-size: .85rem; font-weight: 700; margin-bottom: 1rem; }
-    .auth-error { background: rgba(220,38,38,.08); border: 1px solid rgba(220,38,38,.2); color: #991b1b; border-radius: 10px; padding: .65rem 1rem; font-size: .85rem; font-weight: 700; margin-bottom: 1rem; }
-    .field-group { display: flex; flex-direction: column; gap: .25rem; margin-bottom: .9rem; }
-    .field-group label { font-size: .8rem; font-weight: 800; color: #2D3142; letter-spacing: .02em; }
-    .field-group input { width: 100%; padding: .75rem 1rem; border-radius: 12px; background: #F0FAF9; border: 1.5px solid #C5E8E5; outline: none; font-family: 'Nunito', sans-serif; font-size: .92rem; font-weight: 600; color: #2D3142; transition: border-color .18s, background .18s; }
-    .field-group input:focus { background: #fff; border-color: #0F9B8E; }
-    .auth-btn { width: 100%; padding: .82rem; border-radius: 999px; background: #0F9B8E; color: #fff; border: none; font-family: 'Nunito', sans-serif; font-size: .97rem; font-weight: 900; cursor: pointer; box-shadow: 0 4px 14px rgba(15,155,142,.35); transition: background .18s, transform .15s, box-shadow .15s; }
-    .auth-btn:hover { background: #0d8a7e; transform: translateY(-2px); box-shadow: 0 7px 20px rgba(15,155,142,.45); }
-    .auth-btn-outline { width: 100%; padding: .75rem; border-radius: 999px; background: transparent; color: #0F9B8E; border: 2px solid #0F9B8E; font-family: 'Nunito', sans-serif; font-size: .92rem; font-weight: 800; cursor: pointer; transition: background .18s, color .18s; }
-    .auth-btn-outline:hover { background: #E0F5F3; }
-    .auth-footer { margin-top: 1rem; text-align: center; font-size: .85rem; font-weight: 700; padding: .85rem; background: #F0FAF9; border-radius: 12px; }
-    .auth-footer a { color: #0F9B8E; font-weight: 800; text-decoration: none; }
-    .auth-footer a:hover { text-decoration: underline; }
-    @@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-    @@media (max-width: 700px) { .auth-left { display: none; } .auth-right { width: 100%; } }
-</style>
-</body>
-</html>

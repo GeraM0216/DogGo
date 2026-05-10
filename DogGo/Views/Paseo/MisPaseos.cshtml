@@ -2,7 +2,8 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "Mis paseos";
+    var esPaseadorTemp = User.IsInRole("Paseador");
+    ViewData["Title"] = esPaseadorTemp ? "Mis servicios" : "Mis paseos";
 
     var enCurso = Model.Where(p => p.Estado == "EnCurso").ToList();
     var pendientes = Model.Where(p => p.Estado == "Pendiente").ToList();
@@ -135,8 +136,8 @@
 <div class="page-header-wrap">
     <div class="page-header-inner">
         <div class="page-eyebrow">Tu historial</div>
-        <h1 class="page-title">Mis paseos</h1>
-        <p class="page-sub">Revisa el estado de todos tus paseos, activos e históricos.</p>
+        <h1 class="page-title">@(esPaseador ? "Mis servicios" : "Mis paseos")</h1>
+        <p class="page-sub">Revisa el estado de todos tus @(esPaseador ? "servicios" : "paseos"), activos e históricos.</p>
 
         @if (Model.Any())
         {
@@ -182,7 +183,7 @@
             <div class="mp-kpi-card">
                 <div class="mp-kpi-icon">🦮</div>
                 <div>
-                    <div class="mp-kpi-label">Paseos activos</div>
+                    <div class="mp-kpi-label">@(esPaseador ? "Servicios activos" : "Paseos activos")</div>
                     <div class="mp-kpi-value">@totalActivos</div>
                     <div class="mp-kpi-sub">Pendientes y en curso</div>
                 </div>
@@ -200,9 +201,9 @@
             <div class="mp-kpi-card">
                 <div class="mp-kpi-icon">💰</div>
                 <div>
-                    <div class="mp-kpi-label">Total finalizado</div>
+                    <div class="mp-kpi-label">@(esPaseador ? "Total ganado" : "Total gastado")</div>
                     <div class="mp-kpi-value">$@totalGastadoFinalizados.ToString("0.00")</div>
-                    <div class="mp-kpi-sub">Solo paseos finalizados</div>
+                    <div class="mp-kpi-sub">@(esPaseador ? "En servicios finalizados" : "Solo paseos finalizados")</div>
                 </div>
             </div>
 
@@ -235,7 +236,7 @@
                 <input type="text"
                        name="busqueda"
                        value="@ViewBag.Busqueda"
-                       placeholder="Perro o paseador"
+                       placeholder="@(esPaseador ? "Perro o dueño" : "Perro o paseador")"
                        class="form-ctrl" />
             </div>
 
@@ -280,12 +281,15 @@
     @if (!Model.Any())
     {
         <div class="empty-state">
-            <div class="empty-icon">🦮</div>
-            <h3>No se encontraron paseos</h3>
-            <p>Intenta cambiar los filtros o limpiar la búsqueda.</p>
-            <a asp-controller="Paseador" asp-action="Directorio" class="btn-primary-doggo" style="margin-top:.75rem;display:inline-block">
-                Buscar paseador
-            </a>
+            <div class="empty-icon">@(esPaseador ? "🦮" : "🐶")</div>
+            <h3>@(esPaseador ? "No tienes servicios aún" : "No se encontraron paseos")</h3>
+            <p>@(esPaseador ? "Cuando un dueño te contrate, aparecerá aquí." : "Intenta cambiar los filtros o limpiar la búsqueda.")</p>
+            @if (!esPaseador)
+            {
+                <a asp-controller="Paseador" asp-action="Directorio" class="btn-primary-doggo" style="margin-top:.75rem;display:inline-block">
+                    Buscar paseador
+                </a>
+            }
         </div>
     }
     else

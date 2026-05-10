@@ -9,9 +9,17 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.ComponentModel.DataAnnotations;
 
 namespace DogGo.Controllers
 {
+    // Modelo auxiliar para que la verificación no dependa de archivos externos
+    public class ConfirmacionAuxiliar
+    {
+        [Required] public string Email { get; set; } = string.Empty;
+        [Required] public string Codigo { get; set; } = string.Empty;
+    }
+
     public class AuthController : Controller
     {
         private readonly DogGoDbContext _context;
@@ -23,10 +31,9 @@ namespace DogGo.Controllers
             _emailService = emailService;
         }
 
-        // GET: /Auth/Login
+        // --- LOGIN ---
         public IActionResult Login() => View();
 
-        // POST: /Auth/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
@@ -34,7 +41,6 @@ namespace DogGo.Controllers
             if (!ModelState.IsValid) return View(model);
 
             var emailNormalizado = model.Email.Trim().ToLower();
-
             var usuario = await _context.Usuarios
                 .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
 
@@ -45,7 +51,6 @@ namespace DogGo.Controllers
             }
 
             var passwordValido = await VerificarPasswordYActualizarSiNecesarioAsync(usuario, model.Password);
-
             if (!passwordValido)
             {
                 ModelState.AddModelError("", "Email o contraseña incorrectos");
@@ -54,389 +59,164 @@ namespace DogGo.Controllers
 
             if (!usuario.EmailConfirmado)
             {
-                ModelState.AddModelError("", "Debes confirmar tu correo antes de iniciar sesión.");
-                return View(model);
+                TempData["Error"] = "Tu cuenta no está confirmada.";
+                return RedirectToAction("ConfirmarEmail", new { email = usuario.Email });
             }
 
             await SignInUser(usuario, model.RememberMe);
-
-            if (usuario.Rol == "Paseador")
-            {
-                var paseador = await _context.Paseadores
-                    .FirstOrDefaultAsync(p => p.UsuarioId == usuario.Id);
-
-                if (paseador != null)
-                {
-                    var perfilIncompleto =
-                        string.IsNullOrWhiteSpace(paseador.Descripcion) ||
-                        string.IsNullOrWhiteSpace(paseador.FotoUrl) ||
-                        string.IsNullOrWhiteSpace(paseador.ZonaServicio);
-
-                    if (perfilIncompleto)
-                    {
-                        TempData["Exito"] = "Completa tu perfil para aparecer mejor ante los dueños.";
-                        return RedirectToAction("Editar", "Paseador");
-                    }
-                }
-            }
-
-            return RedirectToAction("Index", "Home");
+            return (usuario.Rol == "Admin") ? RedirectToAction("Index", "Admin") : RedirectToAction("Index", "Home");
         }
 
-        // GET: /Auth/Register
+        // --- REGISTRO ---
         public IActionResult Register() => View();
 
-        // POST: /Auth/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
 
-            var emailNormalizado = model.Email.Trim().ToLower();
-
-            var existe = await _context.Usuarios.AnyAsync(u => u.Email.ToLower() == emailNormalizado);
-            if (existe)
+            if (await _context.Usuarios.AnyAsync(u => u.Email.ToLower() == model.Email.ToLower()))
             {
-                ModelState.AddModelError("Email", "Ya existe una cuenta con ese email");
+                ModelState.AddModelError("Email", "Este email ya está registrado.");
                 return View(model);
             }
 
-            var codigo = GenerarCodigoConfirmacion();
-
             var usuario = new Usuario
             {
-                Nombre = model.Nombre.Trim(),
-                Apellido = model.Apellido.Trim(),
-                Email = emailNormalizado,
-                Telefono = model.Telefono?.Trim() ?? string.Empty,
-                Rol = model.Rol,
+                Nombre = model.Nombre,
+                Apellido = model.Apellido,
+                Email = model.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
-                FechaRegistro = DateTime.UtcNow,
+                Telefono = model.Telefono ?? "",
+                Rol = model.Rol,
                 EmailConfirmado = false,
-                CodigoConfirmacion = codigo,
-                CodigoExpiraEn = DateTime.UtcNow.AddMinutes(10)
+                CodigoConfirmacion = GenerarCodigoConfirmacion(),
+                CodigoExpiraEn = DateTime.UtcNow.AddMinutes(10),
+                FechaRegistro = DateTime.UtcNow
             };
 
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
 
-            if (model.Rol == "Paseador")
+            // Si es paseador, crear su perfil base
+            if (usuario.Rol == "Paseador")
             {
-                _context.Paseadores.Add(new Paseador
-                {
-                    UsuarioId = usuario.Id,
-                    Descripcion = "",
-                    TarifaPorHora = 0,
-                    CalificacionPromedio = 0,
-                    Disponible = true
-                });
-
+                _context.Paseadores.Add(new Paseador { UsuarioId = usuario.Id, Disponible = true, TarifaPorHora = 0, Descripcion = "¡Hola! Soy un nuevo paseador." });
                 await _context.SaveChangesAsync();
             }
 
-            await _emailService.EnviarCodigoConfirmacionAsync(usuario.Email, codigo);
+            try
+            {
+                await _emailService.EnviarCodigoConfirmacionAsync(usuario.Email, usuario.CodigoConfirmacion);
+            }
+            catch { /* Ignorar errores de correo en local */ }
 
-            TempData["EmailPendiente"] = usuario.Email;
-
-            return RedirectToAction("ConfirmarCorreo");
+            return RedirectToAction("ConfirmarEmail", new { email = usuario.Email });
         }
 
-        // GET: /Auth/ConfirmarCorreo
-        public IActionResult ConfirmarCorreo()
+        // --- CONFIRMACIÓN (Usando tu archivo VerificarCodigo.cshtml) ---
+        public IActionResult ConfirmarEmail(string email)
         {
-            ViewBag.Email = TempData["EmailPendiente"]?.ToString();
-            return View();
+            return View("VerificarCodigo", new ConfirmacionAuxiliar { Email = email });
         }
 
-        // POST: /Auth/ConfirmarCorreo
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConfirmarCorreo(string email, string codigo)
+        public async Task<IActionResult> ConfirmarEmail(ConfirmacionAuxiliar model)
         {
-            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(codigo))
-            {
-                ViewBag.Error = "Debes capturar el correo y el código.";
-                ViewBag.Email = email;
-                return View();
-            }
-
-            var emailNormalizado = email.Trim().ToLower();
-
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
+                .FirstOrDefaultAsync(u => u.Email == model.Email && u.CodigoConfirmacion == model.Codigo);
 
             if (usuario == null)
             {
-                ViewBag.Error = "No se encontró un usuario con ese correo.";
-                ViewBag.Email = email;
-                return View();
-            }
-
-            if (usuario.EmailConfirmado)
-            {
-                TempData["Success"] = "Tu correo ya estaba confirmado. Ya puedes iniciar sesión.";
-                return RedirectToAction("Login");
-            }
-
-            if (usuario.CodigoExpiraEn == null || usuario.CodigoExpiraEn < DateTime.UtcNow)
-            {
-                ViewBag.Error = "El código ya expiró. Debes solicitar uno nuevo.";
-                ViewBag.Email = email;
-                return View();
-            }
-
-            if (usuario.CodigoConfirmacion != codigo.Trim())
-            {
-                ViewBag.Error = "El código es incorrecto.";
-                ViewBag.Email = email;
-                return View();
+                ModelState.AddModelError("", "Código incorrecto o expirado.");
+                return View("VerificarCodigo", model);
             }
 
             usuario.EmailConfirmado = true;
             usuario.CodigoConfirmacion = null;
-            usuario.CodigoExpiraEn = null;
-
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Correo confirmado correctamente. Ya puedes iniciar sesión.";
-            return RedirectToAction("Login");
+            await SignInUser(usuario, false);
+            return RedirectToAction("Index", "Home");
         }
 
-        // POST: /Auth/ReenviarCodigo
+        // --- SWITCH DE ROLES (CAMBIO DE MODO) ---
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ReenviarCodigo(string email)
+        public async Task<IActionResult> SwitchView()
         {
-            if (string.IsNullOrWhiteSpace(email))
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdStr)) return RedirectToAction("Login");
+
+            var usuario = await _context.Usuarios.FindAsync(int.Parse(userIdStr));
+            if (usuario == null) return RedirectToAction("Login");
+
+            // Cambiar rol
+            usuario.Rol = (usuario.Rol == "Duenio") ? "Paseador" : "Duenio";
+
+            // Si pasa a paseador y no tiene perfil, crearlo
+            if (usuario.Rol == "Paseador")
             {
-                TempData["Error"] = "Debes indicar un correo.";
-                return RedirectToAction("ConfirmarCorreo");
+                var existe = await _context.Paseadores.AnyAsync(p => p.UsuarioId == usuario.Id);
+                if (!existe)
+                {
+                    _context.Paseadores.Add(new Paseador { 
+                        UsuarioId = usuario.Id, 
+                        Disponible = true, 
+                        Descripcion = "Perfil activado vía switch", 
+                        TarifaPorHora = 0 
+                    });
+                }
             }
-
-            var emailNormalizado = email.Trim().ToLower();
-
-            var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
-
-            if (usuario == null)
-            {
-                TempData["Error"] = "No se encontró una cuenta con ese correo.";
-                return RedirectToAction("ConfirmarCorreo");
-            }
-
-            if (usuario.EmailConfirmado)
-            {
-                TempData["Success"] = "Ese correo ya está confirmado.";
-                return RedirectToAction("Login");
-            }
-
-            var codigo = GenerarCodigoConfirmacion();
-            usuario.CodigoConfirmacion = codigo;
-            usuario.CodigoExpiraEn = DateTime.UtcNow.AddMinutes(10);
 
             await _context.SaveChangesAsync();
+            await SignInUser(usuario, false);
 
-            await _emailService.EnviarCodigoConfirmacionAsync(usuario.Email, codigo);
-
-            TempData["EmailPendiente"] = usuario.Email;
-            TempData["Success"] = "Se generó un nuevo código de confirmación.";
-
-            return RedirectToAction("ConfirmarCorreo");
+            TempData["Exito"] = $"Modo {(usuario.Rol == "Duenio" ? "Cliente" : "Paseador")} activado";
+            return RedirectToAction("Index", "Home");
         }
 
-        // POST: /Auth/Logout
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        // --- LOGOUT ---
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Login");
+            return RedirectToAction("Index", "Home");
         }
 
-        [HttpGet]
-        public IActionResult ForgotPassword()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ForgotPassword(string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                ViewBag.Error = "Debes capturar tu correo.";
-                return View();
-            }
-
-            var emailNormalizado = email.Trim().ToLower();
-
-            var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
-
-            if (usuario == null)
-            {
-                ViewBag.Error = "No existe una cuenta con ese correo.";
-                return View();
-            }
-
-            var codigo = GenerarCodigoConfirmacion();
-
-            usuario.CodigoRecuperacion = codigo;
-            usuario.CodigoRecuperacionExpiraEn = DateTime.UtcNow.AddMinutes(10);
-
-            await _context.SaveChangesAsync();
-
-            await _emailService.EnviarCorreoAsync(
-                usuario.Email,
-                "Recuperación de contraseña - DogGo",
-                $"Tu código de recuperación es: {codigo}. Expira en 10 minutos."
-            );
-
-            TempData["Success"] = "Te enviamos un código de recuperación a tu correo.";
-            TempData["EmailRecuperacion"] = usuario.Email;
-
-            return RedirectToAction("ResetPassword");
-        }
-
-        [HttpGet]
-        public IActionResult ResetPassword()
-        {
-            ViewBag.Email = TempData["EmailRecuperacion"]?.ToString();
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResetPassword(string email, string codigo, string nuevaPassword, string confirmarPassword)
-        {
-            if (string.IsNullOrWhiteSpace(email) ||
-                string.IsNullOrWhiteSpace(codigo) ||
-                string.IsNullOrWhiteSpace(nuevaPassword) ||
-                string.IsNullOrWhiteSpace(confirmarPassword))
-            {
-                ViewBag.Error = "Debes completar todos los campos.";
-                ViewBag.Email = email;
-                return View();
-            }
-
-            if (nuevaPassword != confirmarPassword)
-            {
-                ViewBag.Error = "Las contraseñas no coinciden.";
-                ViewBag.Email = email;
-                return View();
-            }
-
-            if (nuevaPassword.Length < 6)
-            {
-                ViewBag.Error = "La contraseña debe tener al menos 6 caracteres.";
-                ViewBag.Email = email;
-                return View();
-            }
-
-            var emailNormalizado = email.Trim().ToLower();
-
-            var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == emailNormalizado);
-
-            if (usuario == null)
-            {
-                ViewBag.Error = "No se encontró una cuenta con ese correo.";
-                ViewBag.Email = email;
-                return View();
-            }
-
-            if (usuario.CodigoRecuperacionExpiraEn == null || usuario.CodigoRecuperacionExpiraEn < DateTime.UtcNow)
-            {
-                ViewBag.Error = "El código ya expiró. Solicita uno nuevo.";
-                ViewBag.Email = email;
-                return View();
-            }
-
-            if (usuario.CodigoRecuperacion != codigo.Trim())
-            {
-                ViewBag.Error = "El código es incorrecto.";
-                ViewBag.Email = email;
-                return View();
-            }
-
-            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(nuevaPassword);
-            usuario.CodigoRecuperacion = null;
-            usuario.CodigoRecuperacionExpiraEn = null;
-
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Tu contraseña fue actualizada correctamente.";
-            return RedirectToAction("Login");
-        }
-
-        // ── Helpers ──────────────────────────────────────────────
-
+        // --- MÉTODOS PRIVADOS DE APOYO ---
         private async Task SignInUser(Usuario usuario, bool rememberMe)
         {
-            var claims = new List<Claim>
-            {
+            var claims = new List<Claim> {
                 new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                new Claim(ClaimTypes.Name, usuario.Nombre),
+                new Claim(ClaimTypes.Name, $"{usuario.Nombre} {usuario.Apellido}"),
                 new Claim(ClaimTypes.Email, usuario.Email),
                 new Claim(ClaimTypes.Role, usuario.Rol)
             };
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
+            var props = new AuthenticationProperties { IsPersistent = rememberMe };
 
-            var props = new AuthenticationProperties
-            {
-                IsPersistent = rememberMe,
-                ExpiresUtc = rememberMe
-                    ? DateTimeOffset.UtcNow.AddDays(30)
-                    : DateTimeOffset.UtcNow.AddHours(8)
-            };
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal,
-                props
-            );
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, props);
         }
 
         private async Task<bool> VerificarPasswordYActualizarSiNecesarioAsync(Usuario usuario, string password)
         {
-            if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(usuario.PasswordHash))
-            {
-                return false;
-            }
-
-            try
-            {
-                if (BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
-                {
-                    return true;
-                }
-            }
-            catch
-            {
-                // Si truena, probablemente era hash viejo SHA256.
-            }
+            try { if (BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash)) return true; } catch { }
 
             var hashSha256 = HashPasswordSha256(password);
-
             if (string.Equals(usuario.PasswordHash, hashSha256, StringComparison.OrdinalIgnoreCase))
             {
                 usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
                 await _context.SaveChangesAsync();
                 return true;
             }
-
             return false;
         }
 
-        private static string GenerarCodigoConfirmacion()
-        {
-            var random = new Random();
-            return random.Next(100000, 999999).ToString();
-        }
+        private static string GenerarCodigoConfirmacion() => new Random().Next(100000, 999999).ToString();
 
         private static string HashPasswordSha256(string password)
         {

@@ -89,6 +89,15 @@
         </div>
     </div>
 
+    @* ── Aviso si es Paseador viendo el perfil de otro ── *@
+    @if (User.IsInRole("Paseador") && !esPropietario)
+    {
+        <div class="role-notice-perfil">
+            <span>🦮</span>
+            Estás en modo Paseador — para solicitar paseos usa el botón 🔄 y cambia a modo Cliente.
+        </div>
+    }
+
     <!-- ── Banner resumen estrellas ── -->
     <div class="perfil-stars-banner">
         <div class="psb-stars">
@@ -150,4 +159,19 @@
 
 @section Styles {
     <link rel="stylesheet" href="@Url.Content("~/css/paseador.css")" />
+    <style>
+        .role-notice-perfil {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            background: var(--amber-l);
+            border: 1.5px solid var(--amber);
+            border-radius: 14px;
+            padding: .75rem 1.1rem;
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--amber-d);
+            margin-top: 1rem;
+        }
+    </style>
 }

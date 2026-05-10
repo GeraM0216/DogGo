@@ -4,6 +4,52 @@
 
 @{
     ViewData["Title"] = "Paseadores disponibles";
+    var esPaseador = User.IsInRole("Paseador");
+    var esDuenio   = User.IsInRole("Duenio");
+}
+
+@* ── Bloqueo visual si es Paseador ── *@
+@if (esPaseador)
+{
+    <div class="page-header-wrap">
+        <div class="page-header-inner">
+            <div class="page-eyebrow">Directorio</div>
+            <h1 class="page-title">Paseadores disponibles</h1>
+            <p class="page-sub">Estás en modo Paseador — aquí solo puedes explorar el directorio.</p>
+        </div>
+    </div>
+
+    <div class="dir-container">
+        <div class="role-notice">
+            <div class="role-notice-icon">🦮</div>
+            <div class="role-notice-body">
+                <div class="role-notice-title">Estás operando como Paseador</div>
+                <p class="role-notice-sub">Para solicitar paseos necesitas estar en modo Cliente. Usa el botón flotante 🔄 en la esquina inferior izquierda para cambiar de modo.</p>
+            </div>
+        </div>
+    </div>
+
+    @section Styles {
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <link rel="stylesheet" href="@Url.Content("~/css/paseador.css")" />
+        <style>
+            .role-notice {
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                background: var(--amber-l);
+                border: 1.5px solid var(--amber);
+                border-radius: 20px;
+                padding: 1.5rem;
+                max-width: 600px;
+                margin: 2rem auto;
+            }
+            .role-notice-icon { font-size: 2rem; flex-shrink: 0; }
+            .role-notice-title { font-weight: 900; font-size: 1rem; color: var(--amber-d); margin-bottom: .3rem; }
+            .role-notice-sub { font-size: .88rem; color: var(--muted); font-weight: 600; margin: 0; line-height: 1.6; }
+        </style>
+    }
+    return;
 }
 
 <!-- ── Page Header ── -->
@@ -18,70 +64,50 @@
 <!-- ── Contenido ── -->
 <div class="dir-container">
 
-    <!-- ── Filtros y búsqueda ── -->
+    <!-- ── Filtros ── -->
     <form asp-action="Directorio" method="get" class="filtros-card">
         <div class="filtros-grid">
 
             <div class="filtro-group">
                 <label>Buscar</label>
-                <input type="text"
-                       name="busqueda"
-                       value="@ViewBag.Busqueda"
-                       placeholder="Nombre o descripción"
-                       class="form-ctrl" />
+                <input type="text" name="busqueda" value="@ViewBag.Busqueda"
+                       placeholder="Nombre o descripción" class="form-ctrl" />
             </div>
 
             <div class="filtro-group">
                 <label>Zona</label>
                 <select name="zona" class="form-ctrl form-sel">
                     <option value="">Todas las zonas</option>
-                    <option value="Centro" selected="@(ViewBag.Zona == "Centro")">Centro</option>
-                    <option value="Cumbres" selected="@(ViewBag.Zona == "Cumbres")">Cumbres</option>
-                    <option value="San Pedro" selected="@(ViewBag.Zona == "San Pedro")">San Pedro</option>
-                    <option value="San Nicolás" selected="@(ViewBag.Zona == "San Nicolás")">San Nicolás</option>
-                    <option value="Guadalupe" selected="@(ViewBag.Zona == "Guadalupe")">Guadalupe</option>
-                    <option value="Apodaca" selected="@(ViewBag.Zona == "Apodaca")">Apodaca</option>
-                    <option value="Santa Catarina" selected="@(ViewBag.Zona == "Santa Catarina")">Santa Catarina</option>
-                    <option value="Escobedo" selected="@(ViewBag.Zona == "Escobedo")">Escobedo</option>
+                    <option value="Centro"          selected="@(ViewBag.Zona == "Centro")">Centro</option>
+                    <option value="Cumbres"         selected="@(ViewBag.Zona == "Cumbres")">Cumbres</option>
+                    <option value="San Pedro"       selected="@(ViewBag.Zona == "San Pedro")">San Pedro</option>
+                    <option value="San Nicolás"     selected="@(ViewBag.Zona == "San Nicolás")">San Nicolás</option>
+                    <option value="Guadalupe"       selected="@(ViewBag.Zona == "Guadalupe")">Guadalupe</option>
+                    <option value="Apodaca"         selected="@(ViewBag.Zona == "Apodaca")">Apodaca</option>
+                    <option value="Santa Catarina"  selected="@(ViewBag.Zona == "Santa Catarina")">Santa Catarina</option>
+                    <option value="Escobedo"        selected="@(ViewBag.Zona == "Escobedo")">Escobedo</option>
                 </select>
             </div>
 
             <div class="filtro-group">
                 <label>Experiencia mínima</label>
-                <input type="number"
-                       name="experienciaMinima"
-                       value="@ViewBag.ExperienciaMinima"
-                       min="0"
-                       placeholder="Años"
-                       class="form-ctrl" />
+                <input type="number" name="experienciaMinima" value="@ViewBag.ExperienciaMinima"
+                       min="0" placeholder="Años" class="form-ctrl" />
             </div>
 
             <div class="filtro-group">
                 <label>Tarifa máxima</label>
-                <input type="number"
-                       name="tarifaMaxima"
-                       value="@ViewBag.TarifaMaxima"
-                       min="0"
-                       step="0.01"
-                       placeholder="Precio máximo"
-                       class="form-ctrl" />
+                <input type="number" name="tarifaMaxima" value="@ViewBag.TarifaMaxima"
+                       min="0" step="0.01" placeholder="Precio máximo" class="form-ctrl" />
             </div>
 
             <div class="filtro-group">
                 <label>Ordenar por</label>
                 <select name="orden" class="form-ctrl form-sel">
-                    <option value="calificacion_desc" selected="@(ViewBag.Orden == "calificacion_desc")">
-                        Mejor calificación
-                    </option>
-                    <option value="tarifa_asc" selected="@(ViewBag.Orden == "tarifa_asc")">
-                        Menor tarifa
-                    </option>
-                    <option value="tarifa_desc" selected="@(ViewBag.Orden == "tarifa_desc")">
-                        Mayor tarifa
-                    </option>
-                    <option value="experiencia_desc" selected="@(ViewBag.Orden == "experiencia_desc")">
-                        Más experiencia
-                    </option>
+                    <option value="calificacion_desc" selected="@(ViewBag.Orden == "calificacion_desc")">Mejor calificación</option>
+                    <option value="tarifa_asc"        selected="@(ViewBag.Orden == "tarifa_asc")">Menor tarifa</option>
+                    <option value="tarifa_desc"       selected="@(ViewBag.Orden == "tarifa_desc")">Mayor tarifa</option>
+                    <option value="experiencia_desc"  selected="@(ViewBag.Orden == "experiencia_desc")">Más experiencia</option>
                 </select>
             </div>
 
@@ -111,7 +137,6 @@
 
                 <div class="paseador-card">
 
-                    <!-- Top: avatar + nombre + estrellas -->
                     <div class="pc-top">
                         <div class="pc-avatar">
                             @if (!string.IsNullOrWhiteSpace(p.FotoUrl))
@@ -140,13 +165,11 @@
                         </div>
                     </div>
 
-                    <!-- Descripción -->
                     @if (!string.IsNullOrWhiteSpace(p.Descripcion))
                     {
                         <p class="pc-desc">@p.Descripcion</p>
                     }
 
-                    <!-- Tags: zonas + disponibilidad -->
                     <div class="pc-tags">
                         @if (!string.IsNullOrWhiteSpace(p.ZonaServicio))
                         {
@@ -155,27 +178,23 @@
                                 <span class="pc-tag">@zonaItem.Trim()</span>
                             }
                         }
-
                         @if (p.ExperienciaAnios != null)
                         {
                             <span class="pc-tag-amber">@p.ExperienciaAnios año(s) exp.</span>
                         }
-
                         <span class="pc-disp @(p.Disponible ? "disp-si" : "disp-no")">
                             ● @(p.Disponible ? "Disponible" : "No disponible")
                         </span>
                     </div>
 
-                    <!-- Acciones -->
                     <div class="pc-actions">
                         <a asp-action="Perfil" asp-route-id="@p.Id" class="btn-ver-perfil">
                             Ver perfil
                         </a>
 
-                        @if (User.IsInRole("Duenio"))
+                        @if (esDuenio)
                         {
                             var perros = ViewBag.Perros as List<Perro>;
-
                             if (perros != null && perros.Any())
                             {
                                 <button type="button"
@@ -183,13 +202,14 @@
                                         data-paseador-id="@p.Id"
                                         data-nombre="@nombrePaseador"
                                         data-tarifa="@tarifaJs"
-                                    @(p.Disponible ? "" : "disabled")>
+                                        @(p.Disponible ? "" : "disabled")>
                                     Solicitar paseo
                                 </button>
                             }
                             else
                             {
-                                <a asp-controller="Perro" asp-action="Create" class="btn-solicitar btn-solicitar-warn">
+                                <a asp-controller="Perro" asp-action="Create"
+                                   class="btn-solicitar btn-solicitar-warn">
                                     Registra un perro primero
                                 </a>
                             }
@@ -202,8 +222,8 @@
     }
 </div>
 
-<!-- ── Modal solicitar paseo ── -->
-@if (User.IsInRole("Duenio"))
+<!-- ── Modal solicitar paseo — solo Duenio ── -->
+@if (esDuenio)
 {
     var perros = ViewBag.Perros as List<Perro>;
     var duenioPerfil = ViewBag.DuenioPerfil as DuenioPerfil;
@@ -227,13 +247,11 @@
                     <div class="form-group">
                         <label class="form-lbl">Tus perros</label>
                         <div class="form-help">Selecciona uno o varios perros para este paseo.</div>
-
                         <div class="perros-select-grid">
                             @foreach (var perro in perros)
                             {
                                 <label class="perro-option">
                                     <input type="checkbox" name="perroIds" value="@perro.Id" class="perro-check" />
-
                                     <div class="perro-option-body">
                                         <div class="perro-option-avatar">
                                             @if (!string.IsNullOrWhiteSpace(perro.ImagenUrl))
@@ -245,12 +263,10 @@
                                                 <span>🐶</span>
                                             }
                                         </div>
-
                                         <div class="perro-option-info">
                                             <div class="perro-option-name">@perro.Nombre</div>
                                             <div class="perro-option-meta">
                                                 @(string.IsNullOrWhiteSpace(perro.Raza) ? "Sin raza registrada" : perro.Raza)
-
                                                 @if (!string.IsNullOrWhiteSpace(perro.Tamaño))
                                                 {
                                                     <span>· @perro.Tamaño</span>
@@ -261,22 +277,14 @@
                                 </label>
                             }
                         </div>
-
-                        <div id="perros-seleccionados" class="perros-seleccionados">
-                            Ningún perro seleccionado.
-                        </div>
+                        <div id="perros-seleccionados" class="perros-seleccionados">Ningún perro seleccionado.</div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-lbl">Precio estimado</label>
-                        <input type="text"
-                               id="modal-precio"
-                               class="form-ctrl"
-                               value="$0.00"
-                               readonly />
-
+                        <input type="text" id="modal-precio" class="form-ctrl" value="$0.00" readonly />
                         <div class="form-help" id="modal-precio-help">
-                            Se calcula automáticamente con la tarifa del paseador y la duración del paseo.
+                            Se calcula automáticamente con la tarifa del paseador y la duración.
                         </div>
                     </div>
 
@@ -293,13 +301,11 @@
 
                     <div class="form-group">
                         <label class="form-lbl">Tipo de paseo</label>
-
                         <div class="tipo-row">
                             <label class="tipo-pill">
                                 <input type="radio" name="esProgramado" value="false" checked class="tipo-radio" />
                                 <span>Paseo ahora</span>
                             </label>
-
                             <label class="tipo-pill">
                                 <input type="radio" name="esProgramado" value="true" class="tipo-radio" />
                                 <span>Programar paseo</span>
@@ -309,30 +315,19 @@
 
                     <div class="form-group" id="fecha-wrap" style="display:none">
                         <label class="form-lbl">Fecha y hora</label>
-                        <input type="datetime-local"
-                               name="fechaProgramada"
-                               id="input-fecha"
-                               class="form-ctrl" />
+                        <input type="datetime-local" name="fechaProgramada" id="input-fecha" class="form-ctrl" />
                     </div>
 
-                    <!-- ── Ubicación de recolección ── -->
                     <div class="form-group">
                         <label class="form-lbl">Dirección de recolección</label>
-                        <input type="text"
-                               name="direccionRecogida"
-                               id="direccion-recogida"
-                               class="form-ctrl"
-                               placeholder="Ej. Av. Leones 123, Cumbres"
-                               required />
+                        <input type="text" name="direccionRecogida" id="direccion-recogida"
+                               class="form-ctrl" placeholder="Ej. Av. Leones 123, Cumbres" required />
                     </div>
 
                     <div class="form-group">
                         <label class="form-lbl">Referencias</label>
-                        <input type="text"
-                               name="referenciasRecogida"
-                               id="referencias-recogida"
-                               class="form-ctrl"
-                               placeholder="Ej. Portón negro, casa de dos pisos" />
+                        <input type="text" name="referenciasRecogida" id="referencias-recogida"
+                               class="form-ctrl" placeholder="Ej. Portón negro, casa de dos pisos" />
                     </div>
 
                     <div class="form-group">
@@ -352,18 +347,14 @@
 
                     <div class="form-group">
                         <label class="form-lbl">Punto de recolección en el mapa</label>
-                        <div class="form-help">
-                            Marca el punto exacto donde el paseador debe realizar la recolección del perro.
-                        </div>
+                        <div class="form-help">Marca el punto exacto donde el paseador recogerá al perro.</div>
 
                         @if (duenioPerfil != null &&
                              !string.IsNullOrWhiteSpace(duenioPerfil.Direccion) &&
                              !string.IsNullOrWhiteSpace(duenioPerfil.Zona) &&
-                             duenioPerfil.Latitud.HasValue &&
-                             duenioPerfil.Longitud.HasValue)
+                             duenioPerfil.Latitud.HasValue && duenioPerfil.Longitud.HasValue)
                         {
-                            <button type="button"
-                                    class="btn-ubicacion-predeterminada"
+                            <button type="button" class="btn-ubicacion-predeterminada"
                                     data-direccion="@duenioPerfil.Direccion"
                                     data-referencias="@duenioPerfil.ReferenciasDireccion"
                                     data-zona="@duenioPerfil.Zona"
@@ -375,9 +366,8 @@
                         }
                         else
                         {
-                            <a asp-controller="DuenioPerfil"
-                                   asp-action="Editar"
-                                   class="btn-ubicacion-predeterminada btn-ubicacion-warn">
+                            <a asp-controller="DuenioPerfil" asp-action="Editar"
+                               class="btn-ubicacion-predeterminada btn-ubicacion-warn">
                                 Completar ubicación predeterminada
                             </a>
                         }
@@ -387,12 +377,10 @@
                         </button>
 
                         <div id="mapa-recogida" class="mapa-recogida"></div>
-
                         <div id="texto-ubicacion-recogida" class="texto-ubicacion-recogida">
                             Todavía no has marcado el punto de recolección.
                         </div>
-
-                        <input type="hidden" name="latitudRecogida" id="latitud-recogida" />
+                        <input type="hidden" name="latitudRecogida"  id="latitud-recogida" />
                         <input type="hidden" name="longitudRecogida" id="longitud-recogida" />
                     </div>
 
@@ -409,6 +397,22 @@
 @section Styles {
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="@Url.Content("~/css/paseador.css")" />
+    <style>
+        .role-notice {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: var(--amber-l);
+            border: 1.5px solid var(--amber);
+            border-radius: 20px;
+            padding: 1.5rem;
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+        .role-notice-icon  { font-size: 2rem; flex-shrink: 0; }
+        .role-notice-title { font-weight: 900; font-size: 1rem; color: var(--amber-d); margin-bottom: .3rem; }
+        .role-notice-sub   { font-size: .88rem; color: var(--muted); font-weight: 600; margin: 0; line-height: 1.6; }
+    </style>
 }
 
 @section Scripts {
