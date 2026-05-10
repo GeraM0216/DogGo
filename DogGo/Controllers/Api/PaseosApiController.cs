@@ -292,6 +292,32 @@ namespace DogGo.Controllers.Api
             return Ok(new { success = true, message = result.Message, data = result.Data });
         }
 
+        [HttpGet("{id:int}/ubicaciones")]
+        [HttpGet("{id:int}/historial-ubicaciones")]
+        [HttpGet("{id:int}/ruta")]
+        public async Task<IActionResult> ObtenerHistorialUbicaciones(int id)
+        {
+            var usuarioId = ObtenerUsuarioId();
+            var rol = ObtenerRol();
+
+            if (usuarioId == null)
+            {
+                return Unauthorized(new { success = false, message = "Token inválido." });
+            }
+
+            var result = await _paseoService.ObtenerHistorialUbicacionesAsync(
+                paseoId: id,
+                usuarioId: usuarioId.Value,
+                rol: rol);
+
+            if (!result.Success)
+            {
+                return BadRequest(new { success = false, message = result.Message });
+            }
+
+            return Ok(new { success = true, message = result.Message, data = result.Data });
+        }
+
         private int? ObtenerUsuarioId()
         {
             var valor = User.FindFirstValue(ClaimTypes.NameIdentifier)

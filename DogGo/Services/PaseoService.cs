@@ -195,6 +195,11 @@ namespace DogGo.Services
                 return (false, "Solo se pueden finalizar paseos en curso.");
             }
 
+            if (string.IsNullOrWhiteSpace(paseo.FotoFinUrl))
+            {
+                return (false, "Para finalizar el paseo primero debes subir la foto de fin.");
+            }
+
             paseo.Estado = "Finalizado";
             paseo.FechaFin = DateTime.UtcNow;
 
@@ -278,6 +283,16 @@ namespace DogGo.Services
             if (tipoNormalizado != "inicio" && tipoNormalizado != "fin")
             {
                 return (false, "Tipo de evidencia inválido.", null);
+            }
+
+            if (tipoNormalizado == "inicio" && paseo.Estado != "EnCurso")
+            {
+                return (false, "La foto de inicio solo se puede subir cuando el paseo está en curso.", null);
+            }
+
+            if (tipoNormalizado == "fin" && paseo.Estado != "EnCurso")
+            {
+                return (false, "La foto de fin solo se puede subir cuando el paseo está en curso.", null);
             }
 
             if (archivo == null || archivo.Length <= 0)
@@ -452,6 +467,68 @@ namespace DogGo.Services
                 timestamp = (DateTime?)null,
                 fecha = (DateTime?)null
             });
+        }
+
+        public async Task<(bool Success, string Message, object? Data)> ObtenerHistorialUbicacionesAsync(
+            int paseoId,
+            int usuarioId,
+            string rol)
+        {
+            var paseo = await QueryPaseosCompletos()
+                .FirstOrDefaultAsync(p => p.Id == paseoId);
+
+            if (paseo == null)
+            {
+                return (false, "Paseo no encontrado.", null);
+            }
+
+            if (!await UsuarioPuedeVerPaseoAsync(paseo, usuarioId, rol))
+            {
+                return (false, "No tienes permiso para ver la ruta de este paseo.", null);
+            }
+
+            var ubicaciones = await _context.Ubicaciones
+                .Where(u => u.PaseoId == paseoId)
+                .OrderBy(u => u.Timestamp)
+                .Select(u => new
+                {
+                    id = u.Id,
+                    paseoId = u.PaseoId,
+                    latitud = u.Latitud,
+                    longitud = u.Longitud,
+                    latitudActual = u.Latitud,
+                    longitudActual = u.Longitud,
+                    timestamp = u.Timestamp,
+                    fecha = u.Timestamp
+                })
+                .ToListAsync();
+
+            if (ubicaciones.Count > 0)
+            {
+                return (true, "Historial de ubicaciones obtenido.", ubicaciones);
+            }
+
+            if (paseo.LatitudActual != 0 || paseo.LongitudActual != 0)
+            {
+                var fallback = new[]
+                {
+                    new
+                    {
+                        id = 0,
+                        paseoId = paseo.Id,
+                        latitud = paseo.LatitudActual,
+                        longitud = paseo.LongitudActual,
+                        latitudActual = paseo.LatitudActual,
+                        longitudActual = paseo.LongitudActual,
+                        timestamp = paseo.FechaInicio,
+                        fecha = paseo.FechaInicio
+                    }
+                };
+
+                return (true, "Historial de ubicaciones obtenido.", fallback);
+            }
+
+            return (true, "Todavía no hay ubicaciones registradas para este paseo.", new List<object>());
         }
 
         private IQueryable<Paseo> QueryPaseosCompletos()
