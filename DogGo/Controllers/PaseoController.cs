@@ -1,4 +1,4 @@
-﻿using DogGo.Data;
+using DogGo.Data;
 using DogGo.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -180,6 +180,13 @@ namespace DogGo.Controllers
 
             if (paseador == null)
                 return NotFound();
+
+            // ── No puedes contratar tu propio perfil de paseador ──
+            if (paseador.UsuarioId == usuarioId)
+            {
+                TempData["Error"] = "No puedes contratarte a ti mismo como paseador. Cambia a modo Paseador para ofrecer servicios.";
+                return RedirectToAction("Directorio", "Paseador");
+            }
 
             if (duracionMinutos < 15 || duracionMinutos > 180)
             {

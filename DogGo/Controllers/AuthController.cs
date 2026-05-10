@@ -118,7 +118,7 @@ namespace DogGo.Controllers
         // --- CONFIRMACIÓN (Usando tu archivo VerificarCodigo.cshtml) ---
         public IActionResult ConfirmarEmail(string email)
         {
-            return View("VerificarCodigo", new ConfirmacionAuxiliar { Email = email });
+            return View("ConfirmarCorreo", new ConfirmacionAuxiliar { Email = email });
         }
 
         [HttpPost]
