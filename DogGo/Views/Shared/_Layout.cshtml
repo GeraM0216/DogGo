@@ -12,7 +12,7 @@
     @await RenderSectionAsync("Styles", required: false)
 
     <style>
-        /* ── Chip de usuario (nuevo, no pisa el site.css) ── */
+        /* ── Chip de usuario ── */
         .nav-user-chip {
             display: flex;
             align-items: center;
@@ -44,6 +44,14 @@
             background: var(--amber);
         }
 
+        .nav-user-avatar.av-admin {
+            background: #12a79d;
+        }
+
+        .nav-user-avatar.av-superadmin {
+            background: #0f766e;
+        }
+
         .nav-user-info {
             display: flex;
             flex-direction: column;
@@ -69,6 +77,34 @@
 
         .nav-chip-rol.rol-paseador {
             color: var(--amber-d);
+        }
+
+        .nav-chip-rol.rol-admin,
+        .nav-chip-rol.rol-superadmin {
+            color: var(--teal);
+        }
+
+        .navbar-doggo .nav-link {
+            position: relative;
+            border-radius: 999px;
+            font-weight: 800;
+        }
+
+        .navbar-doggo .nav-link.active {
+            background: var(--teal-l);
+            color: var(--teal) !important;
+        }
+
+        .navbar-doggo .nav-link.active::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -8px;
+            width: 22px;
+            height: 3px;
+            border-radius: 999px;
+            background: var(--teal);
+            transform: translateX(-50%);
         }
 
         /* ── Widget flotante compacto ── */
@@ -161,17 +197,46 @@
         var rolActual = User.Identity != null && User.Identity.IsAuthenticated
             ? User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
             : null;
+
         var nombreActual = User.Identity != null && User.Identity.IsAuthenticated
             ? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
             : null;
+
+        var controllerActual = ViewContext.RouteData.Values["controller"]?.ToString();
+
         var iniciales = "";
-        if (!string.IsNullOrWhiteSpace(nombreActual)) {
+
+        if (!string.IsNullOrWhiteSpace(nombreActual))
+        {
             var partes = nombreActual.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
             iniciales = partes.Length >= 2
                 ? $"{partes[0][0]}{partes[1][0]}"
                 : $"{partes[0][0]}";
         }
-        var labelRol = rolActual == "Duenio" ? "Cliente" : rolActual;
+
+        var labelRol = rolActual == "Duenio"
+            ? "Cliente"
+            : rolActual == "SuperAdmin"
+                ? "SuperAdmin"
+                : rolActual == "Admin"
+                    ? "Admin"
+                    : rolActual;
+
+        var avatarClass = rolActual == "Paseador"
+            ? "av-paseador"
+            : rolActual == "SuperAdmin"
+                ? "av-superadmin"
+                : rolActual == "Admin"
+                    ? "av-admin"
+                    : "";
+
+        var rolClass = rolActual == "Paseador"
+            ? "rol-paseador"
+            : rolActual == "SuperAdmin"
+                ? "rol-superadmin"
+                : rolActual == "Admin"
+                    ? "rol-admin"
+                    : "";
     }
 
     <nav class="navbar navbar-expand-md navbar-doggo sticky-top">
@@ -191,33 +256,85 @@
 
                 <ul class="navbar-nav me-auto align-items-center gap-1 ms-2">
                     <li class="nav-item">
-                        <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
+                        <a class="nav-link @(controllerActual == "Home" ? "active" : "")"
+                           asp-controller="Home"
+                           asp-action="Index">
+                            Inicio
+                        </a>
                     </li>
-                    @if (rolActual == "Admin")
+
+                    @if (rolActual == "SuperAdmin")
                     {
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Admin" asp-action="Index">Admin</a>
+                            <a class="nav-link @(controllerActual == "SuperAdmin" ? "active" : "")"
+                               asp-controller="SuperAdmin"
+                               asp-action="Index">
+                                Super Admin
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link @(controllerActual == "Admin" ? "active" : "")"
+                               asp-controller="Admin"
+                               asp-action="Index">
+                                Admin negocio
+                            </a>
                         </li>
                     }
+                    else if (rolActual == "Admin")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @(controllerActual == "Admin" ? "active" : "")"
+                               asp-controller="Admin"
+                               asp-action="Index">
+                                Admin
+                            </a>
+                        </li>
+                    }
+
                     @if (rolActual == "Paseador")
                     {
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Paseo" asp-action="MisPaseos">Mis servicios</a>
+                            <a class="nav-link @(controllerActual == "Paseo" ? "active" : "")"
+                               asp-controller="Paseo"
+                               asp-action="MisPaseos">
+                                Mis servicios
+                            </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Paseador" asp-action="Perfil">Mi perfil</a>
+                            <a class="nav-link @(controllerActual == "Paseador" ? "active" : "")"
+                               asp-controller="Paseador"
+                               asp-action="Perfil">
+                                Mi perfil
+                            </a>
                         </li>
                     }
+
                     @if (rolActual == "Duenio")
                     {
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Paseo" asp-action="MisPaseos">Mis paseos</a>
+                            <a class="nav-link @(controllerActual == "Paseo" ? "active" : "")"
+                               asp-controller="Paseo"
+                               asp-action="MisPaseos">
+                                Mis paseos
+                            </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="DuenioPerfil" asp-action="Editar">Mi perfil</a>
+                            <a class="nav-link @(controllerActual == "DuenioPerfil" ? "active" : "")"
+                               asp-controller="DuenioPerfil"
+                               asp-action="Editar">
+                                Mi perfil
+                            </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Perro" asp-action="Index">Mis perros</a>
+                            <a class="nav-link @(controllerActual == "Perro" ? "active" : "")"
+                               asp-controller="Perro"
+                               asp-action="Index">
+                                Mis perros
+                            </a>
                         </li>
                     }
                 </ul>
@@ -227,17 +344,18 @@
                     {
                         <li class="nav-item">
                             <div class="nav-user-chip">
-                                <div class="nav-user-avatar @(rolActual == "Paseador" ? "av-paseador" : "")">
+                                <div class="nav-user-avatar @avatarClass">
                                     @iniciales
                                 </div>
                                 <div class="nav-user-info">
                                     <span class="nav-chip-nombre">@nombreActual</span>
-                                    <span class="nav-chip-rol @(rolActual == "Paseador" ? "rol-paseador" : "")">
+                                    <span class="nav-chip-rol @rolClass">
                                         @labelRol
                                     </span>
                                 </div>
                             </div>
                         </li>
+
                         <li class="nav-item">
                             <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
                                 @Html.AntiForgeryToken()
@@ -248,10 +366,19 @@
                     else
                     {
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Auth" asp-action="Login">Iniciar sesión</a>
+                            <a class="nav-link @(controllerActual == "Auth" ? "active" : "")"
+                               asp-controller="Auth"
+                               asp-action="Login">
+                                Iniciar sesión
+                            </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-cta-btn" asp-controller="Auth" asp-action="Register">Registrarse</a>
+                            <a class="nav-cta-btn"
+                               asp-controller="Auth"
+                               asp-action="Register">
+                                Registrarse
+                            </a>
                         </li>
                     }
                 </ul>
@@ -268,6 +395,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         }
+
         @if (TempData["Error"] != null)
         {
             <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
@@ -295,12 +423,15 @@
             <div class="mode-fab-tooltip">
                 Cambiar a modo @(rolActual == "Duenio" ? "Paseador" : "Cliente")
             </div>
+
             <form asp-controller="Auth" asp-action="SwitchView" method="post" class="m-0">
                 @Html.AntiForgeryToken()
+
                 <div class="mode-fab-inner">
                     <div class="mode-fab-icon @(rolActual == "Duenio" ? "duenio" : "paseador")">
                         @(rolActual == "Duenio" ? "🐶" : "🦮")
                     </div>
+
                     <button type="submit"
                             class="mode-fab-btn @(rolActual == "Duenio" ? "to-paseador" : "to-duenio")"
                             title="Cambiar a modo @(rolActual == "Duenio" ? "Paseador" : "Cliente")">

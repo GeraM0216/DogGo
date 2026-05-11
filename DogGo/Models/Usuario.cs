@@ -38,12 +38,19 @@ namespace DogGo.Models
 
         public DateTime? CodigoRecuperacionExpiraEn { get; set; }
 
-        /// <summary>"Duenio", "Paseador" o "Admin"</summary>
+        /// <summary>"Duenio", "Paseador", "Admin" o "SuperAdmin"</summary>
         [Required]
         [MaxLength(20)]
         public string Rol { get; set; } = string.Empty;
 
         public DateTime FechaRegistro { get; set; } = DateTime.UtcNow;
+
+        public bool Activo { get; set; } = true;
+
+        public DateTime? FechaDesactivacion { get; set; }
+
+        [MaxLength(300)]
+        public string? MotivoDesactivacion { get; set; }
 
         // Navegación
         public ICollection<Perro> Perros { get; set; } = new List<Perro>();

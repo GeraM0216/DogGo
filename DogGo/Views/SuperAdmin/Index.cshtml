@@ -1,0 +1,1741 @@
+﻿@model DogGo.ViewModels.SuperAdminDashboardViewModel
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Super Admin";
+    var mx = new CultureInfo("es-MX");
+}
+
+<div class="super-admin-page">
+
+    <section class="super-hero">
+        <div>
+            <span class="super-kicker">PANEL TÉCNICO DEL SISTEMA</span>
+            <h1>Super Admin</h1>
+            <p>
+                Control técnico de DogGo: seguridad, roles, estado del sistema, módulos internos,
+                alertas, calidad de datos, soporte de cuentas y actividad reciente.
+            </p>
+        </div>
+
+        <div class="super-hero-card">
+            <span>Vista general</span>
+            <strong>@Model.FechaVista.ToString("dd/MM/yyyy")</strong>
+            <small>@Model.Ambiente</small>
+        </div>
+    </section>
+
+    <nav class="super-tabs">
+        <a href="#resumen" class="active">Resumen</a>
+        <a href="#alertas">Alertas</a>
+        <a href="#calidad">Calidad</a>
+        <a href="#roles">Roles</a>
+        <a href="#usuarios">Usuarios</a>
+        <a href="#sistema">Sistema</a>
+        <a href="#modulos">Módulos</a>
+        <a href="#actividad">Actividad</a>
+        <a href="/Admin">Admin negocio</a>
+    </nav>
+
+    <section id="resumen" class="super-grid super-grid-4">
+        <article class="super-card">
+            <div class="card-icon purple">👥</div>
+            <h3>@Model.TotalUsuarios</h3>
+            <p>Usuarios totales</p>
+        </article>
+
+        <article class="super-card">
+            <div class="card-icon green">🟢</div>
+            <h3>@Model.TotalUsuariosActivos</h3>
+            <p>Usuarios activos</p>
+        </article>
+
+        <article class="super-card">
+            <div class="card-icon red">🚷</div>
+            <h3>@Model.TotalUsuariosDesactivados</h3>
+            <p>Desactivados</p>
+        </article>
+
+        <article class="super-card">
+            <div class="card-icon dark">⚙️</div>
+            <h3>@Model.TotalSuperAdmins</h3>
+            <p>Super admins</p>
+        </article>
+    </section>
+
+    <section class="super-grid super-grid-4">
+        <article class="super-card soft-blue">
+            <div class="card-icon blue">👤</div>
+            <h3>@Model.TotalDuenios</h3>
+            <p>Dueños registrados</p>
+        </article>
+
+        <article class="super-card soft-green">
+            <div class="card-icon green">🐕‍🦺</div>
+            <h3>@Model.TotalPaseadoresUsuarios</h3>
+            <p>Usuarios paseadores</p>
+        </article>
+
+        <article class="super-card soft-yellow">
+            <div class="card-icon yellow">🐶</div>
+            <h3>@Model.TotalPerros</h3>
+            <p>Perros registrados</p>
+        </article>
+
+        <article class="super-card soft-red">
+            <div class="card-icon red">🚶</div>
+            <h3>@Model.TotalPaseos</h3>
+            <p>Paseos registrados</p>
+        </article>
+    </section>
+
+    <section class="super-grid super-grid-4">
+        <article class="super-card border-yellow">
+            <div class="card-icon yellow">⏳</div>
+            <h3>@Model.PaseosPendientes</h3>
+            <p>Paseos pendientes</p>
+        </article>
+
+        <article class="super-card border-green">
+            <div class="card-icon green">▶</div>
+            <h3>@Model.PaseosEnCurso</h3>
+            <p>Paseos en curso</p>
+        </article>
+
+        <article class="super-card border-blue">
+            <div class="card-icon blue">✅</div>
+            <h3>@Model.PaseosFinalizados</h3>
+            <p>Paseos finalizados</p>
+        </article>
+
+        <article class="super-card border-red">
+            <div class="card-icon red">✕</div>
+            <h3>@Model.PaseosCancelados</h3>
+            <p>Paseos cancelados</p>
+        </article>
+    </section>
+
+    <section class="super-grid super-grid-3">
+        <article class="super-wide-card">
+            <div class="wide-icon green">💰</div>
+            <div>
+                <span>Ingresos finalizados</span>
+                <strong>@Model.IngresosFinalizados.ToString("C", mx)</strong>
+                <p>Calculado solo con paseos finalizados</p>
+            </div>
+        </article>
+
+        <article class="super-wide-card">
+            <div class="wide-icon blue">🎫</div>
+            <div>
+                <span>Ticket promedio</span>
+                <strong>@Model.TicketPromedio.ToString("C", mx)</strong>
+                <p>Promedio por paseo finalizado</p>
+            </div>
+        </article>
+
+        <article class="super-wide-card warning">
+            <div class="wide-icon yellow">⚠️</div>
+            <div>
+                <span>Usuarios sin confirmar</span>
+                <strong>@Model.UsuariosSinConfirmar</strong>
+                <p>Cuentas pendientes de validación por correo</p>
+            </div>
+        </article>
+    </section>
+
+    <section id="alertas" class="super-panel">
+        <div class="panel-header">
+            <div>
+                <h2>Alertas técnicas</h2>
+                <p>Situaciones que el SuperAdmin puede revisar para mantener estable la plataforma.</p>
+            </div>
+            <span class="pill neutral">@Model.Alertas.Count alertas</span>
+        </div>
+
+        <div class="maintenance-actions">
+            <form asp-controller="SuperAdmin" asp-action="LimpiarCodigosExpirados" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="maintenance-btn">
+                    Limpiar códigos de confirmación expirados
+                </button>
+            </form>
+
+            <form asp-controller="SuperAdmin" asp-action="LimpiarRecuperacionesExpiradas" method="post">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="maintenance-btn danger-soft">
+                    Limpiar recuperaciones expiradas
+                </button>
+            </form>
+        </div>
+
+        <div class="alert-grid">
+            @foreach (var alerta in Model.Alertas)
+            {
+                <article class="alert-card @alerta.Tipo">
+                    <div class="alert-icon">@alerta.Icono</div>
+                    <div>
+                        <span>@alerta.Titulo</span>
+                        <strong>@alerta.Valor</strong>
+                        <p>@alerta.Descripcion</p>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section id="calidad" class="super-panel">
+        <div class="panel-header">
+            <div>
+                <h2>Calidad de datos</h2>
+                <p>Campos incompletos que pueden afectar la experiencia de usuarios, paseadores o dueños.</p>
+            </div>
+            <span class="pill neutral">Auditoría rápida</span>
+        </div>
+
+        <div class="quality-grid">
+            @foreach (var item in Model.CalidadDatos)
+            {
+                <article class="quality-card @item.Tipo">
+                    <div class="quality-icon">@item.Icono</div>
+                    <div>
+                        <span>@item.Titulo</span>
+                        <strong>@item.Valor</strong>
+                        <p>@item.Descripcion</p>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section id="roles" class="super-roles-layout">
+        <div class="super-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Distribución de roles</h2>
+                    <p>Resumen de permisos y tipo de usuarios registrados en DogGo.</p>
+                </div>
+                <span class="pill neutral">@Model.TotalUsuarios usuarios</span>
+            </div>
+
+            <div class="role-grid">
+                @foreach (var rol in Model.DistribucionRoles)
+                {
+                    <article class="role-card @rol.Tipo">
+                        <div class="role-icon">@rol.Icono</div>
+                        <div>
+                            <span>@rol.Rol</span>
+                            <strong>@rol.Total</strong>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+
+        <div class="super-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Usuarios administrativos</h2>
+                    <p>Cuentas con acceso a paneles internos.</p>
+                </div>
+                <span class="pill neutral">@Model.UsuariosAdministrativos.Count cuentas</span>
+            </div>
+
+            <div class="admin-user-list">
+                @if (Model.UsuariosAdministrativos.Any())
+                {
+                    foreach (var usuario in Model.UsuariosAdministrativos)
+                    {
+                        <article class="admin-user-item">
+                            <div class="admin-avatar">
+                                @(string.IsNullOrWhiteSpace(usuario.NombreCompleto) ? "AD" : usuario.NombreCompleto.Substring(0, 1).ToUpper())
+                            </div>
+
+                            <div>
+                                <strong>@usuario.NombreCompleto</strong>
+                                <p>@usuario.Email</p>
+                                <small>@usuario.Rol · @usuario.Estado · @usuario.FechaRegistro.ToString("dd/MM/yyyy")</small>
+                            </div>
+                        </article>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">No hay usuarios administrativos registrados.</div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section id="usuarios" class="super-panel">
+        <div class="panel-header">
+            <div>
+                <h2>Usuarios del sistema</h2>
+                <p>Gestión funcional de roles, edición, activación, desactivación, eliminación segura y limpieza de códigos.</p>
+            </div>
+            <span class="pill neutral">@Model.UsuariosSistema.Count usuarios cargados</span>
+        </div>
+
+        <div class="users-table-wrap">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Estado</th>
+                        <th>Rol</th>
+                        <th>Correo</th>
+                        <th>Teléfono</th>
+                        <th>Códigos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var usuario in Model.UsuariosSistema)
+                    {
+                        <tr class="@(usuario.Activo ? "" : "inactive-row")">
+                            <td>
+                                <div class="user-cell">
+                                    <div class="admin-avatar @(usuario.Activo ? "" : "avatar-disabled")">
+                                        @(string.IsNullOrWhiteSpace(usuario.NombreCompleto) ? "U" : usuario.NombreCompleto.Substring(0, 1).ToUpper())
+                                    </div>
+                                    <div>
+                                        <strong>@usuario.NombreCompleto</strong>
+                                        <span>@usuario.Email</span>
+                                        <small>Registro: @usuario.FechaRegistro.ToString("dd/MM/yyyy")</small>
+
+                                        @if (usuario.EsUsuarioActual)
+                                        {
+                                            <em>Cuenta actual</em>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="account-status">
+                                    @if (usuario.Activo)
+                                    {
+                                        <span class="status-pill success">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill danger">Desactivado</span>
+
+                                        @if (usuario.FechaDesactivacion != null)
+                                        {
+                                            <small>Desde: @usuario.FechaDesactivacion.Value.ToString("dd/MM/yyyy")</small>
+                                        }
+
+                                        @if (!string.IsNullOrWhiteSpace(usuario.MotivoDesactivacion))
+                                        {
+                                            <p>@usuario.MotivoDesactivacion</p>
+                                        }
+                                    }
+                                </div>
+                            </td>
+
+                            <td>
+                                <form asp-controller="SuperAdmin" asp-action="CambiarRol" method="post" class="role-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="usuarioId" value="@usuario.Id" />
+
+                                    <select name="nuevoRol" class="role-select" disabled="@usuario.EsUsuarioActual">
+                                        <option value="Duenio" selected="@(usuario.Rol == "Duenio" || usuario.Rol == "Dueño")">Duenio</option>
+                                        <option value="Paseador" selected="@(usuario.Rol == "Paseador")">Paseador</option>
+                                        <option value="Admin" selected="@(usuario.Rol == "Admin")">Admin</option>
+                                        <option value="SuperAdmin" selected="@(usuario.Rol == "SuperAdmin")">SuperAdmin</option>
+                                    </select>
+
+                                    <button type="submit" class="mini-btn" disabled="@usuario.EsUsuarioActual">
+                                        Guardar rol
+                                    </button>
+                                </form>
+                            </td>
+
+                            <td>
+                                @if (usuario.EmailConfirmado)
+                                {
+                                    <span class="status-pill success">Confirmado</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pill warning">Sin confirmar</span>
+                                }
+                            </td>
+
+                            <td>
+                                <span class="muted-text">@usuario.Telefono</span>
+                            </td>
+
+                            <td>
+                                <div class="code-status-list">
+                                    @if (usuario.TieneCodigoConfirmacionActivo)
+                                    {
+                                        <span class="status-pill info">Confirmación activa</span>
+                                    }
+
+                                    @if (usuario.TieneCodigoConfirmacionExpirado)
+                                    {
+                                        <span class="status-pill warning">Confirmación expirada</span>
+                                    }
+
+                                    @if (usuario.TieneRecuperacionActiva)
+                                    {
+                                        <span class="status-pill info">Recuperación activa</span>
+                                    }
+
+                                    @if (usuario.TieneRecuperacionExpirada)
+                                    {
+                                        <span class="status-pill warning">Recuperación expirada</span>
+                                    }
+
+                                    @if (!usuario.TieneCodigoConfirmacionActivo &&
+                                         !usuario.TieneCodigoConfirmacionExpirado &&
+                                         !usuario.TieneRecuperacionActiva &&
+                                         !usuario.TieneRecuperacionExpirada)
+                                    {
+                                        <span class="status-pill success">Sin códigos pendientes</span>
+                                    }
+                                </div>
+                            </td>
+
+                            <td>
+                                <div class="user-actions">
+
+                                    <details class="edit-user-box">
+                                        <summary>Editar usuario</summary>
+
+                                        <form asp-controller="SuperAdmin" asp-action="EditarUsuario" method="post" class="edit-user-form">
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden" name="usuarioId" value="@usuario.Id" />
+
+                                            <label>
+                                                Nombre
+                                                <input type="text" name="nombre" value="@usuario.Nombre" required />
+                                            </label>
+
+                                            <label>
+                                                Apellido
+                                                <input type="text" name="apellido" value="@usuario.Apellido" required />
+                                            </label>
+
+                                            <label>
+                                                Correo
+                                                <input type="email" name="email" value="@usuario.Email" required />
+                                            </label>
+
+                                            <label>
+                                                Teléfono
+                                                <input type="text" name="telefono" value="@(usuario.Telefono == "Sin teléfono" ? "" : usuario.Telefono)" />
+                                            </label>
+
+                                            <button type="submit" class="mini-btn success">
+                                                Guardar cambios
+                                            </button>
+                                        </form>
+                                    </details>
+
+                                    @if (!usuario.EmailConfirmado)
+                                    {
+                                        <form asp-controller="SuperAdmin" asp-action="ConfirmarCorreo" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="usuarioId" value="@usuario.Id" />
+                                            <button type="submit" class="mini-btn success">Confirmar correo</button>
+                                        </form>
+                                    }
+
+                                    @if (usuario.TieneCodigoConfirmacionActivo || usuario.TieneCodigoConfirmacionExpirado)
+                                    {
+                                        <form asp-controller="SuperAdmin" asp-action="LimpiarCodigoConfirmacionUsuario" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="usuarioId" value="@usuario.Id" />
+                                            <button type="submit" class="mini-btn warning">Limpiar confirmación</button>
+                                        </form>
+                                    }
+
+                                    @if (usuario.TieneRecuperacionActiva || usuario.TieneRecuperacionExpirada)
+                                    {
+                                        <form asp-controller="SuperAdmin" asp-action="LimpiarRecuperacionUsuario" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="usuarioId" value="@usuario.Id" />
+                                            <button type="submit" class="mini-btn danger">Limpiar recuperación</button>
+                                        </form>
+                                    }
+
+                                    @if (!usuario.EsUsuarioActual)
+                                    {
+                                        @if (usuario.Activo)
+                                        {
+                                            <details class="deactivate-user-box">
+                                                <summary>Desactivar</summary>
+
+                                                <form asp-controller="SuperAdmin"
+                                                      asp-action="DesactivarUsuario"
+                                                      method="post"
+                                                      class="deactivate-user-form"
+                                                      onsubmit="return confirm('¿Seguro que quieres desactivar este usuario? Ya no podrá iniciar sesión.');">
+                                                    @Html.AntiForgeryToken()
+
+                                                    <input type="hidden" name="usuarioId" value="@usuario.Id" />
+
+                                                    <label>
+                                                        Motivo
+                                                        <textarea name="motivo" maxlength="300" placeholder="Ej. Cuenta de prueba, suspensión temporal, solicitud interna..."></textarea>
+                                                    </label>
+
+                                                    <button type="submit" class="mini-btn warning">
+                                                        Confirmar desactivación
+                                                    </button>
+                                                </form>
+                                            </details>
+                                        }
+                                        else
+                                        {
+                                            <form asp-controller="SuperAdmin"
+                                                  asp-action="ReactivarUsuario"
+                                                  method="post"
+                                                  onsubmit="return confirm('¿Seguro que quieres reactivar este usuario?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="usuarioId" value="@usuario.Id" />
+                                                <button type="submit" class="mini-btn success">Reactivar</button>
+                                            </form>
+                                        }
+
+                                        <form asp-controller="SuperAdmin"
+                                              asp-action="EliminarUsuario"
+                                              method="post"
+                                              onsubmit="return confirm('¿Seguro que quieres ELIMINAR este usuario? Esta acción no se puede deshacer. Solo funcionará si no tiene datos relacionados.');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="usuarioId" value="@usuario.Id" />
+                                            <button type="submit" class="mini-btn danger">Eliminar</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="sistema" class="super-system-layout">
+        <div class="super-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Estado del sistema</h2>
+                    <p>Resumen técnico de la aplicación DogGo.</p>
+                </div>
+                <span class="pill success">Operativo</span>
+            </div>
+
+            <div class="system-list">
+                <div class="system-row">
+                    <span>Ambiente</span>
+                    <strong>@Model.Ambiente</strong>
+                </div>
+
+                <div class="system-row">
+                    <span>Servidor</span>
+                    <strong>@Model.EstadoServidor</strong>
+                </div>
+
+                <div class="system-row">
+                    <span>Base de datos</span>
+                    <strong>@Model.EstadoBaseDatos</strong>
+                </div>
+
+                <div class="system-row">
+                    <span>Usuarios activos</span>
+                    <strong>@Model.TotalUsuariosActivos</strong>
+                </div>
+
+                <div class="system-row">
+                    <span>Usuarios desactivados</span>
+                    <strong>@Model.TotalUsuariosDesactivados</strong>
+                </div>
+
+                <div class="system-row">
+                    <span>Recuperaciones de contraseña activas</span>
+                    <strong>@Model.RecuperacionesPasswordActivas</strong>
+                </div>
+
+                <div class="system-row">
+                    <span>Total paseadores perfil</span>
+                    <strong>@Model.TotalPaseadores</strong>
+                </div>
+
+                <div class="system-row">
+                    <span>Paseos en curso atorados</span>
+                    <strong>@Model.PaseosEnCursoAtorados</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="super-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Herramientas rápidas</h2>
+                    <p>Atajos para soporte, revisión y pruebas técnicas.</p>
+                </div>
+                <span class="pill neutral">Soporte</span>
+            </div>
+
+            <div class="quick-actions">
+                <a href="/Admin">
+                    <strong>Dashboard Admin</strong>
+                    <span>Métricas del negocio</span>
+                </a>
+
+                <a href="/Usuarios">
+                    <strong>Usuarios</strong>
+                    <span>Revisión de cuentas</span>
+                </a>
+
+                <a href="/Paseos">
+                    <strong>Paseos</strong>
+                    <span>Operación y estados</span>
+                </a>
+
+                <a href="/Perros">
+                    <strong>Perros</strong>
+                    <span>Mascotas registradas</span>
+                </a>
+
+                <a href="/Paseadores">
+                    <strong>Paseadores</strong>
+                    <span>Perfiles de servicio</span>
+                </a>
+
+                <a href="/swagger">
+                    <strong>Swagger API</strong>
+                    <span>Pruebas backend/API</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="modulos" class="super-main-layout">
+        <div class="super-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Módulos internos</h2>
+                    <p>Estado general de las partes principales del sistema.</p>
+                </div>
+                <span class="pill neutral">@Model.Modulos.Count módulos</span>
+            </div>
+
+            <div class="module-grid">
+                @foreach (var modulo in Model.Modulos)
+                {
+                    <article class="module-card @modulo.Tipo">
+                        <div class="module-icon">@modulo.Icono</div>
+                        <div>
+                            <h3>@modulo.Nombre</h3>
+                            <p>@modulo.Descripcion</p>
+                            <span>@modulo.Estado</span>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+
+        <aside id="actividad" class="super-panel activity-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Actividad reciente</h2>
+                    <p>Últimos movimientos del sistema.</p>
+                </div>
+                <span class="pill neutral">@Model.ActividadReciente.Count movimientos</span>
+            </div>
+
+            <div class="activity-list">
+                @if (Model.ActividadReciente.Any())
+                {
+                    foreach (var item in Model.ActividadReciente)
+                    {
+                        <article class="activity-item @item.Tipo">
+                            <div class="activity-dot">@item.Icono</div>
+                            <div>
+                                <strong>@item.Titulo</strong>
+                                <p>@item.Detalle</p>
+                                <small>@item.Fecha.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                        </article>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        No hay actividad reciente para mostrar.
+                    </div>
+                }
+            </div>
+        </aside>
+    </section>
+</div>
+
+<style>
+    :root {
+        --doggo-bg: #fbf7ef;
+        --doggo-panel: #fffaf3;
+        --doggo-card: #ffffff;
+        --doggo-text: #272b42;
+        --doggo-muted: #748098;
+        --doggo-line: #eadfd1;
+        --doggo-teal: #12a79d;
+        --doggo-teal-soft: #d8f5f2;
+        --doggo-blue: #5b8def;
+        --doggo-green: #22c55e;
+        --doggo-yellow: #f59e0b;
+        --doggo-red: #ef4444;
+        --doggo-purple: #6b4fa3;
+        --doggo-shadow: 0 18px 45px rgba(39, 43, 66, 0.08);
+    }
+
+    .super-admin-page {
+        max-width: 1540px;
+        margin: 0 auto;
+        padding: 48px 32px 70px;
+        color: var(--doggo-text);
+    }
+
+    .super-hero {
+        background: rgba(255, 250, 243, 0.96);
+        border: 1px solid var(--doggo-line);
+        border-radius: 26px;
+        padding: 34px 36px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 28px;
+        box-shadow: var(--doggo-shadow);
+        margin-bottom: 18px;
+    }
+
+    .super-kicker {
+        display: inline-flex;
+        padding: 8px 24px;
+        background: var(--doggo-teal-soft);
+        color: #008d84;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-bottom: 14px;
+    }
+
+    .super-hero h1 {
+        font-size: clamp(2.4rem, 4vw, 3.4rem);
+        line-height: 1;
+        margin: 0 0 14px;
+        font-weight: 950;
+        letter-spacing: -0.04em;
+    }
+
+    .super-hero p {
+        margin: 0;
+        color: var(--doggo-muted);
+        font-size: 1.02rem;
+        font-weight: 700;
+        max-width: 850px;
+    }
+
+    .super-hero-card {
+        min-width: 180px;
+        background: #fff;
+        border: 1px solid var(--doggo-line);
+        border-radius: 22px;
+        padding: 20px 22px;
+        display: grid;
+        gap: 7px;
+        box-shadow: 0 12px 30px rgba(39, 43, 66, 0.05);
+    }
+
+    .super-hero-card span {
+        color: var(--doggo-muted);
+        font-size: 0.75rem;
+        font-weight: 950;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .super-hero-card strong {
+        font-size: 1.15rem;
+        font-weight: 950;
+    }
+
+    .super-hero-card small {
+        color: var(--doggo-teal);
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .super-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 18px 0 22px;
+    }
+
+    .super-tabs a {
+        text-decoration: none;
+        color: var(--doggo-text);
+        background: #fff;
+        border: 1px solid var(--doggo-line);
+        border-radius: 999px;
+        padding: 11px 18px;
+        font-size: 0.87rem;
+        font-weight: 950;
+        box-shadow: 0 8px 20px rgba(39, 43, 66, 0.04);
+        transition: 0.18s ease;
+    }
+
+    .super-tabs a:hover,
+    .super-tabs a.active {
+        background: var(--doggo-teal-soft);
+        color: #008d84;
+        border-color: transparent;
+        transform: translateY(-1px);
+    }
+
+    .super-grid {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .super-grid-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .super-grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .super-card,
+    .super-wide-card,
+    .super-panel {
+        background: var(--doggo-card);
+        border: 1px solid var(--doggo-line);
+        border-radius: 22px;
+        box-shadow: 0 13px 32px rgba(39, 43, 66, 0.06);
+    }
+
+    .super-card {
+        padding: 22px;
+        min-height: 118px;
+    }
+
+    .super-card h3 {
+        margin: 8px 0 2px;
+        font-size: 1.95rem;
+        line-height: 1;
+        font-weight: 950;
+        letter-spacing: -0.04em;
+    }
+
+    .super-card p {
+        margin: 0;
+        color: var(--doggo-muted);
+        font-size: 0.8rem;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .card-icon {
+        width: 31px;
+        height: 31px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-size: 1.05rem;
+    }
+
+    .purple { background: #f1eaff; color: var(--doggo-purple); }
+    .blue { background: #e9f0ff; color: var(--doggo-blue); }
+    .green { background: #e8faef; color: var(--doggo-green); }
+    .yellow { background: #fff4d6; color: var(--doggo-yellow); }
+    .red { background: #ffe7e7; color: var(--doggo-red); }
+    .dark { background: #edf0f5; color: #272b42; }
+
+    .soft-blue { background: #f7faff; }
+    .soft-green { background: #f4fff8; }
+    .soft-yellow { background: #fffaed; }
+    .soft-red { background: #fff6f6; }
+
+    .border-yellow { border-color: rgba(245, 158, 11, 0.55); background: #fff7e3; }
+    .border-green { border-color: rgba(34, 197, 94, 0.5); background: #ecfff3; }
+    .border-blue { border-color: rgba(91, 141, 239, 0.45); background: #f5f8ff; }
+    .border-red { border-color: rgba(239, 68, 68, 0.45); background: #fff0f0; }
+
+    .super-wide-card {
+        padding: 20px 22px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        min-height: 96px;
+    }
+
+    .super-wide-card.warning {
+        border-color: rgba(245, 158, 11, 0.55);
+        background: #fff8e8;
+    }
+
+    .super-wide-card.danger {
+        border-color: rgba(239, 68, 68, 0.42);
+        background: #fff4f4;
+    }
+
+    .wide-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    .super-wide-card span {
+        display: block;
+        color: var(--doggo-muted);
+        font-size: 0.78rem;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin-bottom: 3px;
+    }
+
+    .super-wide-card strong {
+        display: block;
+        font-size: 1.35rem;
+        font-weight: 950;
+        line-height: 1.1;
+    }
+
+    .super-wide-card p {
+        margin: 4px 0 0;
+        color: var(--doggo-muted);
+        font-weight: 750;
+        font-size: 0.88rem;
+    }
+
+    .super-panel {
+        padding: 24px;
+        background: rgba(255, 255, 255, 0.96);
+        margin-bottom: 16px;
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .panel-header h2 {
+        margin: 0 0 5px;
+        font-size: 1.28rem;
+        font-weight: 950;
+        letter-spacing: -0.03em;
+    }
+
+    .panel-header p {
+        margin: 0;
+        color: var(--doggo-muted);
+        font-weight: 750;
+        font-size: 0.92rem;
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 0.78rem;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .pill.success {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .pill.neutral {
+        background: #f7f1e9;
+        color: var(--doggo-muted);
+        border: 1px solid var(--doggo-line);
+    }
+
+    .maintenance-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .maintenance-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 10px 16px;
+        background: var(--doggo-teal);
+        color: white;
+        font-weight: 950;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: 0.18s ease;
+    }
+
+    .maintenance-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(0.98);
+    }
+
+    .maintenance-btn.danger-soft {
+        background: #ef4444;
+    }
+
+    .alert-grid,
+    .quality-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .alert-card,
+    .quality-card {
+        border: 1px solid var(--doggo-line);
+        border-radius: 20px;
+        padding: 18px;
+        display: flex;
+        gap: 14px;
+        background: #fffaf3;
+        min-height: 145px;
+    }
+
+    .alert-card.success,
+    .quality-card.success {
+        background: #f3fff7;
+        border-color: rgba(34, 197, 94, 0.35);
+    }
+
+    .alert-card.warning,
+    .quality-card.warning {
+        background: #fff8e8;
+        border-color: rgba(245, 158, 11, 0.45);
+    }
+
+    .alert-card.danger,
+    .quality-card.danger {
+        background: #fff4f4;
+        border-color: rgba(239, 68, 68, 0.45);
+    }
+
+    .alert-icon,
+    .quality-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        background: #ffffff;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        box-shadow: 0 8px 20px rgba(39, 43, 66, 0.06);
+    }
+
+    .alert-card span,
+    .quality-card span {
+        display: block;
+        color: var(--doggo-muted);
+        font-size: 0.76rem;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 5px;
+    }
+
+    .alert-card strong,
+    .quality-card strong {
+        display: block;
+        font-size: 2rem;
+        line-height: 1;
+        font-weight: 950;
+        margin-bottom: 8px;
+    }
+
+    .alert-card p,
+    .quality-card p {
+        margin: 0;
+        color: var(--doggo-muted);
+        font-size: 0.85rem;
+        font-weight: 750;
+    }
+
+    .super-roles-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.95fr) minmax(420px, 1.05fr);
+        gap: 16px;
+        align-items: start;
+    }
+
+    .role-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .role-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 18px;
+        border-radius: 18px;
+        border: 1px solid var(--doggo-line);
+        background: #fffaf3;
+    }
+
+    .role-card.blue { background: #f5f8ff; border-color: rgba(91, 141, 239, 0.35); }
+    .role-card.green { background: #f3fff7; border-color: rgba(34, 197, 94, 0.35); }
+    .role-card.purple { background: #faf7ff; border-color: rgba(107, 79, 163, 0.3); }
+    .role-card.dark { background: #f5f6f8; border-color: rgba(39, 43, 66, 0.18); }
+
+    .role-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+        background: #ffffff;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 8px 20px rgba(39, 43, 66, 0.05);
+    }
+
+    .role-card span {
+        display: block;
+        color: var(--doggo-muted);
+        font-size: 0.78rem;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .role-card strong {
+        display: block;
+        font-size: 1.8rem;
+        font-weight: 950;
+        line-height: 1;
+        margin-top: 4px;
+    }
+
+    .admin-user-list {
+        display: grid;
+        gap: 10px;
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .admin-user-item {
+        display: flex;
+        gap: 13px;
+        align-items: center;
+        padding: 14px;
+        border: 1px solid var(--doggo-line);
+        border-radius: 18px;
+        background: #fffaf3;
+    }
+
+    .admin-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--doggo-teal);
+        color: white;
+        display: grid;
+        place-items: center;
+        font-size: 0.8rem;
+        font-weight: 950;
+        flex-shrink: 0;
+    }
+
+    .admin-avatar.avatar-disabled {
+        background: #9ca3af;
+    }
+
+    .admin-user-item strong {
+        display: block;
+        font-weight: 950;
+    }
+
+    .admin-user-item p {
+        margin: 2px 0;
+        color: var(--doggo-muted);
+        font-weight: 750;
+        font-size: 0.86rem;
+    }
+
+    .admin-user-item small {
+        color: #9aa3b5;
+        font-weight: 850;
+    }
+
+    .users-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--doggo-line);
+        border-radius: 20px;
+        background: #fffaf3;
+    }
+
+    .users-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 1280px;
+    }
+
+    .users-table th {
+        text-align: left;
+        padding: 16px;
+        color: var(--doggo-muted);
+        font-size: 0.76rem;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        background: #fff7ec;
+        border-bottom: 1px solid var(--doggo-line);
+    }
+
+    .users-table td {
+        vertical-align: top;
+        padding: 16px;
+        border-bottom: 1px solid var(--doggo-line);
+    }
+
+    .users-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .inactive-row {
+        background: #f9fafb;
+        opacity: 0.92;
+    }
+
+    .user-cell {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        min-width: 250px;
+    }
+
+    .user-cell strong {
+        display: block;
+        font-weight: 950;
+    }
+
+    .user-cell span {
+        display: block;
+        color: var(--doggo-muted);
+        font-size: 0.84rem;
+        font-weight: 750;
+    }
+
+    .user-cell small {
+        display: block;
+        color: #9aa3b5;
+        font-weight: 850;
+        margin-top: 3px;
+    }
+
+    .user-cell em {
+        display: inline-flex;
+        margin-top: 7px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: var(--doggo-teal-soft);
+        color: #008d84;
+        font-size: 0.73rem;
+        font-style: normal;
+        font-weight: 950;
+    }
+
+    .account-status {
+        display: grid;
+        gap: 6px;
+        max-width: 210px;
+    }
+
+    .account-status small {
+        color: #9aa3b5;
+        font-weight: 850;
+    }
+
+    .account-status p {
+        margin: 0;
+        color: var(--doggo-muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
+    .role-form {
+        display: grid;
+        gap: 8px;
+        min-width: 150px;
+    }
+
+    .role-select {
+        width: 100%;
+        border: 1px solid var(--doggo-line);
+        border-radius: 13px;
+        padding: 9px 10px;
+        background: white;
+        color: var(--doggo-text);
+        font-weight: 900;
+    }
+
+    .mini-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 8px 11px;
+        background: var(--doggo-teal);
+        color: white;
+        font-size: 0.76rem;
+        font-weight: 950;
+        cursor: pointer;
+        transition: 0.18s ease;
+        white-space: nowrap;
+    }
+
+    .mini-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(0.98);
+    }
+
+    .mini-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .mini-btn.success {
+        background: #22c55e;
+    }
+
+    .mini-btn.warning {
+        background: #f59e0b;
+    }
+
+    .mini-btn.danger {
+        background: #ef4444;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.72rem;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .status-pill.success {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-pill.warning {
+        background: #fff4d6;
+        color: #b45309;
+    }
+
+    .status-pill.info {
+        background: #e9f0ff;
+        color: #2563eb;
+    }
+
+    .status-pill.danger {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .muted-text {
+        color: var(--doggo-muted);
+        font-size: 0.83rem;
+        font-weight: 800;
+    }
+
+    .code-status-list {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .user-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        min-width: 210px;
+    }
+
+    .user-actions form {
+        margin: 0;
+    }
+
+    .edit-user-box,
+    .deactivate-user-box {
+        width: 100%;
+    }
+
+    .edit-user-box summary,
+    .deactivate-user-box summary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 8px 11px;
+        color: white;
+        font-size: 0.76rem;
+        font-weight: 950;
+        cursor: pointer;
+        list-style: none;
+        white-space: nowrap;
+        transition: 0.18s ease;
+    }
+
+    .edit-user-box summary {
+        background: #5b8def;
+    }
+
+    .deactivate-user-box summary {
+        background: #f59e0b;
+    }
+
+    .edit-user-box summary::-webkit-details-marker,
+    .deactivate-user-box summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .edit-user-box summary:hover,
+    .deactivate-user-box summary:hover {
+        transform: translateY(-1px);
+        filter: brightness(0.98);
+    }
+
+    .edit-user-form,
+    .deactivate-user-form {
+        margin-top: 10px;
+        padding: 12px;
+        border-radius: 16px;
+        border: 1px solid var(--doggo-line);
+        background: #fffaf3;
+        display: grid;
+        gap: 9px;
+        min-width: 230px;
+    }
+
+    .edit-user-form label,
+    .deactivate-user-form label {
+        display: grid;
+        gap: 4px;
+        color: var(--doggo-muted);
+        font-size: 0.72rem;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .edit-user-form input,
+    .deactivate-user-form textarea {
+        width: 100%;
+        border: 1px solid var(--doggo-line);
+        border-radius: 12px;
+        padding: 9px 10px;
+        background: white;
+        color: var(--doggo-text);
+        font-size: 0.82rem;
+        font-weight: 850;
+        outline: none;
+    }
+
+    .deactivate-user-form textarea {
+        min-height: 76px;
+        resize: vertical;
+    }
+
+    .edit-user-form input:focus,
+    .deactivate-user-form textarea:focus {
+        border-color: var(--doggo-teal);
+        box-shadow: 0 0 0 3px rgba(18, 167, 157, 0.12);
+    }
+
+    .super-system-layout {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 16px;
+        margin: 0 0 16px;
+    }
+
+    .super-main-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(360px, 0.55fr);
+        gap: 16px;
+        align-items: start;
+    }
+
+    .system-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .system-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: #fffaf3;
+        border: 1px solid var(--doggo-line);
+    }
+
+    .system-row span {
+        color: var(--doggo-muted);
+        font-weight: 850;
+    }
+
+    .system-row strong {
+        font-weight: 950;
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .quick-actions a {
+        text-decoration: none;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: #fffaf3;
+        border: 1px solid var(--doggo-line);
+        color: var(--doggo-text);
+        font-weight: 950;
+        transition: 0.18s ease;
+        display: grid;
+        gap: 4px;
+    }
+
+    .quick-actions a span {
+        color: var(--doggo-muted);
+        font-size: 0.78rem;
+        font-weight: 750;
+    }
+
+    .quick-actions a:hover {
+        transform: translateY(-1px);
+        background: var(--doggo-teal-soft);
+        color: #008d84;
+        border-color: transparent;
+    }
+
+    .module-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .module-card {
+        border: 1px solid var(--doggo-line);
+        border-radius: 20px;
+        padding: 17px;
+        display: flex;
+        gap: 14px;
+        background: #fffaf3;
+    }
+
+    .module-card.ok {
+        border-color: rgba(34, 197, 94, 0.32);
+        background: #f3fff7;
+    }
+
+    .module-card.warning {
+        border-color: rgba(245, 158, 11, 0.45);
+        background: #fff8e8;
+    }
+
+    .module-card.danger {
+        border-color: rgba(239, 68, 68, 0.45);
+        background: #fff4f4;
+    }
+
+    .module-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: #ffffff;
+        flex-shrink: 0;
+        box-shadow: 0 8px 20px rgba(39, 43, 66, 0.06);
+    }
+
+    .module-card h3 {
+        margin: 0 0 5px;
+        font-size: 1rem;
+        font-weight: 950;
+    }
+
+    .module-card p {
+        margin: 0 0 10px;
+        color: var(--doggo-muted);
+        font-size: 0.88rem;
+        font-weight: 700;
+    }
+
+    .module-card span {
+        display: inline-flex;
+        font-size: 0.76rem;
+        font-weight: 950;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--doggo-text);
+    }
+
+    .activity-panel {
+        max-height: 720px;
+        overflow: hidden;
+    }
+
+    .activity-list {
+        display: grid;
+        gap: 10px;
+        max-height: 615px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .activity-item {
+        display: flex;
+        gap: 13px;
+        padding: 15px;
+        border-radius: 18px;
+        border: 1px solid var(--doggo-line);
+        background: #fffaf3;
+    }
+
+    .activity-item.success {
+        background: #f3fff7;
+        border-color: rgba(34, 197, 94, 0.32);
+    }
+
+    .activity-item.warning {
+        background: #fff8e8;
+        border-color: rgba(245, 158, 11, 0.42);
+    }
+
+    .activity-item.danger {
+        background: #fff4f4;
+        border-color: rgba(239, 68, 68, 0.42);
+    }
+
+    .activity-item.active {
+        background: #f3f8ff;
+        border-color: rgba(91, 141, 239, 0.34);
+    }
+
+    .activity-dot {
+        width: 30px;
+        height: 30px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #ffffff;
+        flex-shrink: 0;
+        font-weight: 950;
+    }
+
+    .activity-item strong {
+        display: block;
+        font-size: 0.92rem;
+        font-weight: 950;
+        margin-bottom: 3px;
+    }
+
+    .activity-item p {
+        margin: 0 0 5px;
+        color: var(--doggo-muted);
+        font-size: 0.84rem;
+        font-weight: 700;
+    }
+
+    .activity-item small {
+        color: #9aa3b5;
+        font-weight: 800;
+    }
+
+    .empty-state {
+        padding: 28px;
+        border-radius: 18px;
+        border: 1px dashed var(--doggo-line);
+        text-align: center;
+        color: var(--doggo-muted);
+        font-weight: 850;
+        background: #fffaf3;
+    }
+
+    @@media (max-width: 1180px) {
+        .super-grid-4,
+        .alert-grid,
+        .quality-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .super-grid-3 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .super-system-layout,
+        .super-main-layout,
+        .super-roles-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 760px) {
+        .super-admin-page {
+            padding: 28px 16px 52px;
+        }
+
+        .super-hero {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 26px;
+        }
+
+        .super-grid-4,
+        .super-grid-3,
+        .alert-grid,
+        .quality-grid,
+        .module-grid,
+        .quick-actions,
+        .role-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .panel-header {
+            flex-direction: column;
+        }
+    }
+</style>
