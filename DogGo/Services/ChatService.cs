@@ -108,6 +108,43 @@ namespace DogGo.Services
             };
 
             _context.Mensajes.Add(mensaje);
+
+            var emisor = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == usuarioId);
+
+            var nombreEmisor = emisor == null
+                ? "Alguien"
+                : $"{emisor.Nombre} {emisor.Apellido}".Trim();
+
+            if (string.IsNullOrWhiteSpace(nombreEmisor))
+            {
+                nombreEmisor = "Alguien";
+            }
+
+            var resumenMensaje = contenido.Length > 80
+                ? contenido.Substring(0, 80) + "..."
+                : contenido;
+
+            var nombrePerro = paseo.Perro?.Nombre;
+
+            if (string.IsNullOrWhiteSpace(nombrePerro))
+            {
+                nombrePerro = "tu paseo";
+            }
+
+            var notificacion = new Notificacion
+            {
+                UsuarioId = receptorId.Value,
+                Titulo = "Nuevo mensaje",
+                Mensaje = $"{nombreEmisor} te envió un mensaje sobre {nombrePerro}: \"{resumenMensaje}\"",
+                Tipo = "Chat",
+                ReferenciaId = paseo.Id,
+                Leida = false,
+                FechaCreacion = DateTime.UtcNow
+            };
+
+            _context.Notificaciones.Add(notificacion);
+
             await _context.SaveChangesAsync();
 
             var guardado = await _context.Mensajes
@@ -277,5 +314,3 @@ namespace DogGo.Services
         }
     }
 }
-
-

@@ -17,6 +17,7 @@ namespace DogGo.Data
         public DbSet<Calificacion> Calificaciones { get; set; }
         public DbSet<Mensaje> Mensajes { get; set; }
         public DbSet<Ubicacion> Ubicaciones { get; set; }
+        public DbSet<Notificacion> Notificaciones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -59,29 +60,27 @@ namespace DogGo.Data
                 .HasForeignKey(p => p.PaseadorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Relación actual: Paseo -> Perro
-            // Se mantiene temporalmente por compatibilidad
+            // Paseo -> Perro
             modelBuilder.Entity<Paseo>()
                 .HasOne(p => p.Perro)
                 .WithMany(pe => pe.Paseos)
                 .HasForeignKey(p => p.PerroId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Nueva relación: PaseoPerro -> Paseo
+            // PaseoPerro -> Paseo
             modelBuilder.Entity<PaseoPerro>()
                 .HasOne(pp => pp.Paseo)
                 .WithMany(p => p.PaseoPerros)
                 .HasForeignKey(pp => pp.PaseoId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Nueva relación: PaseoPerro -> Perro
+            // PaseoPerro -> Perro
             modelBuilder.Entity<PaseoPerro>()
                 .HasOne(pp => pp.Perro)
                 .WithMany(p => p.PaseoPerros)
                 .HasForeignKey(pp => pp.PerroId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Evita duplicados del mismo perro en el mismo paseo
             modelBuilder.Entity<PaseoPerro>()
                 .HasIndex(pp => new { pp.PaseoId, pp.PerroId })
                 .IsUnique();
@@ -120,6 +119,16 @@ namespace DogGo.Data
                 .WithMany(p => p.Ubicaciones)
                 .HasForeignKey(u => u.PaseoId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Notificacion -> Usuario
+            modelBuilder.Entity<Notificacion>()
+                .HasOne(n => n.Usuario)
+                .WithMany()
+                .HasForeignKey(n => n.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Notificacion>()
+                .HasIndex(n => new { n.UsuarioId, n.Leida, n.FechaCreacion });
 
             // Precisión decimales
             modelBuilder.Entity<Paseador>()
@@ -167,4 +176,4 @@ namespace DogGo.Data
                 .HasPrecision(10, 7);
         }
     }
-} 
+}

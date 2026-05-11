@@ -27,6 +27,7 @@ namespace DogGo.Services
             }
 
             var perro = await _context.Perros
+                .Include(p => p.Dueño)
                 .FirstOrDefaultAsync(p => p.Id == dto.PerroId && p.DueñoId == usuarioId);
 
             if (perro == null)
@@ -72,6 +73,33 @@ namespace DogGo.Services
             };
 
             _context.Paseos.Add(paseo);
+            await _context.SaveChangesAsync();
+
+            var duenioNombre = perro.Dueño == null
+                ? "Un cliente"
+                : $"{perro.Dueño.Nombre} {perro.Dueño.Apellido}".Trim();
+
+            if (string.IsNullOrWhiteSpace(duenioNombre))
+            {
+                duenioNombre = "Un cliente";
+            }
+
+            var fechaTexto = paseo.FechaProgramada.HasValue
+                ? $" para el {paseo.FechaProgramada.Value:dd/MM/yyyy HH:mm}"
+                : string.Empty;
+
+            var notificacion = new Notificacion
+            {
+                UsuarioId = paseador.UsuarioId,
+                Titulo = "Nueva solicitud de paseo",
+                Mensaje = $"{duenioNombre} solicitó un paseo para {perro.Nombre}{fechaTexto}.",
+                Tipo = "Paseo",
+                ReferenciaId = paseo.Id,
+                Leida = false,
+                FechaCreacion = DateTime.UtcNow
+            };
+
+            _context.Notificaciones.Add(notificacion);
             await _context.SaveChangesAsync();
 
             var creado = await QueryPaseosCompletos()
