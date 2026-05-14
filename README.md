@@ -72,7 +72,7 @@ DogGo/
 ## 🔄 Funcionamiento del Sistema (Modo Dual)
 
 El sistema permite una transición fluida entre roles:
-1. **Dueño:** Registro de mascotas (Hikari, etc.), búsqueda de paseadores y visualización de evidencias de paseo.
+1. **Dueño:** Registro de mascotas  búsqueda de paseadores y visualización de evidencias de paseo.
 2. **Paseador:** Gestión de disponibilidad, subida de fotos (inicio/fin) y reporte de ubicación en tiempo real.
 
 **Estado del Repositorio:** 🟢 CERTIFICADO PARA DESPLIEGUE (FASE 5)  
